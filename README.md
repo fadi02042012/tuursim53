@@ -1,44 +1,54 @@
-# Anon - An eCommerce Website
-
-![GitHub repo size](https://img.shields.io/github/repo-size/codewithsadee/anon-ecommerce-website)
-![GitHub stars](https://img.shields.io/github/stars/codewithsadee/anon-ecommerce-website?style=social)
-![GitHub forks](https://img.shields.io/github/forks/codewithsadee/anon-ecommerce-website?style=social)
+<div align="center">
+  
+  ![GitHub repo size](https://img.shields.io/github/repo-size/codewithsadee/woodex)
+  ![GitHub stars](https://img.shields.io/github/stars/codewithsadee/woodex?style=social)
+  ![GitHub forks](https://img.shields.io/github/forks/codewithsadee/woodex?style=social)
 [![Twitter Follow](https://img.shields.io/twitter/follow/codewithsadee_?style=social)](https://twitter.com/intent/follow?screen_name=codewithsadee_)
-[![YouTube Video Views](https://img.shields.io/youtube/views/3l8Lob4ysI0?style=social)](https://youtu.be/3l8Lob4ysI0)
+  [![YouTube Video Views](https://img.shields.io/youtube/views/NK8Cif0dAoM?style=social)](https://youtu.be/NK8Cif0dAoM)
 
-Anon is a fully responsive ecommerce website, maximum compatiblities in all mobile devices, built using HTML, CSS, and JavaScript.
+  <br />
+  <br />
 
-## Demo
+  <h2 align="center">Woodex - Furniture eCommerce Website</h2>
 
-![Anon Desktop Demo](./website-demo-image/desktop.png "Desktop Demo")
-![Anon Mobile Demo](./website-demo-image/mobile.png "Mobile Demo")
+  Woodex is a fully responsive furniture ecommerce website, <br />Responsive for all devices, build using HTML, CSS, and JavaScript.
 
-## Prerequisites
+  <a href="https://codewithsadee.github.io/woodex/"><strong>➥ Live Demo</strong></a>
+
+</div>
+
+<br />
+
+### Demo Screeshots
+
+![Woodex Desktop Demo](./readme-images/desktop.png "Desktop Demo")
+
+### Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 
 * [Git](https://git-scm.com/downloads "Download Git") must be installed on your operating system.
 
-## Installing Anon
+### Run Locally
 
-To install **Anon**, follow these steps:
+To run **Woodex** locally, run this command on your git bash:
 
 Linux and macOS:
 
 ```bash
-sudo git clone https://github.com/codewithsadee/anon-ecommerce-website.git
+sudo git clone https://github.com/codewithsadee/woodex.git
 ```
 
 Windows:
 
 ```bash
-git clone https://github.com/codewithsadee/anon-ecommerce-website.git
+git clone https://github.com/codewithsadee/woodex.git
 ```
 
-## Contact
+### Contact
 
-If you want to contact me you can reach me at [Twitter](https://www.twitter.com/codewithsadee).
+If you want to contact with me you can reach me at [Twitter](https://www.twitter.com/codewithsadee).
 
-## License
+### License
 
 This project is **free to use** and does not contains any license.
