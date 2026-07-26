@@ -1,54 +1,38 @@
-<div align="center">
-  
-  ![GitHub repo size](https://img.shields.io/github/repo-size/codewithsadee/woodex)
-  ![GitHub stars](https://img.shields.io/github/stars/codewithsadee/woodex?style=social)
-  ![GitHub forks](https://img.shields.io/github/forks/codewithsadee/woodex?style=social)
-[![Twitter Follow](https://img.shields.io/twitter/follow/codewithsadee_?style=social)](https://twitter.com/intent/follow?screen_name=codewithsadee_)
-  [![YouTube Video Views](https://img.shields.io/youtube/views/NK8Cif0dAoM?style=social)](https://youtu.be/NK8Cif0dAoM)
+# Nike Shoe Store Website
 
-  <br />
-  <br />
+A stylish and responsive Nike Shoe Store website built using HTML, CSS, and JavaScript.  
+This project includes product sections, shopping cart functionality, login form, smooth navigation, and local storage support.
 
-  <h2 align="center">Woodex - Furniture eCommerce Website</h2>
+## 🚀 Features
 
-  Woodex is a fully responsive furniture ecommerce website, <br />Responsive for all devices, build using HTML, CSS, and JavaScript.
+- Responsive Nike Shoe Store UI
+- Add products to cart
+- Remove items from cart
+- Cart item counter
+- Total price calculation
+- Checkout functionality
+- Login form with welcome message
+- Smooth scrolling buttons
+- LocalStorage support (cart data saved even after refresh)
+- Modern footer with social icons
 
-  <a href="https://codewithsadee.github.io/woodex/"><strong>➥ Live Demo</strong></a>
+## 🛠 Technologies Used
 
-</div>
+- HTML5
+- CSS3
+- JavaScript
+- Font Awesome Icons
 
-<br />
-
-### Demo Screeshots
-
-![Woodex Desktop Demo](./readme-images/desktop.png "Desktop Demo")
-
-### Prerequisites
-
-Before you begin, ensure you have met the following requirements:
-
-* [Git](https://git-scm.com/downloads "Download Git") must be installed on your operating system.
-
-### Run Locally
-
-To run **Woodex** locally, run this command on your git bash:
-
-Linux and macOS:
+## 📂 Project Structure
 
 ```bash
-sudo git clone https://github.com/codewithsadee/woodex.git
-```
-
-Windows:
-
-```bash
-git clone https://github.com/codewithsadee/woodex.git
-```
-
-### Contact
-
-If you want to contact with me you can reach me at [Twitter](https://www.twitter.com/codewithsadee).
-
-### License
-
-This project is **free to use** and does not contains any license.
+Nike-Shoe-Store/
+│
+├── index.html
+├── style.css
+├── script.js
+├── image/
+│   ├── shoes1.png
+│   ├── shoes2.png
+│   ├── shoes3.png
+│   └── ...
