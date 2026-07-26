@@ -1,0 +1,52 @@
+@import "./variables";
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  position: relative;
+  font-size: 14px;
+  font-family: "Open Sans", sans-serif;
+  background: white;
+  // min-height: 100vh;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+a {
+  text-decoration: none;
+  transition: color 0.25s ease-in-out;
+  color: inherit;
+}
+
+li {
+  list-style-type: none;
+}
+
+small {
+  font-size: 12px;
+}
+
+button {
+  border: 0;
+  outline: none;
+  line-height: 12px;
+  cursor: pointer;
+  text-transform: capitalize;
+  background: $light-blue;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.dark {
+  background: $black-color;
+  color: $white-color;
+}
