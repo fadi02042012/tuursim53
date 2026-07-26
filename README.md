@@ -1,20 +1,4 @@
-# Shopee clone using plain HTML/CSS 🛍️
+# Custom Search Engine
+[![View notebooks](https://wolfr.am/HAAhzkRq)](https://wolfr.am/NFN3lQy2)
 
-![shopee-clone](./github-images/shopee-clone.png)
-
-### Link Demo 📌
-
-[https://ng-ha.github.io/shopee/](https://ng-ha.github.io/shopee/)
-
-### Features :computer:
-
-A responsive website clone with plain `HTML/CSS`, works nicely on all devices 📱 :desktop_computer:
-
-### Technologies ✨
-
-- `HTML/CSS`
-- Vanilla `Javascript`
-
-### License :right_anger_bubble:
-
-[MIT](https://choosealicense.com/licenses/mit/)
+A Wolfram Cloud form that uses the DuckDuckGo Instant Answer API to create robust web searches
