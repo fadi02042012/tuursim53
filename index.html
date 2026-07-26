@@ -1,272 +1,125 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nike Shoe Store</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="design.css">
 
-    <link rel="stylesheet" href="style.css">
+    <script src="js/custom/ajaxcall.js"></script>
+    <script src="js/custom/userOperations.js"></script>
+    <script src="js/custom/cartOperations.js"></script>
+    <script src="js/custom/controller.js"> </script>
 
-    <script src="script.js" defer></script>
-
+    <title> GROCERYMart </title>
 </head>
 
 <body>
-
-    <nav>
-
-        <div class="logo">
-            Shoe<span>s</span>
-        </div>
-
-        <ul>
-            <li><a href="#home">Home</a></li>
-            <li><a href="#products">Products</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#login">Login</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-
-        <div class="icons">
-            <i class="fa-solid fa-cart-shopping cart-icon" data-count="0"></i>
-          <a href="#login">
-   <i class="fa-solid fa-user user-icon"></i>
-</a>
-        </div>
-
-    </nav>
-
-    <section class="hero" id="home">
-
-        <div class="hero-text">
-
-            <h1>NIKE <span>COLLECTION</span></h1>
-
-            <p>
-                Nike offers one of the most popular and stylish shoe collections in the world. Nike shoes are famous for comfort, durability and modern design.
-            </p>
-
-            <button onclick="document.getElementById('products').scrollIntoView()">
-                Shop Now
-            </button>
-
-        </div>
-
-        <div class="hero-image">
-            <img src="image/shoes2.png">
-        </div>
-
-    </section>
-
-    <section class="products" id="products">
-
-        <h1>Products</h1>
-
-        <div class="product-container">
-
-            <div class="card">
-                <img src="image/shoes4.png">
-                <h2>Nike Air Force</h2>
-                <p>Stylish sneakers for daily wear.</p>
-                <div class="price">$120</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-            <div class="card">
-                <img src="image/shoes5.png">
-                <h2>Nike Air Max</h2>
-                <p>Comfortable running shoes.</p>
-                <div class="price">$180</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-            <div class="card">
-                <img src="image/shoes6.png">
-                <h2>Nike Dunk</h2>
-                <p>Premium quality sneakers.</p>
-                <div class="price">$150</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-            <div class="card">
-                <img src="image/shoes7.png">
-                <h2>Air Jordan</h2>
-                <p>Best basketball shoes.</p>
-                <div class="price">$220</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-             <div class="card">
-                <img src="image/shoes3.png">
-                <h2>Nike Zoom Fly</h2>
-                <p>Running Shoes.</p>
-                <div class="price">$190</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-             <div class="card">
-                <img src="image/red_shoes4.png">
-                <h2>Nike Revolution 6</h2>
-                <p>Casual Wear.</p>
-                <div class="price">$90</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-             <div class="card">
-                <img src="image/shoes9.jpg">
-                <h2>Nike Air Max Alpha</h2>
-                <p>Sports Sneakers.</p>
-                <div class="price">$240</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-             <div class="card">
-                <img src="image/shoes11.jpg">
-                <h2>Nike Air Max 2025</h2>
-                <p>Air Cushion Shoes.</p>
-                <div class="price">$200</div>
-                <div class="stars">★★★★★</div>
-                <a href="#" class="btn">Add To Cart</a>
-            </div>
-
-        </div>
-
-    </section>
-
-    <div class="cart-box">
-
-        <h2>Shopping Cart</h2>
-
-        <div class="cart-items"></div>
-
-        <h3 class="total">Total: $0</h3>
-
-        <button class="checkout-btn">Checkout</button>
-
-    </div>
-
-    <section class="about" id="about">
-
-        <div class="about-image">
-            <img src="image/red_shoes1.png">
-        </div>
-
-        <div class="about-text">
-
-            <h1>About Nike</h1>
-
-            <p>
-                Nike is one of the world's leading sportswear brands known for high-quality and stylish shoes. Nike collections are designed for comfort, sports and fashion.
-            </p>
-
-            <p>
-                Nike shoes use advanced technology to provide better support and performance for athletes and casual users.
-            </p>
-
-            <button onclick="document.getElementById('products').scrollIntoView()">
-                Explore More
-            </button>
-
-        </div>
-
-    </section>
-
-    <section class="login" id="login">
-
-        <div class="login-box">
-
-            <div class="login-image">
-                <img src="image/shoes1.png">
-            </div>
-
-            <div class="login-form">
-
-                <h1>Login</h1>
-
-                <form id="loginForm">
-
-                    <input type="text" id="username" placeholder="Username" required>
-
-                    <input type="password" id="password" placeholder="Password" required>
-
-                    <button type="submit">Login</button>
-
-                    <div class="message" id="message"></div>
-
-                </form>
-
-            </div>
-
-        </div>
-
-    </section>
-
-    <footer id="contact">
-
-        <div class="footer-container">
-
-            <div>
-                <h2>Nike Store</h2>
-
-                <p>
-                    Premium quality Nike shoes with modern design and comfort.
-                </p>
-            </div>
-
-            <div>
-
-                <h2>Quick Links</h2>
-
-                <a href="#home">Home</a>
-                <a href="#products">Products</a>
-                <a href="#about">About</a>
-                <a href="#login">Login</a>
-
-            </div>
-
-            <div>
-
-                <h2>Contact</h2>
-
-                <p>📍 Guntur, Andhra Pradesh</p>
-                <p>📞 +91 9876543210</p>
-                <p>✉ nike@gmail.com</p>
-
-            </div>
-
-            <div>
-
-                <h2>Follow Us</h2>
-
-                <div class="social-icons">
-                    <i class="fa-brands fa-facebook"></i>
-                    <i class="fa-brands fa-instagram"></i>
-                    <i class="fa-brands fa-twitter"></i>
-                    <i class="fa-brands fa-linkedin"></i>
+    <header>
+        <h3> GROCERY MART </h3>
+        <label class="notification" id="cartlabel"> 0 </label>  
+        <img src="images/cart.png" id="cart" data-toggle="modal" data-target="#exampleModalCenter">      
+    </header> 
+
+    <main>
+        <div id="logindiv">
+                <div>
+                    <br>
+                    <label for="username"> User Name </label><br>
+                    <input type="text" id="username" placeholder="Enter username" size="25"><br><br>
+                </div>
+                
+                <div>
+                    <label for="pass"> Password </label><br>
+                    <input type="password" id="pass" placeholder="Enter password" size="25"><br>
+                    <h6 class="incorrect" id=incorrectpass> </h6>
+                </div>
+                <div>
+                    <button id="btnlogin" onclick="ajaxcall.ajax(checkuser,'http://localhost:3000/json/users.json','username')"> LOGIN </button><br>
+                    <h6 id="signup"> New User? SIGN UP </h6>
+                </div>
+         </div>
+
+         <div id="registerdiv">    
+                <h6 class="incorrectregister" id="mandatory"></h6>
+                <div>
+                    <label for="firstname"> First Name </label><br>
+                    <input type="text" id="firstname" placeholder="Enter firstname" size="25"><br>
+                    <h6 class="incorrectregister" id="wrongfirst">&nbsp;&nbsp; </h6>
+                </div>
+                        
+                <div>
+                    <label for="lastname"> Last Name </label><br>
+                    <input type="text" id="lastname" placeholder="Enter lastname" size="25"><br>
+                    <h6 class="incorrectregister" id="wronglast"> </h6>
                 </div>
 
+                <div>
+                    <label for="rusername"> User Name </label><br>
+                    <input type="text" id="rusername" placeholder="Enter username" size="25"><br>
+                    <h6 class="incorrectregister" id="duplicateuser"> </h6>
+                </div>
+                
+                <div>
+                    <label for="address"> Address </label><br>
+                    <textarea type="text" id="address" placeholder="Enter address" rows="5" cols="28"></textarea><br><br>
+                </div>
+                <div>
+                    <label for="rpass"> Password </label><br>
+                    <input type="password" id="rpass" placeholder="Enter password" size="25">
+                    <h6 id="hpass"> </h6>
+                </div>
+                <div>
+                    <button id="btnregister" onclick="ajaxcall.ajax(checkUser,'http://localhost:3000/json/users.json','username')"> REGISTER </button><br>
+                </div>
+         </div>
+
+         <div id="homediv">
+            <div id="mainmenu"> 
+                <div id="innerdiv"></div>
             </div>
+            <div id="submenu"></div>
+         </div>
 
-        </div>
+         <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="exampleModalLongTitle"> Billing </h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                      </button>
+                    </div>
+                    <div class="modal-body">
+                      <table class="table table-bordered">
+                          <thead>
+                              <tr>
+                                  <td> Item </td>
+                                  <td> Price </td>
+                                  <td> Quantity </td>
+                              </tr>
+                          </thead>
+                          <tbody id="itemtable"></tbody>
+                      </table>
+                      <div>
+                        <p> Total Price : <span id="pricevalue"> 0 </span></p>
+                        <p> Tax : <span> 10% </span></p>
+                        <p> Cart Subtotal : <span id="totalpricevalue"> 0 </span></p>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <!-- <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button> -->
+                      <button type="button" class="btn btn-primary" id="buy"> Buy Now </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+    </main>
 
-        <div class="copyright">
-            © 2026 Nike Shoe Store | All Rights Reserved
-        </div>
-
-    </footer>
-
-    
-
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
 </body>
-</html>
 
+</html>
