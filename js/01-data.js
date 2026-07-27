@@ -1,333 +1,551 @@
 ﻿// ============================================================
 // 01-data.js - تحميل ومعالجة البيانات
+// نسخة محسنة باستخدام IndexedDB
 // ============================================================
 
-// ============================================================
-// 1. تحميل البيانات من JSON مع التخزين المؤقت
-// ============================================================
-async function loadData() {
-    try {
-
-        const cachedCountries = localStorage.getItem('countries_cache');
-        const cachedCities = localStorage.getItem('cities_cache');
-
-        // إذا كانت البيانات موجودة في التخزين المحلي
-        if (cachedCountries && cachedCities) {
-
-            countries = JSON.parse(cachedCountries);
-
-            const rawCities = JSON.parse(cachedCities);
-
-            populateCountrySelect();
-
-            allCities = rawCities.map(c => ({
-                ...c,
-                _searchKey: buildSearchableText(c)
-            }));
-
-            statusDiv.textContent =
-                `✅ تم تحميل ${allCities.length.toLocaleString()} مدينة من التخزين المحلي`;
-
-            statusDiv.style.color = '#10b981';
-
-            renderResults({
-                cities: allCities.slice(0, 100),
-                countries: []
-            });
-
-            return;
-        }
-
-        // أول زيارة فقط
-        statusDiv.textContent = '⏳ جاري تحميل الدول من countries.json...';
-
-        const countriesRes = await fetch('output/countries.json');
-        countries = await countriesRes.json();
-
-        localStorage.setItem(
-            'countries_cache',
-            JSON.stringify(countries)
-        );
-
-        populateCountrySelect();
-
-        statusDiv.textContent = `✅ تم تحميل ${countries.length} دولة`;
-
-        try {
-
-            statusDiv.textContent = '⏳ جاري تحميل المدن من cities.json...';
-
-            const citiesRes = await fetch('output/cities.json');
-            const rawCities = await citiesRes.json();
-
-            localStorage.setItem(
-                'cities_cache',
-                JSON.stringify(rawCities)
-            );
-
-            allCities = rawCities.map(c => ({
-                ...c,
-                _searchKey: buildSearchableText(c)
-            }));
-
-            statusDiv.textContent =
-                `✅ تم تحميل ${allCities.length.toLocaleString()} مدينة من ${countries.length} دولة`;
-
-            statusDiv.style.color = '#10b981';
-
-            renderResults({
-                cities: allCities.slice(0, 100),
-                countries: []
-            });
-
-        } catch (e) {
-
-            statusDiv.textContent =
-                '⏳ جاري تحميل المدن من ملفات الدول الفردية...';
-
-            await loadAllCountryCities();
-        }
-
-    } catch (error) {
-
-        console.error('خطأ في تحميل البيانات:', error);
-
-        statusDiv.textContent =
-            '⚠️ فشل تحميل البيانات. تأكد من وجود الملفات في مجلد output/';
-
-        statusDiv.style.color = '#ef4444';
-
-        showDemoData();
-    }
-}
 
 // ============================================================
-// 2. تحميل مدن جميع الدول من الملفات الفردية
+// إعداد IndexedDB
 // ============================================================
-async function loadAllCountryCities() {
 
-    const allCitiesTemp = [];
-    let loaded = 0;
+const DB_NAME = "tuursim53_cache";
+const DB_VERSION = 1;
+const STORE_NAME = "json_data";
 
-    for (const country of countries) {
 
-        try {
+// فتح قاعدة البيانات
+function openDataDB() {
 
-            const res = await fetch(
-                `output/by_country/${country.code}.json`
-            );
+    return new Promise((resolve, reject) => {
 
-            const data = await res.json();
+        const request =
+            indexedDB.open(DB_NAME, DB_VERSION);
 
-            const countryName =
-                countryNames[country.code] || country.code;
 
-            const cities = data.map(c => ({
-                ...c,
-                country: countryName,
-                country_ar: country.name_ar || countryName,
-                _searchKey: buildSearchableText({
-                    ...c,
-                    country: countryName
-                })
-            }));
+        request.onupgradeneeded = function(e) {
 
-            allCitiesTemp.push(...cities);
+            const db = e.target.result;
 
-            loaded++;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
 
-            if (loaded % 10 === 0) {
-
-                statusDiv.textContent =
-                    `⏳ جاري تحميل المدن... ${loaded}/${countries.length} دولة`;
+                db.createObjectStore(STORE_NAME);
             }
+        };
 
-        } catch (e) {
 
-            console.warn(
-                `⚠️ فشل تحميل ${country.code}:`,
-                e
-            );
-        }
-    }
+        request.onsuccess = function(e) {
 
-    allCities = allCitiesTemp;
+            resolve(e.target.result);
+        };
 
-    statusDiv.textContent =
-        `✅ تم تحميل ${allCities.length.toLocaleString()} مدينة من ${loaded} دولة`;
 
-    statusDiv.style.color = '#10b981';
+        request.onerror = function(e) {
 
-    renderResults({
-        cities: allCities.slice(0, 100),
-        countries: []
+            reject(e);
+        };
+
     });
 }
 
-// ============================================================
-// 3. تحميل مدن دولة معينة
-// ============================================================
-async function loadCountryCities(code) {
 
-    if (!code) return [];
+// حفظ بيانات
+async function saveCache(key, data) {
+
+    const db = await openDataDB();
+
+    return new Promise((resolve, reject) => {
+
+
+        const transaction =
+            db.transaction(
+                STORE_NAME,
+                "readwrite"
+            );
+
+
+        transaction
+            .objectStore(STORE_NAME)
+            .put(data, key);
+
+
+        transaction.oncomplete =
+            resolve;
+
+
+        transaction.onerror =
+            reject;
+
+    });
+
+}
+
+
+// قراءة بيانات
+async function getCache(key) {
+
+    const db = await openDataDB();
+
+    return new Promise((resolve, reject) => {
+
+
+        const transaction =
+            db.transaction(
+                STORE_NAME,
+                "readonly"
+            );
+
+
+        const request =
+            transaction
+                .objectStore(STORE_NAME)
+                .get(key);
+
+
+        request.onsuccess =
+            () => resolve(request.result);
+
+
+        request.onerror =
+            reject;
+
+    });
+
+}
+
+
+
+// ============================================================
+// 1. تحميل الدول فقط عند فتح الموقع
+// ============================================================
+
+async function loadData() {
+
 
     try {
 
-        const res = await fetch(
-            `output/by_country/${code}.json`
-        );
 
-        const data = await res.json();
+        statusDiv.textContent =
+            "⏳ جاري تحميل الدول...";
 
-        const countryName =
-            countryMap[code] || code;
 
-        const countryNameAr =
-            countries.find(c => c.code === code)?.name_ar ||
-            countryName;
+        let cachedCountries =
+            await getCache("countries");
 
-        return data.map(c => ({
-            ...c,
-            country: countryName,
-            country_ar: countryNameAr,
-            _searchKey: buildSearchableText({
-                ...c,
-                country: countryName
-            })
-        }));
 
-    } catch (error) {
 
-        console.warn(
-            `⚠️ فشل تحميل مدن ${code}:`,
+        if (cachedCountries) {
+
+
+            countries = cachedCountries;
+
+
+            console.log(
+                "📦 الدول من IndexedDB"
+            );
+
+
+        } else {
+
+
+            const response =
+                await fetch(
+                    "output/countries.json"
+                );
+
+
+            countries =
+                await response.json();
+
+
+
+            await saveCache(
+                "countries",
+                countries
+            );
+
+
+            console.log(
+                "💾 تم حفظ الدول"
+            );
+
+        }
+
+
+
+        populateCountrySelect();
+
+
+
+        statusDiv.textContent =
+            `✅ تم تحميل ${countries.length} دولة`;
+
+
+
+        statusDiv.style.color =
+            "#10b981";
+
+
+
+        renderResults({
+
+            cities: [],
+
+            countries: countries
+
+        });
+
+
+
+    }
+
+    catch(error) {
+
+
+        console.error(
+            "خطأ تحميل الدول:",
             error
         );
 
-        return [];
+
+        statusDiv.textContent =
+            "⚠️ فشل تحميل الدول";
+
+
+        statusDiv.style.color =
+            "#ef4444";
+
+
+        showDemoData();
+
     }
+
 }
+
+
+
+// ============================================================
+// 2. تحميل مدن دولة معينة
+// ============================================================
+
+async function loadCountryCities(code) {
+
+
+    if (!code)
+        return [];
+
+
+
+    try {
+
+
+
+        // البحث في IndexedDB
+
+        let cached =
+            await getCache(
+                "country_" + code
+            );
+
+
+
+        if (cached) {
+
+
+            console.log(
+                "📦 من الكاش:",
+                code
+            );
+
+
+            return cached;
+
+        }
+
+
+
+
+        console.log(
+            "🌍 تحميل:",
+            code
+        );
+
+
+
+        const response =
+            await fetch(
+                `output/by_country/${code}.json`
+            );
+
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "ملف الدولة غير موجود"
+            );
+        }
+
+
+
+        const data =
+            await response.json();
+
+
+
+
+        const country =
+            countries.find(
+                c => c.code === code
+            );
+
+
+
+        const countryName =
+            country?.name ||
+            country?.name_en ||
+            code;
+
+
+
+        const countryNameAr =
+            country?.name_ar ||
+            countryName;
+
+
+
+        const cities =
+            data.map(c => ({
+
+
+                ...c,
+
+
+                country:
+                    countryName,
+
+
+                country_ar:
+                    countryNameAr,
+
+
+
+                _searchKey:
+                    buildSearchableText({
+
+                        ...c,
+
+                        country:
+                            countryName
+
+                    })
+
+            }));
+
+
+
+
+        await saveCache(
+
+            "country_" + code,
+
+            cities
+
+        );
+
+
+
+        return cities;
+
+
+
+    }
+
+    catch(error) {
+
+
+        console.warn(
+
+            `⚠️ فشل تحميل مدن ${code}:`,
+
+            error
+
+        );
+
+
+        return [];
+
+    }
+
+}
+
+
+
+// ============================================================
+// 3. تحميل جميع الدول (اختياري)
+// لا يستخدم عند الدخول
+// ============================================================
+
+async function loadAllCountryCities() {
+
+
+    const allCitiesTemp = [];
+
+    let loaded = 0;
+
+
+
+    for (const country of countries) {
+
+
+        const cities =
+            await loadCountryCities(
+                country.code
+            );
+
+
+        allCitiesTemp.push(
+            ...cities
+        );
+
+
+        loaded++;
+
+
+
+        statusDiv.textContent =
+            `⏳ ${loaded}/${countries.length} دولة`;
+
+    }
+
+
+
+    allCities =
+        allCitiesTemp;
+
+
+
+    statusDiv.textContent =
+        `✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`;
+
+
+
+    renderResults({
+
+        cities:
+            allCities.slice(0,100),
+
+        countries:[]
+
+    });
+
+}
+
+
 
 // ============================================================
 // 4. بيانات تجريبية
 // ============================================================
+
 function showDemoData() {
+
 
     const demoCities = [
 
         {
-            city: "القاهرة",
-            city_ar: "القاهرة",
-            country: "مصر",
-            country_ar: "مصر",
-            population: "20000000"
+            city:"صنعاء",
+            city_ar:"صنعاء",
+            country:"اليمن",
+            country_ar:"اليمن"
         },
 
         {
-            city: "الرياض",
-            city_ar: "الرياض",
-            country: "السعودية",
-            country_ar: "السعودية",
-            population: "7000000"
+            city:"الرياض",
+            city_ar:"الرياض",
+            country:"السعودية",
+            country_ar:"السعودية"
         },
 
         {
-            city: "دبي",
-            city_ar: "دبي",
-            country: "الإمارات",
-            country_ar: "الإمارات",
-            population: "3300000"
-        },
-
-        {
-            city: "بيروت",
-            city_ar: "بيروت",
-            country: "لبنان",
-            country_ar: "لبنان",
-            population: "2200000"
-        },
-
-        {
-            city: "عمان",
-            city_ar: "عمان",
-            country: "الأردن",
-            country_ar: "الأردن",
-            population: "4000000"
-        },
-
-        {
-            city: "الكويت",
-            city_ar: "الكويت",
-            country: "الكويت",
-            country_ar: "الكويت",
-            population: "3000000"
-        },
-
-        {
-            city: "الدوحة",
-            city_ar: "الدوحة",
-            country: "قطر",
-            country_ar: "قطر",
-            population: "2500000"
-        },
-
-        {
-            city: "المنامة",
-            city_ar: "المنامة",
-            country: "البحرين",
-            country_ar: "البحرين",
-            population: "1500000"
-        },
-
-        {
-            city: "مسقط",
-            city_ar: "مسقط",
-            country: "عمان",
-            country_ar: "عمان",
-            population: "1200000"
-        },
-
-        {
-            city: "صنعاء",
-            city_ar: "صنعاء",
-            country: "اليمن",
-            country_ar: "اليمن",
-            population: "3000000"
+            city:"دبي",
+            city_ar:"دبي",
+            country:"الإمارات",
+            country_ar:"الإمارات"
         }
+
     ];
 
-    allCities = demoCities;
+
+
+    allCities =
+        demoCities;
+
+
 
     statusDiv.textContent =
-        `⚠️ تم استخدام بيانات تجريبية (${allCities.length} مدينة)`;
+        "⚠️ تم استخدام بيانات تجريبية";
 
-    statusDiv.style.color = '#f59e0b';
+
 
     renderResults({
+
         cities: allCities,
-        countries: []
+
+        countries:[]
+
     });
+
 }
 
-console.log('✅ 01-data.js تم تحميله بنجاح');
+
 
 // ============================================================
-// أدوات إدارة الكاش (اختياري)
+// أدوات إدارة الكاش
 // ============================================================
 
-// مسح الكاش
-window.clearDataCache = function () {
 
-    localStorage.removeItem('countries_cache');
-    localStorage.removeItem('cities_cache');
+window.clearDataCache = async function(){
 
-    console.log('🗑️ تم حذف الكاش');
+
+    const db =
+        await openDataDB();
+
+
+
+    const tx =
+        db.transaction(
+            STORE_NAME,
+            "readwrite"
+        );
+
+
+
+    tx.objectStore(
+        STORE_NAME
+    ).clear();
+
+
+
+    console.log(
+        "🗑️ تم حذف IndexedDB"
+    );
+
 };
 
-// إعادة تحميل البيانات من الصفر
-window.reloadDataCache = function () {
 
-    localStorage.removeItem('countries_cache');
-    localStorage.removeItem('cities_cache');
+
+
+window.reloadDataCache = async function(){
+
+
+    await clearDataCache();
+
 
     location.reload();
+
 };
+
+
+
+console.log(
+    "✅ 01-data.js جاهز - IndexedDB"
+);
