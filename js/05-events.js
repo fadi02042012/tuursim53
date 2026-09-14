@@ -321,7 +321,7 @@ async function searchWikipediaWithConfig(limit, message, extendedMessage) {
     wikipediaPage = 0;
 
     try {
-        const results = await searchWikipedia(query, limit);
+        const results = await searchWikipediaMultilingual(query, limit);
 
         if (results.length > 0) {
             resultsDiv.innerHTML = '';
@@ -581,7 +581,7 @@ window.loadMoreWikipedia = async function() {
     updateStatus(`⏳ جاري تحميل المزيد من نتائج ويكيبيديا (الصفحة ${wikipediaPage + 1})...`, '#f59e0b');
 
     try {
-        const results = await searchWikipedia(query, CONFIG.WIKIPEDIA_PAGE_SIZE, offset);
+        const results = await searchWikipediaMultilingual(query, CONFIG.WIKIPEDIA_PAGE_SIZE, offset);
 
         if (results.length > 0) {
             renderWikipediaResults(results, query, true);

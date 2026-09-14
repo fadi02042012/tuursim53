@@ -160,7 +160,7 @@ function renderResults({ cities, countries }) {
         statusDiv.textContent = "🔍 جاري البحث في ويكيبيديا...";
         statusDiv.style.color = '#f59e0b';
         
-        searchWikipedia(query, 30).then(wikiResults => {
+        searchWikipediaMultilingual(query, 30).then(wikiResults => {
             if (wikiResults.length > 0) {
                 resultsDiv.innerHTML = '';
                 allLinksData = [];
