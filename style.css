@@ -2263,3 +2263,26 @@ body.dark-mode .msn-section-nav { background: #1f2937; border-color: #46556b; }
     flex: 0 0 48px;
 }
 .msn-page-intro { overflow: hidden; }
+
+
+/* Put the functional search bar near the top, matching the reference layout. */
+.container {
+    display: flex;
+    flex-direction: column;
+}
+.container > .msn-header { order: 1; }
+.container > .msn-nav { order: 2; }
+.container > .msn-notice { order: 3; }
+.container > .search-section { order: 4; }
+.container > .msn-page-intro { order: 5; }
+.container > .msn-shortcuts { order: 6; }
+.container > .msn-section-nav { order: 7; }
+.container > .stats-bar { order: 8; }
+.container > .tools { order: 9; }
+.container > .counter { order: 10; }
+.container > #results { order: 11; }
+
+.container > .search-section {
+    margin: 18px 0 0;
+    padding: 18px 22px;
+}
