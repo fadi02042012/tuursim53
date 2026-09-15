@@ -65,7 +65,7 @@
         }
     </style>
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260915-msn-reference-2">
 </head>
 <body>
 
@@ -120,13 +120,45 @@
             <button type="button" onclick="showStatistics()">📊 الإحصائيات</button>
         </nav>
 
+        <div class="msn-notice" role="note">
+            <span>ⓘ</span>
+            <strong>نحن بصدد تحديث تجربة الاستخدام.</strong>
+            <a href="#search">معرفة المزيد</a>
+        </div>
+
         <div class="msn-page-intro">
-            <div>
+            <div class="msn-brand-lockup">
+                <img src="assets/logo.svg" alt="شعار البحث الذكي" />
+                <strong>البحث الذكي</strong>
+            </div>
+            <div class="msn-hero-copy">
                 <span class="msn-kicker">دليل السفر الذكي</span>
                 <h2>اكتشف المدن والدول حول العالم</h2>
                 <p>ابحث بالعربية أو الإنجليزية أو باستخدام كود المدينة والدولة.</p>
             </div>
-            <div class="msn-intro-mark" aria-hidden="true">✦</div>
+            <div class="msn-hero-side">
+                <span class="msn-weather">☀️ 22°</span>
+                <button type="button" onclick="showStatistics()">⚙️</button>
+                <button type="button" onclick="showFavorites()">تسجيل الدخول</button>
+            </div>
+        </div>
+
+        <div class="msn-shortcuts" aria-label="اختصارات سريعة">
+            <a href="#results"><span>🌍</span><b>الوجهات</b></a>
+            <a href="#results"><span>🏨</span><b>الفنادق</b></a>
+            <a href="#results"><span>✈️</span><b>السفر</b></a>
+            <a href="#results"><span>🗺️</span><b>الخريطة</b></a>
+            <a href="#results"><span>▶</span><b>يوتيوب</b></a>
+        </div>
+
+        <div class="msn-section-nav" aria-label="أقسام المحتوى">
+            <a class="is-active" href="#results">اكتشاف</a>
+            <a href="#results">الأخبار</a>
+            <a href="#results">رياضة</a>
+            <a href="#results">ألعاب تقليدية</a>
+            <a href="#results">المال</a>
+            <a href="#results">الطقس</a>
+            <a href="#results">مشاهدة</a>
         </div>
 
         <!-- ============================================================

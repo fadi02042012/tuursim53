@@ -2098,3 +2098,168 @@ body.dark-mode .stats-bar { background: #1f2937; }
     .search-row select, .search-row input, .btn-primary { width: 100%; }
     .stats-bar { grid-template-columns: repeat(2, 1fr); }
 }
+
+
+/* Reference layout: MSN Arabic home-inspired visual treatment */
+.msn-notice {
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 20px 34px;
+    color: #fff;
+    background: #092694;
+    direction: rtl;
+}
+.msn-notice > span { font-size: 52px; line-height: 1; opacity: .95; }
+.msn-notice strong { font-size: clamp(18px, 2vw, 25px); }
+.msn-notice a {
+    margin-inline-start: auto;
+    padding: 10px 34px;
+    color: #16287f;
+    background: #fff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.msn-page-intro {
+    min-height: 146px;
+    display: grid;
+    grid-template-columns: 180px 1fr 330px;
+    align-items: center;
+    gap: 24px;
+    margin: 0;
+    padding: 18px 24px;
+    border: 0;
+    border-radius: 0;
+    background: #fafafa;
+}
+.msn-brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #242424;
+    font-size: 24px;
+}
+.msn-brand-lockup img { width: 48px; height: 48px; border-radius: 12px; }
+.msn-hero-copy { text-align: center; }
+.msn-hero-copy h2 { font-size: clamp(23px, 3vw, 34px); }
+.msn-hero-side {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    color: #333;
+}
+.msn-weather { font-size: 17px; white-space: nowrap; }
+.msn-hero-side button {
+    border: 1px solid #d5d5d5;
+    border-radius: 6px;
+    padding: 11px 17px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font: inherit;
+}
+.msn-hero-side button:hover { border-color: var(--msn-blue); color: var(--msn-blue); }
+
+.msn-shortcuts {
+    display: flex;
+    justify-content: center;
+    gap: clamp(24px, 5vw, 70px);
+    min-height: 132px;
+    padding: 18px 10px 30px;
+    background: #fafafa;
+    direction: rtl;
+}
+.msn-shortcuts a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 76px;
+    color: #333;
+    text-decoration: none;
+}
+.msn-shortcuts a span {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border: 1px solid #eee;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(0,0,0,.08);
+    font-size: 26px;
+}
+.msn-shortcuts a:hover span { border-color: #7ebce5; transform: translateY(-2px); }
+.msn-shortcuts b { font-size: 13px; font-weight: 500; }
+
+.msn-section-nav {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    min-height: 62px;
+    padding: 13px 10px;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+    direction: rtl;
+}
+.msn-section-nav a {
+    align-self: center;
+    padding: 9px 12px;
+    color: #333;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 14px;
+}
+.msn-section-nav a.is-active {
+    border: 1px solid #d5d5d5;
+    border-radius: 20px;
+    color: var(--msn-blue);
+    font-weight: 700;
+}
+.msn-section-nav a:hover { color: var(--msn-blue); }
+
+/* Keep the actual search as the functional focal point below the MSN-like shell. */
+.search-section { margin-top: 20px; }
+
+body.dark-mode .msn-page-intro,
+body.dark-mode .msn-shortcuts { background: #202938; }
+body.dark-mode .msn-brand-lockup,
+body.dark-mode .msn-weather,
+body.dark-mode .msn-section-nav a { color: #f3f4f6; }
+body.dark-mode .msn-hero-side button,
+body.dark-mode .msn-shortcuts a span { background: #273449; color: #f3f4f6; border-color: #46556b; }
+body.dark-mode .msn-section-nav { background: #1f2937; border-color: #46556b; }
+
+@media (max-width: 900px) {
+    .msn-page-intro { grid-template-columns: 1fr; text-align: center; gap: 12px; }
+    .msn-brand-lockup, .msn-hero-side { justify-content: center; }
+    .msn-hero-side { flex-wrap: wrap; }
+    .msn-notice { gap: 14px; padding: 18px; }
+    .msn-notice > span { font-size: 36px; }
+    .msn-notice a { padding: 8px 14px; }
+    .msn-section-nav { justify-content: flex-start; overflow-x: auto; }
+}
+@media (max-width: 560px) {
+    .msn-notice { flex-wrap: wrap; }
+    .msn-notice a { margin-inline-start: 0; }
+    .msn-shortcuts { gap: 10px; justify-content: space-between; }
+    .msn-shortcuts a { min-width: 56px; }
+    .msn-shortcuts a span { width: 44px; height: 44px; font-size: 21px; }
+}
+
+
+/* Guardrail: keep the reference-page brand mark compact across browsers. */
+.msn-brand-lockup > img {
+    display: block;
+    width: 48px !important;
+    height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    object-fit: cover;
+    flex: 0 0 48px;
+}
+.msn-page-intro { overflow: hidden; }
