@@ -117,22 +117,54 @@
         </article>`;
     }
 
-    window.showFavorites = function showFavorites() {
+    window.showFavorites = async function showFavorites() {
+        closeEnhancementModal();
         const favorites = readFavorites();
-        const content = favorites.length
-            ? `<div class="favorites-list">${favorites.map(renderFavoriteItem).join('')}</div>`
-            : '<div class="enhancement-empty">⭐ لا توجد عناصر مفضلة بعد.<br><small>استخدم زر «☆ مفضلة» داخل أي نتيجة لحفظها هنا.</small></div>';
-        openModal('⭐ المفضلة', content, 'favorites-modal');
-        document.querySelectorAll('[data-remove-favorite]').forEach((button) => {
-            button.addEventListener('click', () => {
-                const items = readFavorites();
-                items.splice(Number(button.dataset.removeFavorite), 1);
-                writeFavorites(items);
-                showFavorites();
-                updateFavoriteButtons();
-                updateSummaryStats();
+
+        if (!favorites.length) {
+            resultsDiv.innerHTML = `
+                <div class="card no-results favorites-empty-results">
+                    <div style="text-align:center;padding:40px;">
+                        <div style="font-size:48px;margin-bottom:16px;">⭐</div>
+                        <h3>لا توجد عناصر مفضلة</h3>
+                        <p style="color:#94a3b8;margin-top:8px;">استخدم زر «☆ مفضلة» داخل أي نتيجة لحفظها هنا.</p>
+                    </div>
+                </div>`;
+            if (typeof countSpan !== 'undefined' && countSpan) countSpan.textContent = '0';
+            if (typeof updateStatus === 'function') updateStatus('⭐ لا توجد عناصر محفوظة في المفضلة', '#f59e0b');
+            return;
+        }
+
+        // استرجاع السجلات الأصلية من JSON حتى تظهر المفضلة كبطاقات نتائج كاملة.
+        const favoriteCities = favorites
+            .filter(item => item.type === 'مدينة' || item.type === 'city' || !item.type)
+            .map(item => {
+                const name = item.name || item.query || '';
+                const exact = (allCities || []).find(city =>
+                    String(city.city || '').toLowerCase() === String(name).toLowerCase()
+                );
+                return exact || { city: name, city_ar: '', country: '', country_ar: '' };
             });
-        });
+
+        const favoriteCountries = favorites
+            .filter(item => item.type === 'دولة' || item.type === 'country')
+            .map(item => {
+                const name = item.name || item.query || '';
+                return (countries || []).find(country =>
+                    String(country.name || '').toLowerCase() === String(name).toLowerCase()
+                ) || { name, name_ar: '' };
+            });
+
+        if (typeof renderResults === 'function') {
+            renderResults({ cities: favoriteCities, countries: favoriteCountries });
+            if (typeof countSpan !== 'undefined' && countSpan) {
+                countSpan.textContent = String(favoriteCities.length + favoriteCountries.length);
+            }
+        }
+
+        if (typeof updateStatus === 'function') {
+            updateStatus(`⭐ تم عرض ${favorites.length} من المفضلة`, '#f59e0b');
+        }
     };
 
     function updateFavoriteButtons() {

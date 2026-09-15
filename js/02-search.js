@@ -142,9 +142,28 @@ async function performSearch(query) {
         return matchesAnyVariant(searchableText, variants);
     });
 
+    // ترتيب النتائج: تطابق كامل، ثم بداية الاسم، ثم أقرب تطابق جزئي.
+    // sortCitiesByRelevance معرّفة في 05-events.js وتُستدعى بعد تحميل جميع الملفات.
+    const uniqueResults = removeDuplicates(resultsList);
+    const rankedResults = typeof sortCitiesByRelevance === 'function'
+        ? sortCitiesByRelevance(uniqueResults, query)
+        : uniqueResults;
+
+    const rankedCountries = countryResults.sort((a, b) => {
+        const queryText = normalizeText(query);
+        const score = (country) => {
+            const names = [country.name, country.name_ar, country.capital, country.capital_ar]
+                .filter(Boolean).map(value => normalizeText(value));
+            if (names.some(name => name === queryText)) return 3;
+            if (names.some(name => name.startsWith(queryText))) return 2;
+            return 1;
+        };
+        return score(b) - score(a);
+    });
+
     return {
-        cities: removeDuplicates(resultsList).slice(0, 100),
-        countries: countryResults.slice(0, 10)
+        cities: rankedResults.slice(0, 100),
+        countries: rankedCountries.slice(0, 10)
     };
 }
 
