@@ -89,7 +89,7 @@
         <!-- ============================================================
              الهيدر مع الأيقونة
              ============================================================ -->
-        <header>
+        <header class="msn-header">
             <div class="header-left">
                 <!-- الأيقونة -->
                 <a href="/" class="logo-container">
@@ -110,6 +110,24 @@
                 <span class="header-badge" style="background:#10b981;">📊 51 رابط</span>
             </div>
         </header>
+
+        <nav class="msn-nav" aria-label="التنقل الرئيسي">
+            <a class="is-active" href="/">اكتشاف</a>
+            <a href="#search">البحث الذكي</a>
+            <a href="#results">المدن</a>
+            <a href="#results">الدول</a>
+            <button type="button" onclick="showFavorites()">⭐ المفضلة</button>
+            <button type="button" onclick="showStatistics()">📊 الإحصائيات</button>
+        </nav>
+
+        <div class="msn-page-intro">
+            <div>
+                <span class="msn-kicker">دليل السفر الذكي</span>
+                <h2>اكتشف المدن والدول حول العالم</h2>
+                <p>ابحث بالعربية أو الإنجليزية أو باستخدام كود المدينة والدولة.</p>
+            </div>
+            <div class="msn-intro-mark" aria-hidden="true">✦</div>
+        </div>
 
         <!-- ============================================================
              شريط الإحصائيات
