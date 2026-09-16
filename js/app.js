@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// app.js - تشغيل التطبيق بدون تجميد الصفحة عند الدخول
+// app.js - تشغيل التطبيق بدون تجميد الصفحة عند الدخول أو الكتابة
 // ============================================================
 
 let citiesLoadPromise = null;
@@ -46,7 +46,7 @@ async function loadCitiesOnDemand() {
     return citiesLoadPromise;
 }
 
-// لا يتم تحميل المدن إلا عند البحث الفعلي.
+// تحميل المدن عند تنفيذ البحث فقط، وليس أثناء كتابة أول حرف.
 const originalPerformSearch = performSearch;
 performSearch = async function lazyPerformSearch(query) {
     await loadCitiesOnDemand();
@@ -76,7 +76,12 @@ function createTextSearchCard(query) {
         </div>`;
 }
 
-// البحث النصي لا يعتمد على تطابق مدينة؛ النص نفسه نتيجة صالحة دائمًا.
+// لا تنفذ بحثًا موسعًا أثناء input؛ هذا هو سبب تجمد الصفحة عند أول حرف.
+// البحث الفعلي يتم عند الضغط على Enter أو زر البحث فقط.
+executeSearch = function executeSearchOnSubmitOnly() {
+    return Promise.resolve();
+};
+
 handleSearch = async function handleSearchWithoutBlocking() {
     const query = searchInput.value.trim();
     if (!query) {
@@ -96,7 +101,6 @@ handleSearch = async function handleSearchWithoutBlocking() {
         return;
     }
 
-    // لا توجد مطابقة محلية: اعرض بطاقة النص فورًا، ثم ويكيبيديا اختياريًا.
     allLinksData = [];
     resultsDiv.innerHTML = createTextSearchCard(query);
     countSpan.textContent = '1';
@@ -127,14 +131,14 @@ async function startApplication() {
         countries = await response.json();
         populateCountrySelect();
 
-        // مهم: لا تستدعِ loadData ولا cities.json عند الدخول.
+        // لا تستدعِ loadData ولا cities.json عند الدخول.
         resultsDiv.innerHTML = `
             <div class="card no-results">
                 <div style="text-align:center;padding:40px;">
                     <div style="font-size:48px;margin-bottom:16px;">🔎</div>
                     <h3>جاهز للبحث</h3>
-                    <p style="color:#94a3b8;margin-top:8px;">اكتب أي نص ثم اضغط زر البحث.</p>
-                    <p style="color:#94a3b8;font-size:12px;margin-top:4px;">سيتم تحميل بيانات المدن عند الحاجة فقط.</p>
+                    <p style="color:#94a3b8;margin-top:8px;">اكتب أي نص ثم اضغط Enter أو زر البحث.</p>
+                    <p style="color:#94a3b8;font-size:12px;margin-top:4px;">لن يتم تحميل بيانات المدن أثناء الكتابة.</p>
                 </div>
             </div>`;
         countSpan.textContent = '0';
@@ -148,5 +152,5 @@ async function startApplication() {
 }
 
 startApplication();
-console.log('✅ تم تشغيل التطبيق بدون تحميل المدن عند الدخول');
-console.log('📁 سيتم تحميل cities.json عند أول بحث فقط');
+console.log('✅ التطبيق لا يحمل المدن عند الدخول أو عند كتابة أول حرف');
+console.log('📁 سيتم تحميل cities.json عند الضغط على Enter أو زر البحث فقط');
