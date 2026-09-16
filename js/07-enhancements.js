@@ -1,6 +1,6 @@
 // ============================================================
 // 07-enhancements.js - وظائف UX الإضافية
-// هذه الطبقة مستقلة عن منطق البحث ومصادر البيانات.
+// دعم المفضلة لجميع أنواع البطاقات: المدن والدول والنص وويكيبيديا.
 // ============================================================
 
 (() => {
@@ -60,7 +60,7 @@
         document.body.appendChild(modal);
         modal.querySelector('.enhancement-modal__close').addEventListener('click', closeEnhancementModal);
         modal.querySelector('[data-close-modal]').addEventListener('click', closeEnhancementModal);
-        modal.addEventListener('keydown', (event) => {
+        modal.addEventListener('keydown', event => {
             if (event.key === 'Escape') closeEnhancementModal();
         });
         modal.tabIndex = -1;
@@ -69,7 +69,9 @@
 
     function getStats() {
         const favorites = readFavorites();
-        const links = Array.isArray(allLinksData) ? allLinksData.reduce((sum, item) => sum + (item.links?.length || 0), 0) : 0;
+        const links = Array.isArray(allLinksData)
+            ? allLinksData.reduce((sum, item) => sum + (item.links?.length || 0), 0)
+            : 0;
         return {
             cities: Array.isArray(allCities) ? allCities.length : 0,
             countries: Array.isArray(countries) ? countries.length : 0,
@@ -117,6 +119,31 @@
         </article>`;
     }
 
+    function restoreNonDatabaseFavorite(item) {
+        const query = item.query || item.name || '';
+        if (!query) return;
+
+        if (item.type === 'بحث نصي' || item.type === 'text' || item.type === 'نص') {
+            if (typeof prependTextQueryCard === 'function') {
+                prependTextQueryCard(query);
+            }
+            return;
+        }
+
+        if (item.type === 'ويكيبيديا' || item.type === 'wikipedia' || item.type === 'Wiki') {
+            if (typeof renderWikipediaResults === 'function') {
+                renderWikipediaResults([{
+                    title: item.name || query,
+                    snippet: '',
+                    url: `https://ar.wikipedia.org/wiki/${encodeURIComponent(item.name || query)}`,
+                    language: 'ar',
+                    wordcount: 0,
+                    timestamp: ''
+                }], query, true);
+            }
+        }
+    }
+
     window.showFavorites = async function showFavorites() {
         closeEnhancementModal();
         const favorites = readFavorites();
@@ -130,20 +157,19 @@
                         <p style="color:#94a3b8;margin-top:8px;">استخدم زر «☆ مفضلة» داخل أي نتيجة لحفظها هنا.</p>
                     </div>
                 </div>`;
-            if (typeof countSpan !== 'undefined' && countSpan) countSpan.textContent = '0';
-            if (typeof updateStatus === 'function') updateStatus('⭐ لا توجد عناصر محفوظة في المفضلة', '#f59e0b');
+            if (countSpan) countSpan.textContent = '0';
+            updateStatus('⭐ لا توجد عناصر محفوظة في المفضلة', '#f59e0b');
             return;
         }
 
-        // استرجاع السجلات الأصلية من JSON حتى تظهر المفضلة كبطاقات نتائج كاملة.
+        // استعادة المدن والدول من قاعدة البيانات، كما في السابق.
         const favoriteCities = favorites
             .filter(item => item.type === 'مدينة' || item.type === 'city' || !item.type)
             .map(item => {
                 const name = item.name || item.query || '';
-                const exact = (allCities || []).find(city =>
+                return (allCities || []).find(city =>
                     String(city.city || '').toLowerCase() === String(name).toLowerCase()
-                );
-                return exact || { city: name, city_ar: '', country: '', country_ar: '' };
+                ) || { city: name, city_ar: '', country: '', country_ar: '' };
             });
 
         const favoriteCountries = favorites
@@ -155,21 +181,22 @@
                 ) || { name, name_ar: '' };
             });
 
-        if (typeof renderResults === 'function') {
-            renderResults({ cities: favoriteCities, countries: favoriteCountries });
-            if (typeof countSpan !== 'undefined' && countSpan) {
-                countSpan.textContent = String(favoriteCities.length + favoriteCountries.length);
-            }
-        }
+        // renderResults يعيد بناء allLinksData للمدن والدول أولاً.
+        renderResults({ cities: favoriteCities, countries: favoriteCountries });
 
-        if (typeof updateStatus === 'function') {
-            updateStatus(`⭐ تم عرض ${favorites.length} من المفضلة`, '#f59e0b');
-        }
+        // استعادة بطاقة البحث النصية ونتائج ويكيبيديا أيضًا.
+        // يتم ذلك بعد renderResults حتى تبقى أرقام favorite-index صحيحة.
+        favorites
+            .filter(item => !['مدينة', 'city', 'دولة', 'country'].includes(item.type))
+            .forEach(restoreNonDatabaseFavorite);
+
+        if (countSpan) countSpan.textContent = String(favorites.length);
+        updateStatus(`⭐ تم عرض ${favorites.length} من المفضلة`, '#f59e0b');
     };
 
     function updateFavoriteButtons() {
         const keys = new Set(readFavorites().map(favoriteKey));
-        document.querySelectorAll('.favorite-toggle').forEach((button) => {
+        document.querySelectorAll('.favorite-toggle').forEach(button => {
             const item = allLinksData?.[Number(button.dataset.favoriteIndex)];
             const active = item && keys.has(favoriteKey(item));
             button.classList.toggle('is-favorite', Boolean(active));
@@ -182,8 +209,9 @@
     window.toggleFavorite = function toggleFavorite(index) {
         const item = allLinksData?.[Number(index)];
         if (!item) return;
+
         const favorites = readFavorites();
-        const existing = favorites.findIndex((favorite) => favoriteKey(favorite) === favoriteKey(item));
+        const existing = favorites.findIndex(favorite => favoriteKey(favorite) === favoriteKey(item));
         if (existing >= 0) {
             favorites.splice(existing, 1);
             showToast('تمت إزالة العنصر من المفضلة');
@@ -207,7 +235,7 @@
         updateSummaryStats();
         updateFavoriteButtons();
     });
-    document.addEventListener('keydown', (event) => {
+    document.addEventListener('keydown', event => {
         if (event.key === 'Escape') closeEnhancementModal();
     });
 })();
