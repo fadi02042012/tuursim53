@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>صيد الكنوز الرقمية — تجربة الاكتشاف</title>
+  <link rel="icon" href="assets/logo.svg">
+  <!-- Reuse main stylesheet if present so the new page matches the site -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Small local overrides to make the treasure page feel distinct */
+    :root{--accent:#f97316;--accent-2:#6366f1}
+    body{font-family: 'Segoe UI', Tahoma, system-ui, -apple-system, sans-serif;background:linear-gradient(180deg,#f8fafc 0%,#eef2ff 100%);padding:28px;color:#0f172a}
+    .wrap{max-width:980px;margin:0 auto}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{width:56px;height:56px;border-radius:12px}
+    h1{font-size:1.6rem;margin:8px 0}
+    p.lead{color:#475569}
+
+    .hero{background:#fff;border-radius:16px;padding:18px;box-shadow:0 8px 24px rgba(15,23,42,0.06);display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .hero-left{flex:1}
+    .hero-actions{display:flex;gap:10px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;border:2px solid transparent;background:linear-gradient(90deg,var(--accent-2),var(--accent));color:#fff;font-weight:700;cursor:pointer;text-decoration:none}
+    .muted-btn{background:transparent;border:1px solid #e6e9ef;color:#0f172a;padding:8px 14px;border-radius:999px;text-decoration:none}
+
+    .track{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .step{background:#fff;padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.04);min-width:120px;flex:1;display:flex;flex-direction:column;gap:8px}
+    .step .title{font-weight:800}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:16px}
+
+    .card{background:linear-gradient(180deg,#fff,#fbfbff);padding:14px;border-radius:12px;border:1px solid #eef2ff}
+    .mini{font-size:0.85rem;color:#64748b}
+
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+    .section{margin-top:22px}
+    .section h3{margin-bottom:8px}
+
+    .dark-toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#0f172a;color:#fff}
+
+    @media (max-width:720px){.hero{flex-direction:column;align-items:flex-start}.hero-actions{width:100%;justify-content:space-between}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <a href="/" aria-label="عودة إلى البحث">
+        <img src="assets/logo.svg" alt="لوغو" />
+      </a>
+      <div>
+        <h1>🧭 صيد الكنوز الرقمية</h1>
+        <p class="lead">لا تبحث عن معلومة فقط… اكتشف القصة التي خلفها. مسار الاكتشاف: معلومة → ملاحظة → سؤال → مصدر → نمط → فرصة → قيمة</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-left">
+          <div id="hero-title" style="font-weight:900">🔎 استعد لبدء رحلة الاكتشاف</div>
+          <div class="mini">سأبقي محرك البحث الحالي كما هو؛ يمكنك الانتقال إليه في أي وقت لإكمال البحث المتقدم.</div>
+
+          <div class="track" aria-hidden="false">
+            <div class="step">
+              <div class="title">معلومة</div>
+              <div class="mini">قطعة صغيرة من الحقائق أو الإحساس بالمكان</div>
+            </div>
+            <div class="step">
+              <div class="title">ملاحظة</div>
+              <div class="mini">أمر لفت انتباهك أو يبدو غير متناسق</div>
+            </div>
+            <div class="step">
+              <div class="title">سؤال</div>
+              <div class="mini">ماذا تريد أن تعرف أكثر؟</div>
+            </div>
+            <div class="step">
+              <div class="title">مصدر</div>
+              <div class="mini">أين وجدت المعلومة؟ هل يمكن التحقق منها؟</div>
+            </div>
+            <div class="step">
+              <div class="title">نمط</div>
+              <div class="mini">هل يوجد اتجاه أو تكرار؟</div>
+            </div>
+            <div class="step">
+              <div class="title">فرصة</div>
+              <div class="mini">كيف يمكن استغلال النمط؟</div>
+            </div>
+            <div class="step">
+              <div class="title">قيمة</div>
+              <div class="mini">ما الفائدة أو القصة التي تتشكل؟</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a class="btn" id="startHunt" href="#explorer">🧭 ابدأ الصيد</a>
+          <a class="muted-btn" id="openSearch" href="/">⚡ الانتقال إلى محرك البحث</a>
+          <button class="dark-toggle" id="darkToggle">🌙 وضع ليلي</button>
+        </div>
+      </section>
+
+      <section id="explorer" class="section" aria-label="خطوات الاكتشاف">
+        <h3>🧩 بطاقات خطوات الاكتشاف</h3>
+        <div class="cards">
+          <article class="card">
+            <strong>معلومة</strong>
+            <p class="mini">أدخل هنا جملة واحدة عن المعلومة التي تريد استكشافها.</p>
+            <div class="controls">
+              <button class="muted-btn" onclick="prefill('معلومة: ')">استخدم كقاعدة</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <strong>اصطد الإشارة</strong>
+            <p class="mini">ابحث عن دلائل صغيرة (صور، كلمات متكررة، مواعيد).</p>
+            <div class="controls">
+              <button class="muted-btn" onclick="prefill('إشارة: ')">إضافة إشارة</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <strong>التحقق من المصادر</strong>
+            <p class="mini">هل المصدر رسمي؟ هل يوجد نص بديل؟</p>
+            <div class="controls">
+              <button class="muted-btn" onclick="prefill('مصدر: ')">تحقق الآن</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <strong>اكتشاف الأنماط</strong>
+            <p class="mini">احرص على مقارنة عدة مصادر لرؤية الاتساق.</p>
+            <div class="controls">
+              <button class="muted-btn" onclick="prefill('نمط: ')">كشف نمط</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <strong>مثال سياحي عملي</strong>
+            <p class="mini">تطبيق النتيجة على وجهة أو تجربة سياحية.</p>
+            <div class="controls">
+              <button class="muted-btn" onclick="prefill('مثال: ')">أضف مثال</button>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>🔎 بحث سريع</h3>
+        <p class="mini">احتفظت بنسخة محرك البحث؛ فتحته في نافذة جديدة لتجربة البحث المتقدم أثناء الصيد.</p>
+        <div style="margin-top:10px">
+          <a class="btn" href="/" target="_self">فتح محرك البحث الحالي ⚡</a>
+        </div>
+      </section>
+
+      <section class="section">
+        <h3>🔧 ملاحظات فنية</h3>
+        <ul class="mini">
+          <li>لم أستبدل وظيفة البحث الحالية — زر "فتح محرك البحث" يعيدك إلى الصفحة الأساسية.</li>
+          <li>الصفحة تستخدم style.css إن وُجدت للتماشي مع التصميم العام.</li>
+          <li>أضفت زر تبديل الوضع الليلي (زائف) يعمل عبر تغيير صنف body.dark عند النقر.</li>
+        </ul>
+      </section>
+
+    </main>
+
+    <footer style="margin-top:28px;color:#64748b">تم الإضافة تلقائيًا بواسطة المساعد — أخبرني إذا تريد ربط هذه الصفحة مباشرة بالصفحة الرئيسية أو تضمين لوحة صغيرة داخل الـindex.html.</footer>
+  </div>
+
+  <script>
+    // Small helper to prefill a prompt in the clipboard (or show a toast)
+    function prefill(text){
+      navigator.clipboard && navigator.clipboard.writeText(text).then(()=>{
+        alert('نُسِخ إلى الحافظة: ' + text);
+      }).catch(()=>{ alert('انسخ النص يدويًا: ' + text); });
+    }
+
+    // Dark mode toggle (persist in localStorage)
+    (function(){
+      const btn = document.getElementById('darkToggle');
+      const state = localStorage.getItem('tuur-dark') === '1';
+      if(state) document.body.classList.add('dark');
+      btn.addEventListener('click', ()=>{
+        const isDark = document.body.classList.toggle('dark');
+        localStorage.setItem('tuur-dark', isDark ? '1' : '0');
+        btn.textContent = isDark ? '☀️ وضع نهاري' : '🌙 وضع ليلي';
+      });
+    })();
+
+    // Smooth jump when starting the hunt
+    document.getElementById('startHunt').addEventListener('click', function(e){
+      e.preventDefault();
+      document.querySelector('#explorer').scrollIntoView({behavior:'smooth'});
+    });
+  </script>
+</body>
+</html>
