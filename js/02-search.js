@@ -79,8 +79,8 @@ function removeDuplicates(items) {
     });
 }
 
-// بطاقة للنص الذي أدخله المستخدم، بنفس أسلوب بطاقات المدن والدول.
-// تُضاف قبل نتائج ويكيبيديا أو رسالة عدم العثور على نتائج.
+// بطاقة النص تستخدم نفس بنية بطاقة المدينة: نفس العنوان والأزرار والوسوم
+// والروابط المتقدمة، مع وضع النص المدخل كأول نتيجة.
 function renderTextQueryCard(query) {
     const text = String(query || '').trim();
     if (!text) return;
@@ -90,8 +90,7 @@ function renderTextQueryCard(query) {
     allLinksData.push({ query: text, links, type: 'بحث نصي', name: text });
 
     const linksHtml = links.map(link => `
-        <a class="link-item" target="_blank" rel="noopener noreferrer"
-           href="${link.url}"
+        <a class="link-item" target="_blank" rel="noopener noreferrer" href="${link.url}"
            style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
             <span class="link-number" style="color:#94a3b8;">#${link.id}</span>
             <span class="link-name" style="margin-right:4px;">${escapeHtml(link.name)}</span>
@@ -99,7 +98,7 @@ function renderTextQueryCard(query) {
     `).join('');
 
     const card = `
-        <div class="card" style="background:white;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border-right:4px solid #6366f1;">
+        <div class="card" style="background:white;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
                 <div>
                     <span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(text)}</span>
@@ -107,12 +106,32 @@ function renderTextQueryCard(query) {
                 </div>
                 <span style="font-size:12px;color:#94a3b8;">${links.length} رابط</span>
             </div>
-            <p style="margin:0 0 12px;color:#64748b;font-size:14px;">نتائج البحث باستخدام النص الذي أدخلته:</p>
+
             <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}" style="padding:6px 12px;background:#4285f4;color:white;border-radius:8px;text-decoration:none;">🔍 Google</a>
-                <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}" style="padding:6px 12px;background:#ff0000;color:white;border-radius:8px;text-decoration:none;">▶ YouTube</a>
-                <button class="btn btn-secondary" onclick="toggleLinks(${index})" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">📋 عرض الروابط (${links.length})</button>
+                <a class="btn btn-maps" target="_blank" rel="noopener noreferrer"
+                   href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}"
+                   style="padding:6px 12px;background:#10b981;color:white;border-radius:8px;text-decoration:none;">📍 خرائط</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer"
+                   href="https://www.google.com/search?q=${encodeURIComponent(text)}"
+                   style="padding:6px 12px;background:#4285f4;color:white;border-radius:8px;text-decoration:none;">🔍 Google</a>
+                <a class="btn btn-yt" target="_blank" rel="noopener noreferrer"
+                   href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}"
+                   style="padding:6px 12px;background:#ff0000;color:white;border-radius:8px;text-decoration:none;">▶ YouTube</a>
+                <button class="btn btn-secondary" onclick="toggleLinks(${index})"
+                        style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">📋 عرض الروابط (${links.length})</button>
+                <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}"
+                        onclick="toggleFavorite(${index})" type="button" aria-label="إضافة ${escapeHtml(text)} إلى المفضلة"
+                        style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">⭐ المفضلة</button>
             </div>
+
+            <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🌍 السياحة</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🏨 فنادق</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🍽️ مطاعم</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('صور ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">📷 صور</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🎬 فيديو</a>
+            </div>
+
             <div class="all-links-container" id="links-${index}" style="display:none;margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;">
                 <div class="links-stats" style="display:flex;justify-content:space-between;margin-bottom:8px;">
                     <span>📌 ${links.length} رابط بحث متقدم</span>
@@ -229,7 +248,7 @@ async function handleSearch() {
         return;
     }
 
-    // لا توجد مدينة أو دولة: ضع بطاقة النص أولاً، ثم أضف نتائج ويكيبيديا بعدها إن وجدت.
+    // بطاقة النص أولاً، ثم نتائج ويكيبيديا بعدها إن وجدت.
     allLinksData = [];
     renderTextQueryCard(query);
     updateStatus('🔍 جاري البحث في ويكيبيديا...', '#f59e0b');
@@ -242,13 +261,8 @@ async function handleSearch() {
         return;
     }
 
-    resultsDiv.innerHTML += `
-        <div class="card no-results" style="margin-top:16px;padding:20px;text-align:center;">
-            <h3>لم يتم العثور على نتائج مطابقة</h3>
-            <p style="color:#94a3b8;margin-top:8px;">تم إنشاء بطاقة للنص المدخل ويمكنك استخدام روابط البحث أعلاه.</p>
-        </div>`;
-    countSpan.textContent = '1';
     updateStatus('✅ تم إنشاء بطاقة للنص المدخل', '#10b981');
+    countSpan.textContent = '1';
 }
 
 console.log('✅ 02-search.js تم تحميله بنجاح');
