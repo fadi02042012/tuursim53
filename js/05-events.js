@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // 05-events.js - أحداث المستخدم (نسخة محسّنة + ترتيب بالصلة + عرض المزيد)
 // ============================================================
 
@@ -285,7 +285,8 @@ suggestionsDiv.addEventListener('click', function(e) {
 async function executeSearch(query) {
     clearTimeout(searchTimeout);
 
-    if (query.length >= 2) {
+    // السماح بأي نص، مهما كان طوله، طالما أنه ليس فارغًا.
+    if (query && query.trim().length > 0) {
         searchTimeout = setTimeout(async () => {
             try {
                 updateStatus('⏳ جاري البحث...', '#64748b');
@@ -351,7 +352,8 @@ searchInput.addEventListener('input', function() {
     clearTimeout(suggestionsTimeout);
     const query = this.value;
 
-    if (query.length >= 2) {
+    // قبول أي نص، حتى حرف واحد، دون قيد طول.
+    if (query.trim().length > 0) {
         suggestionsTimeout = setTimeout(() => {
             const results = performLocalSearch(query);
             showSuggestions(results);
@@ -359,9 +361,7 @@ searchInput.addEventListener('input', function() {
         executeSearch(query);
     } else {
         suggestionsDiv.style.display = 'none';
-        if (query.length === 0) {
-            executeSearch(query);
-        }
+        executeSearch(query);
     }
 });
 
