@@ -54,7 +54,7 @@ function buttonsHtml(query,index,mapsQuery=query,wikiUrl=''){
         <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}">▶ YouTube</a>
         ${wikiUrl?`<a class="btn btn-wiki" target="_blank" rel="noopener noreferrer" href="${escapeHtml(wikiUrl)}">📖 Wiki</a>`:''}
         <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(query)}" target="_blank" rel="noopener noreferrer" href="${advancedUrl}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
-        <button class="btn btn-secondary advanced-links-toggle" type="button" onclick="toggleLinks(${safeIndex})">📋 عرض الروابط (${linkCount()})</button>
+
     </div>
     <div class="all-links-container" id="${linksId}" data-link-index="${safeIndex}" style="display:none;margin:4px 0 10px;padding:10px;background:#f8fafc;border-radius:8px;">
         <div class="links-stats" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:7px;">
