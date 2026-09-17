@@ -12,18 +12,22 @@ compactResultCardStyle.textContent = `
 #results .card .btn-group .btn,#results .card .seo-tags .btn { line-height:1.15!important; }
 #results .card .seo-tags { padding:0!important;line-height:1.1!important; }
 #results .card .all-links-container { padding:0!important; }
+#showMoreResultsBtn { display:none!important; }
 `;
 document.head.appendChild(compactResultCardStyle);
+
 loadData();
 
 // ============================================================
-// أزرار التالي الثابتة: 10 نتائج إضافية أعلى وأسفل الشاشة
+// ترقيم النتائج الموحد - زر ثابت أعلى وأسفل الشاشة
 // ============================================================
 (() => {
     const PAGE_SIZE = 10;
-    let state = { query:'', cursor:0, items:[], initialized:false, rendering:false };
+    let state = { query:'', cursor:0, items:[], rendering:false };
+    let internalRender = false;
+    let refreshTimer = null;
 
-    function ensurePaginationStyles() {
+    function ensureStyles() {
         if (document.getElementById('results-pagination-styles')) return;
         const style = document.createElement('style');
         style.id = 'results-pagination-styles';
@@ -32,6 +36,7 @@ loadData();
 .results-pagination-bar.top{top:76px!important;}
 .results-pagination-bar.bottom{bottom:12px!important;}
 .results-next-btn{min-height:46px!important;padding:10px 24px!important;border:0!important;border-radius:999px!important;background:linear-gradient(135deg,#4f46e5,#db2777)!important;color:#fff!important;font:800 15px "Segoe UI",Tahoma,Arial,sans-serif!important;cursor:pointer!important;box-shadow:0 6px 18px rgba(79,70,229,.35)!important;white-space:nowrap!important;}
+.results-next-btn:hover{filter:brightness(1.06)!important;}
 .results-pagination-info{font-size:12px!important;color:#334155!important;background:#f1f5f9!important;border:1px solid #cbd5e1!important;border-radius:999px!important;padding:7px 11px!important;white-space:nowrap!important;font-weight:700!important;}
 body.dark-mode .results-pagination-bar{background:#0f172a!important;border-color:#818cf8!important;}
 body.dark-mode .results-pagination-info{background:#1e293b!important;border-color:#475569!important;color:#e2e8f0!important;}
@@ -51,35 +56,49 @@ body.dark-mode .results-pagination-info{background:#1e293b!important;border-colo
         });
         const cities = typeof removeDuplicates==='function' ? removeDuplicates(cityMatches) : cityMatches;
         const rankedCities = typeof sortCitiesByRelevance==='function' ? sortCitiesByRelevance(cities,text) : cities;
-        const countryMatches=countries.filter(country=>{
+        const countryMatches = countries.filter(country => {
             const value=[country.name,country.name_ar,country.capital,country.capital_ar,country.code,country.iso2,country.iso3,country.id].filter(v=>v!==undefined&&v!==null).join(' ');
             return typeof matchesAnyVariant==='function' ? matchesAnyVariant(value,variants) : variants.some(v=>value.toLowerCase().includes(String(v).toLowerCase()));
         });
         const q=typeof normalizeText==='function'?normalizeText(text):text.toLowerCase();
         countryMatches.sort((a,b)=>{
-            const score=country=>{const names=[country.name,country.name_ar,country.capital,country.capital_ar].filter(Boolean).map(v=>typeof normalizeText==='function'?normalizeText(v):String(v).toLowerCase());return names.some(n=>n===q)?3:names.some(n=>n.startsWith(q))?2:1;};
+            const score=country=>{
+                const names=[country.name,country.name_ar,country.capital,country.capital_ar].filter(Boolean).map(v=>typeof normalizeText==='function'?normalizeText(v):String(v).toLowerCase());
+                return names.some(n=>n===q)?3:names.some(n=>n.startsWith(q))?2:1;
+            };
             return score(b)-score(a);
         });
-        return { countries:countryMatches, cities:rankedCities };
+        return {countries:countryMatches,cities:rankedCities};
     }
 
     function flatten(groups){return [...groups.countries.map(data=>({type:'country',data})),...groups.cities.map(data=>({type:'city',data}))];}
     function split(items){return {countries:items.filter(x=>x.type==='country').map(x=>x.data),cities:items.filter(x=>x.type==='city').map(x=>x.data)};}
-    function removePaginationButtons(){document.querySelectorAll('.results-pagination-bar').forEach(el=>el.remove());}
+    function removeButtons(){document.querySelectorAll('.results-pagination-bar').forEach(el=>el.remove());}
 
-    function addPaginationButtons(total,cursor){
-        ensurePaginationStyles();
-        removePaginationButtons();
+    function addButtons(total,cursor){
+        ensureStyles();
+        removeButtons();
         if(!total || cursor>=total) return;
-        const createBar=position=>{
-            const el=document.createElement('div');
-            el.className=`results-pagination-bar ${position}`;
-            el.innerHTML=`<button type="button" class="results-next-btn">⬇️ التالي — عرض 10 نتائج أخرى</button><span class="results-pagination-info">تم عرض ${Math.min(cursor,total)} من ${total} • المتبقي ${total-cursor}</span>`;
-            el.querySelector('.results-next-btn').onclick=loadNextPage;
-            document.body.appendChild(el);
+        const make=position=>{
+            const bar=document.createElement('div');
+            bar.className=`results-pagination-bar ${position}`;
+            bar.innerHTML=`<button type="button" class="results-next-btn">⬇️ التالي — عرض 10 نتائج أخرى</button><span class="results-pagination-info">تم عرض ${Math.min(cursor,total)} من ${total} • المتبقي ${total-cursor}</span>`;
+            bar.querySelector('.results-next-btn').addEventListener('click',loadNextPage);
+            document.body.appendChild(bar);
         };
-        createBar('top');
-        createBar('bottom');
+        make('top');
+        make('bottom');
+    }
+
+    async function refreshPagination(){
+        if(internalRender) return;
+        const query=typeof searchInput!=='undefined'&&searchInput?searchInput.value.trim():'';
+        const groups=await collectAllMatches(query);
+        state.query=query;
+        state.items=flatten(groups);
+        const initial=query?Math.min(PAGE_SIZE*2,state.items.length):Math.min(PAGE_SIZE,state.items.length);
+        state.cursor=Math.min(initial,state.items.length);
+        addButtons(state.items.length,state.cursor);
     }
 
     async function loadNextPage(){
@@ -87,36 +106,39 @@ body.dark-mode .results-pagination-info{background:#1e293b!important;border-colo
         state.rendering=true;
         const nextCursor=Math.min(state.cursor+PAGE_SIZE,state.items.length);
         try{
-            const groups=split(state.items.slice(0,nextCursor));
-            renderResults(groups);
-            if(state.query && (groups.cities.length||groups.countries.length) && typeof prependTextQueryCard==='function') prependTextQueryCard(state.query);
+            internalRender=true;
+            renderResults(split(state.items.slice(0,nextCursor)));
+            if(state.query && (state.items.length>0) && typeof prependTextQueryCard==='function') prependTextQueryCard(state.query);
+        } finally {
+            internalRender=false;
             state.cursor=nextCursor;
-            addPaginationButtons(state.items.length,state.cursor);
-            if(typeof updateFavoriteButtons==='function') updateFavoriteButtons();
-            if(typeof updateSummaryStats==='function') updateSummaryStats();
-            if(typeof updateStatus==='function') updateStatus(`📄 تم عرض ${state.cursor} من ${state.items.length} نتيجة`,'#10b981');
-            if(typeof countSpan!=='undefined' && countSpan) countSpan.textContent=String(state.cursor+(state.query?1:0));
-        } finally {state.rendering=false;}
+            state.rendering=false;
+        }
+        addButtons(state.items.length,state.cursor);
+        if(typeof updateFavoriteButtons==='function') updateFavoriteButtons();
+        if(typeof updateSummaryStats==='function') updateSummaryStats();
+        if(typeof updateStatus==='function') updateStatus(`📄 تم عرض ${state.cursor} من ${state.items.length} نتيجة`,'#10b981');
+        if(typeof countSpan!=='undefined'&&countSpan) countSpan.textContent=String(state.cursor+(state.query?1:0));
     }
 
-    async function resetPagination(){
-        removePaginationButtons();
-        const query=typeof searchInput!=='undefined'&&searchInput?searchInput.value.trim():'';
-        state={query,cursor:0,items:[],initialized:false,rendering:false};
-        try{
-            const groups=await collectAllMatches(query);
-            state.items=flatten(groups);
-            const initial=query?Math.min(PAGE_SIZE*2,state.items.length):Math.min(PAGE_SIZE,state.items.length);
-            state.cursor=initial;
-            state.initialized=true;
-            if(initial && state.items.length>initial) setTimeout(()=>addPaginationButtons(state.items.length,state.cursor),700);
-        }catch(error){console.warn('تعذر تجهيز أزرار التالي:',error);}
+    // نعتمد على renderResults نفسها حتى يعمل الزران مع زر البحث وEnter وتغيير الدولة.
+    const originalRenderResults=window.renderResults;
+    if(typeof originalRenderResults==='function'){
+        window.renderResults=function(groups){
+            const result=originalRenderResults(groups);
+            if(!internalRender){
+                clearTimeout(refreshTimer);
+                refreshTimer=setTimeout(()=>refreshPagination(),50);
+            }
+            return result;
+        };
     }
 
-    document.addEventListener('click',event=>{const target=event.target.closest?.('#searchBtn,.google-search-icon');if(target)setTimeout(resetPagination,700);});
-    document.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target?.id==='search')setTimeout(resetPagination,700);});
+    window.refreshResultsPagination=refreshPagination;
+    window.clearResultsPagination=removeButtons;
+    ensureStyles();
 })();
 
 console.log('✅ تم تحميل التطبيق بنجاح');
 console.log(`📊 عدد روابط YouTube: ${searches.length}`);
-console.log('📌 أزرار التالي ثابتة أعلى وأسفل الشاشة - 10 نتائج إضافية');
+console.log('📌 ترقيم موحد: زر ثابت أعلى وأسفل الشاشة، 10 نتائج إضافية في كل ضغطة');
