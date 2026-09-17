@@ -2354,3 +2354,31 @@ img[loading="lazy"] {
     transform: none !important;
   }
 }
+
+/* إصلاح تداخل الشريط الجانبي مع بطاقات النتائج فقط */
+.floating-buttons {
+    position: fixed !important;
+    left: 12px !important;
+    right: auto !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    z-index: 1000 !important;
+}
+#results {
+    margin-left: 140px !important;
+    width: calc(100% - 160px) !important;
+}
+@media (max-width: 900px) {
+    #results {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    .floating-buttons {
+        left: 8px !important;
+        top: auto !important;
+        bottom: 12px !important;
+        transform: none !important;
+    }
+}
+
