@@ -5,30 +5,30 @@ const searches = [
     { name: "📺 البحث العادي", group: "أساسي", base: "https://www.youtube.com/results?search_query=", suffix: "" },
     { name: "🔥 الترتيب حسب عدد المشاهدات", group: "الترتيب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=CAMSAhAB" },
     { name: "⭐ الترتيب حسب التقييم", group: "الترتيب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=CAESAhAB" },
-    { name: "📅 الترتيب حسب تاريخ التحميل", group: "الترتيب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=CAI%253D" },
+    { name: "📅 الترتيب حسب تاريخ التحميل", group: "الترتيب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=CAI%3D" },
     { name: "📝 البحث في عنوان الفيديو", group: "الترتيب", base: "https://www.youtube.com/results?search_query=intitle%3A%22", suffix: "%22" },
-    { name: "🕐 آخر ساعة", group: "التاريخ", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIIAQ%253D%253D" },
+    { name: "🕐 آخر ساعة", group: "التاريخ", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIIAQ%3D%3D" },
     { name: "📆 اليوم", group: "التاريخ", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgQIAhAB" },
     { name: "📅 هذا الأسبوع", group: "التاريخ", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgQIAxAB" },
     { name: "🗓 هذا الشهر", group: "التاريخ", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgQIBBAB" },
     { name: "📖 هذا العام", group: "التاريخ", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgQIBRAB" },
-    { name: "⏱ أقل من 4 دقائق", group: "المدة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIYAQ%253D%253D" },
-    { name: "⌛ بين 4 و20 دقيقة", group: "المدة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIYAw%253D%253D" },
-    { name: "🎬 أكثر من 20 دقيقة", group: "المدة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIYAg%253D%253D" },
-    { name: "🎥 فيديوهات 4K", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgJwAQ%253D%253D" },
-    { name: "✨ HDR", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgPIAQE%253D" },
-    { name: "📺 دقة HD", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIgAQ%253D%253D" },
-    { name: "🌍 فيديوهات 360°", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgJ4AQ%253D%253D" },
-    { name: "🥽 VR180", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgPQAQE%253D" },
-    { name: "🎞 ثلاثي الأبعاد", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgI4AQ%253D%253D" },
+    { name: "⏱ أقل من 4 دقائق", group: "المدة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIYAQ%3D%3D" },
+    { name: "⌛ بين 4 و20 دقيقة", group: "المدة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIYAw%3D%3D" },
+    { name: "🎬 أكثر من 20 دقيقة", group: "المدة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIYAg%3D%3D" },
+    { name: "🎥 فيديوهات 4K", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgJwAQ%3D%3D" },
+    { name: "✨ HDR", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgPIAQE%3D" },
+    { name: "📺 دقة HD", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIgAQ%3D%3D" },
+    { name: "🌍 فيديوهات 360°", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgJ4AQ%3D%3D" },
+    { name: "🥽 VR180", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgPQAQE%3D" },
+    { name: "🎞 ثلاثي الأبعاد", group: "الجودة", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgI4AQ%3D%3D" },
     { name: "🏆 أكثر من 20 دقيقة + الأعلى مشاهدة", group: "مركب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=CAMSAhgC" },
-    { name: "🎞 أكثر من 20 دقيقة + 4K", group: "مركب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgYQBBgCcAE%253D" },
-    { name: "💎 أكثر من 20 دقيقة + 4K + HD", group: "مركب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgYYAiABcAE%253D" },
-    { name: "🎥 فيديوهات فقط", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQAQ%253D%253D" },
-    { name: "📺 قنوات", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQAg%253D%253D" },
-    { name: "📂 قوائم تشغيل", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQAw%253D%253D" },
-    { name: "🎬 أفلام", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQBA%253D%253D" },
-    { name: "📡 بث مباشر", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgJAAQ%253D%253D" },
+    { name: "🎞 أكثر من 20 دقيقة + 4K", group: "مركب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgYQBBgCcAE%3D" },
+    { name: "💎 أكثر من 20 دقيقة + 4K + HD", group: "مركب", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgYYAiABcAE%3D" },
+    { name: "🎥 فيديوهات فقط", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQAQ%3D%3D" },
+    { name: "📺 قنوات", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQAg%3D%3D" },
+    { name: "📂 قوائم تشغيل", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQAw%3D%3D" },
+    { name: "🎬 أفلام", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgIQBA%3D%3D" },
+    { name: "📡 بث مباشر", group: "نوع المحتوى", base: "https://www.youtube.com/results?search_query=", suffix: "&sp=EgJAAQ%3D%3D" },
     { name: "🎬 YouTube Shorts", group: "منصات", base: "https://www.google.com/search?q=site:youtube.com+", suffix: "&udm=39" },
     { name: "🔍 البحث في Google عن فيديوهات YouTube", group: "منصات", base: "https://www.google.com/search?q=site:youtube.com+", suffix: "&tbm=vid" },
     { name: "🆕 فيديوهات YouTube الأحدث (Google)", group: "منصات", base: "https://www.google.com/search?q=site:youtube.com+", suffix: "&num=100&udm=7&tbs=qdr:d" },
@@ -53,8 +53,18 @@ const searches = [
 ];
 
 function generateAdvancedLink(query, index = 0) {
-    const search = searches[Math.max(0, Math.min(searches.length - 1, Number(index) || 0))];
-    return search.base + encodeURIComponent(String(query || '')) + search.suffix;
+    const safeIndex = Math.max(0, Math.min(searches.length - 1, Number(index) || 0));
+    const search = searches[safeIndex];
+    const value = String(query || '').trim();
+    const url = search.base + encodeURIComponent(value) + search.suffix;
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('unsupported_protocol');
+        return parsed.href;
+    } catch (error) {
+        console.warn('رابط بحث متقدم غير صالح:', search.name, error);
+        return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(value);
+    }
 }
 
 function generateAllLinks(query) {
