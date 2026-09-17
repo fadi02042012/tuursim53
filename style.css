@@ -2329,3 +2329,28 @@ img[loading="lazy"] {
   position: relative;
   z-index: 3;
 }
+
+
+/* الشريط الجانبي: خارج منطقة بطاقات النتائج بالكامل */
+.floating-buttons {
+  position: fixed !important;
+  left: 12px !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+  z-index: 1000 !important;
+}
+#results {
+  margin-left: 100px !important;
+}
+@media (max-width: 900px) {
+  #results {
+    margin-left: 0 !important;
+  }
+  .floating-buttons {
+    left: 8px !important;
+    top: auto !important;
+    bottom: 12px !important;
+    transform: none !important;
+  }
+}
