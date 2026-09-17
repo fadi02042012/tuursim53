@@ -2309,3 +2309,23 @@ img[loading="lazy"] {
     font-size: 16px;
   }
 }
+
+
+/* إصلاح نهائي لتفاعل روابط البطاقات:
+   منع تحريك البطاقة عند المرور بالماوس حتى لا تتغير منطقة النقر تحت المؤشر. */
+#results .card,
+#results .card:hover {
+  transform: none !important;
+}
+#results .card .btn,
+#results .card a.btn,
+#results .card .advanced-category-link {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+#results .card .btn-group {
+  position: relative;
+  z-index: 3;
+}
