@@ -1,6 +1,8 @@
 ﻿// ============================================================
 // 02-search.js - منطق البحث وبطاقة نص البحث
 // ============================================================
+const RESULTS_PER_BATCH = 10;
+
 function normalizeText(text) {
     return String(text || '').toLowerCase()
         .replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
@@ -79,13 +81,12 @@ function removeDuplicates(items) {
 }
 
 async function performSearch(query) {
+    const source = currentCountryCities.length ? currentCountryCities : allCities;
     if (!query || !query.trim()) {
-        const source = currentCountryCities.length ? currentCountryCities : allCities;
-        return { cities: source.slice(0, 50), countries: [] };
+        return { cities: source.slice(0, RESULTS_PER_BATCH), countries: [] };
     }
 
     const variants = await buildQueryVariants(query);
-    const source = currentCountryCities.length ? currentCountryCities : allCities;
     const cities = removeDuplicates(source.filter(city => matchesAnyVariant([
         city.city, city.city_ar, city.country, city.country_ar, city.region,
         city.code, city.id, city.iso2, city.iso3, city.name
@@ -105,10 +106,10 @@ async function performSearch(query) {
         };
         return score(b) - score(a);
     });
-    return { cities: rankedCities.slice(0, 50), countries: countryResults.slice(0, 10) };
+    return { cities: rankedCities.slice(0, RESULTS_PER_BATCH), countries: countryResults.slice(0, RESULTS_PER_BATCH) };
 }
 
-async function searchWikipediaLanguage(query, language, limit = 30, offset = 0) {
+async function searchWikipediaLanguage(query, language, limit = RESULTS_PER_BATCH, offset = 0) {
     try {
         const cacheKey = `${language}_${query}_${limit}_${offset}`;
         if (wikiResultsCache[cacheKey]) return wikiResultsCache[cacheKey];
@@ -133,41 +134,28 @@ async function searchWikipediaLanguage(query, language, limit = 30, offset = 0) 
     }
 }
 
-async function searchWikipedia(query, limit = 30, offset = 0) {
+async function searchWikipedia(query, limit = RESULTS_PER_BATCH, offset = 0) {
     return searchWikipediaLanguage(query, 'ar', limit, offset);
 }
 
-async function searchWikipediaMultilingual(query, limit = 30, offset = 0) {
+async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, offset = 0) {
     const requestId = ++lastSearchRequestId;
-    if (activeWikipediaRequest) {
-        try { activeWikipediaRequest.abort(); } catch (_) {}
-    }
-
     const variants = await buildQueryVariants(query);
     const requests = [
         ...variants.filter(looksLikeArabic).map(q => searchWikipediaLanguage(q, 'ar', limit, offset)),
         ...variants.filter(q => !looksLikeArabic(q)).map(q => searchWikipediaLanguage(q, 'en', limit, offset))
     ];
     const groups = await Promise.all(requests);
-
     if (requestId !== lastSearchRequestId) return [];
 
     const unique = new Map();
     groups.flat().forEach(item => unique.set(`${item.language}:${item.title}`, item));
-    const ar = [...unique.values()].filter(item => item.language === 'ar');
-    const en = [...unique.values()].filter(item => item.language === 'en');
-    const balanced = [];
-    for (let i = 0; balanced.length < limit && (i < ar.length || i < en.length); i++) {
-        if (ar[i]) balanced.push(ar[i]);
-        if (en[i] && balanced.length < limit) balanced.push(en[i]);
-    }
-    return balanced.slice(0, limit);
+    return [...unique.values()].slice(0, limit);
 }
 
 function prependTextQueryCard(query) {
     const text = String(query || '').trim();
     if (!text) return;
-
     const index = allLinksData.length;
     const linkCount = typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48;
     allLinksData.push({ query: text, links: null, type: 'بحث نصي', name: text });
@@ -180,21 +168,21 @@ function prependTextQueryCard(query) {
                 <span style="font-size:12px;color:#94a3b8;">${linkCount} رابط</span>
             </div>
             <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;">
-                <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}" style="padding:6px 12px;background:#10b981;color:white;border-radius:8px;text-decoration:none;">📍 خرائط</a>
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}" style="padding:6px 12px;background:#4285f4;color:white;border-radius:8px;text-decoration:none;">🔍 Google</a>
-                <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}" style="padding:6px 12px;background:#ff0000;color:white;border-radius:8px;text-decoration:none;">▶ YouTube</a>
-                <button class="btn btn-secondary" onclick="toggleLinks(${index})" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">📋 عرض الروابط (${linkCount})</button>
-                <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button" aria-label="إضافة ${escapeHtml(text)} إلى المفضلة" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">⭐ المفضلة</button>
+                <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}">📍 خرائط</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}">🔍 Google</a>
+                <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}">▶ YouTube</a>
+                <button class="btn btn-secondary" onclick="toggleLinks(${index})">📋 عرض الروابط (${linkCount})</button>
+                <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button">⭐ المفضلة</button>
             </div>
             <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;">
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🌍 السياحة</a>
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🏨 فنادق</a>
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🍽️ مطاعم</a>
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('صور ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">📷 صور</a>
-                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🎬 فيديو</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}">🌍 السياحة</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق ' + text)}">🏨 فنادق</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم ' + text)}">🍽️ مطاعم</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('صور ' + text)}">📷 صور</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}">🎬 فيديو</a>
             </div>
             <div class="all-links-container" id="links-${index}" style="display:none;margin:0;padding:10px;background:#f8fafc;border-radius:8px;">
-                <div class="links-stats" style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>📌 ${linkCount} رابط بحث متقدم</span><span style="font-size:12px;color:#94a3b8;">للبحث عن: ${escapeHtml(text)}</span></div>
+                <div class="links-stats"><span>📌 ${linkCount} رابط بحث متقدم</span><span>للبحث عن: ${escapeHtml(text)}</span></div>
                 <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;"></div>
             </div>
         </div>`;
@@ -206,7 +194,7 @@ async function handleSearch() {
     const query = searchInput.value.trim();
     if (!query) {
         const source = currentCountryCities.length ? currentCountryCities : allCities;
-        renderResults({ cities: source.slice(0, 50), countries: [] });
+        renderResults({ cities: source.slice(0, RESULTS_PER_BATCH), countries: [] });
         return;
     }
 
@@ -221,7 +209,7 @@ async function handleSearch() {
     allLinksData = [];
     prependTextQueryCard(query);
     updateStatus('🔍 جاري البحث في ويكيبيديا...', '#f59e0b');
-    const wikiResults = await searchWikipediaMultilingual(query, 30);
+    const wikiResults = await searchWikipediaMultilingual(query, RESULTS_PER_BATCH, 0);
     if (wikiResults.length) {
         renderWikipediaResults(wikiResults, query);
         updateStatus(`📖 تم العثور على ${wikiResults.length} نتيجة في ويكيبيديا`, '#10b981');
@@ -232,4 +220,4 @@ async function handleSearch() {
     }
 }
 
-console.log('✅ 02-search.js تم تحميله بنجاح — توليد الروابط متأخر وسريع');
+console.log('✅ 02-search.js تم تحميله بنجاح — دفعات البحث: 10 نتائج');
