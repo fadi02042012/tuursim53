@@ -186,7 +186,12 @@ function prependTextQueryCard(query) {
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}">🎬 فيديو</a>
             </div>
         </div>`;
-    resultsDiv.insertAdjacentHTML('afterbegin', card);
+    const advancedPanel = resultsDiv.querySelector('.advanced-category-panel');
+    if (advancedPanel) {
+        advancedPanel.insertAdjacentHTML('afterend', card);
+    } else {
+        resultsDiv.insertAdjacentHTML('afterbegin', card);
+    }
 }
 // مسار احتياطي إذا استُخدمت هذه الدالة مباشرة من ملفات أخرى.
 async function handleSearch() {
