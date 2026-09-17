@@ -16,6 +16,9 @@ function buildSearchableText(city) {
 
 const translationCache = new Map();
 const TRANSLATION_TIMEOUT_MS = 4500;
+let activeWikipediaRequest = null;
+let lastSearchRequestId = 0;
+
 function looksLikeArabic(text) { return /[\u0600-\u06FF]/.test(text || ''); }
 function looksLikeCode(text) { return /^[A-Za-z0-9][A-Za-z0-9_.:/-]{1,63}$/.test((text || '').trim()); }
 
@@ -78,8 +81,9 @@ function removeDuplicates(items) {
 async function performSearch(query) {
     if (!query || !query.trim()) {
         const source = currentCountryCities.length ? currentCountryCities : allCities;
-        return { cities: source.slice(0, 100), countries: [] };
+        return { cities: source.slice(0, 50), countries: [] };
     }
+
     const variants = await buildQueryVariants(query);
     const source = currentCountryCities.length ? currentCountryCities : allCities;
     const cities = removeDuplicates(source.filter(city => matchesAnyVariant([
@@ -101,7 +105,7 @@ async function performSearch(query) {
         };
         return score(b) - score(a);
     });
-    return { cities: rankedCities.slice(0, 100), countries: countryResults.slice(0, 10) };
+    return { cities: rankedCities.slice(0, 50), countries: countryResults.slice(0, 10) };
 }
 
 async function searchWikipediaLanguage(query, language, limit = 30, offset = 0) {
@@ -113,9 +117,13 @@ async function searchWikipediaLanguage(query, language, limit = 30, offset = 0) 
         if (!response.ok) throw new Error(`wikipedia_http_${response.status}`);
         const data = await response.json();
         const results = (data.query?.search || []).map(item => ({
-            title: item.title, snippet: String(item.snippet || '').replace(/<[^>]+>/g, ''),
+            title: item.title,
+            snippet: String(item.snippet || '').replace(/<[^>]+>/g, ''),
             url: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(item.title)}`,
-            language, size: item.size || 0, wordcount: item.wordcount || 0, timestamp: item.timestamp || ''
+            language,
+            size: item.size || 0,
+            wordcount: item.wordcount || 0,
+            timestamp: item.timestamp || ''
         }));
         wikiResultsCache[cacheKey] = results;
         return results;
@@ -130,12 +138,21 @@ async function searchWikipedia(query, limit = 30, offset = 0) {
 }
 
 async function searchWikipediaMultilingual(query, limit = 30, offset = 0) {
+    const requestId = ++lastSearchRequestId;
+    if (activeWikipediaRequest) {
+        try { activeWikipediaRequest.abort(); } catch (_) {}
+    }
+
     const variants = await buildQueryVariants(query);
     const requests = [
         ...variants.filter(looksLikeArabic).map(q => searchWikipediaLanguage(q, 'ar', limit, offset)),
         ...variants.filter(q => !looksLikeArabic(q)).map(q => searchWikipediaLanguage(q, 'en', limit, offset))
     ];
     const groups = await Promise.all(requests);
+
+    // لا تسمح لطلب قديم بأن يعيد رسم الواجهة بعد طلب أحدث.
+    if (requestId !== lastSearchRequestId) return [];
+
     const unique = new Map();
     groups.flat().forEach(item => unique.set(`${item.language}:${item.title}`, item));
     const ar = [...unique.values()].filter(item => item.language === 'ar');
@@ -148,7 +165,6 @@ async function searchWikipediaMultilingual(query, limit = 30, offset = 0) {
     return balanced.slice(0, limit);
 }
 
-// إنشاء بطاقة النص بنفس بنية بطاقات المدن: تُضاف بصريًا في البداية.
 function prependTextQueryCard(query) {
     const text = String(query || '').trim();
     if (!text) return;
@@ -175,11 +191,11 @@ function prependTextQueryCard(query) {
                 <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button" aria-label="إضافة ${escapeHtml(text)} إلى المفضلة" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">⭐ المفضلة</button>
             </div>
             <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-                <a class="btn btn-google" target="_blank" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🌍 السياحة</a>
-                <a class="btn btn-google" target="_blank" href="https://www.google.com/search?q=${encodeURIComponent('فنادق ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🏨 فنادق</a>
-                <a class="btn btn-google" target="_blank" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🍽️ مطاعم</a>
-                <a class="btn btn-google" target="_blank" href="https://www.google.com/search?q=${encodeURIComponent('صور ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">📷 صور</a>
-                <a class="btn btn-google" target="_blank" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🎬 فيديو</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🌍 السياحة</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🏨 فنادق</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🍽️ مطاعم</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('صور ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">📷 صور</a>
+                <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ff;border-radius:8px;text-decoration:none;font-size:12px;">🎬 فيديو</a>
             </div>
             <div class="all-links-container" id="links-${index}" style="display:none;margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;">
                 <div class="links-stats" style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>📌 ${links.length} رابط بحث متقدم</span><span style="font-size:12px;color:#94a3b8;">للبحث عن: ${escapeHtml(text)}</span></div>
@@ -190,20 +206,22 @@ function prependTextQueryCard(query) {
 }
 
 async function handleSearch() {
+    clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
     if (!query) {
         const source = currentCountryCities.length ? currentCountryCities : allCities;
-        renderResults({ cities: source.slice(0, 100), countries: [] });
+        renderResults({ cities: source.slice(0, 50), countries: [] });
         return;
     }
+
     const results = await performSearch(query);
     if (results.cities.length || results.countries.length) {
         renderResults(results);
-        // البطاقة تظهر دائمًا أولًا، حتى عند وجود نتائج مطابقة.
         prependTextQueryCard(query);
         countSpan.textContent = results.cities.length + results.countries.length + 1;
         return;
     }
+
     allLinksData = [];
     prependTextQueryCard(query);
     updateStatus('🔍 جاري البحث في ويكيبيديا...', '#f59e0b');
@@ -218,4 +236,4 @@ async function handleSearch() {
     }
 }
 
-console.log('✅ 02-search.js تم تحميله بنجاح');
+console.log('✅ 02-search.js تم تحميله بنجاح — البحث المؤكد فقط ينفذ طلبات الشبكة');
