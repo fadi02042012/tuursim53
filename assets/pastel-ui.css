@@ -260,3 +260,13 @@ body.dark-mode #results .wiki-title,
 body.dark-mode #results .wikipedia-title { color: #f4f2fb !important; }
 body.dark-mode #results .all-links-container { background: #1b1b28 !important; }
 body.dark-mode #results .link-item { background: #252534 !important; border-color: #38374a !important; }
+
+/* إخفاء الإحصائيات من الواجهة بالكامل مع إبقاء منطق التطبيق والبحث والمفضلة والوضع الداكن */
+.stats-bar,
+.header-right,
+.btn-stats,
+.msn-nav button[onclick="showStatistics()"],
+.msn-hero-side button[onclick="showStatistics()"],
+.google-actions button[onclick="showStatistics()"] {
+  display: none !important;
+}
