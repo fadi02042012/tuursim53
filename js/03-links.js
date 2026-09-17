@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// 03-links.js - روابط البحث المتقدم (48 رابط)
+// 03-links.js - محرك التصنيفات المتقدمة السريع
 // ============================================================
 const searches = [
     { name: "📺 البحث العادي", base: "https://www.youtube.com/results?search_query=", suffix: "" },
@@ -52,18 +52,27 @@ const searches = [
     { name: "📷 WebCamTaxi", base: "https://www.webcamtaxi.com/en/search.html?searchword=", suffix: "&searchphrase=all" }
 ];
 
+function generateAdvancedLink(query, index) {
+    const search = searches[Math.max(0, Math.min(searches.length - 1, Number(index) || 0))];
+    return search.base + encodeURIComponent(String(query || "")) + search.suffix;
+}
+
 function generateAllLinks(query) {
-    const encodedQuery = encodeURIComponent(String(query || ""));
-    return searches.map((search, index) => ({
+    return searches.map((_, index) => ({
         id: index + 1,
-        name: search.name,
-        url: search.base + encodedQuery + search.suffix
+        name: searches[index].name,
+        url: generateAdvancedLink(query, index)
     }));
 }
 
-window.getAdvancedLinksCount = function() {
-    return searches.length;
-};
+function getAdvancedLinkName(index) {
+    return searches[Math.max(0, Math.min(searches.length - 1, Number(index) || 0))].name;
+}
 
-console.log('✅ 03-links.js تم تحميله بنجاح');
-console.log(`📊 عدد روابط البحث المتقدم: ${searches.length}`);
+window.getAdvancedLinksCount = function() { return searches.length; };
+window.getAdvancedLinkName = getAdvancedLinkName;
+window.generateAdvancedLink = generateAdvancedLink;
+window.getAdvancedSearches = function() { return searches.map((item, index) => ({ index, name: item.name })); };
+
+console.log('✅ 03-links.js تم تحميله بنجاح — نظام التصنيف السريع');
+console.log(`📊 عدد التصنيفات: ${searches.length}`);
