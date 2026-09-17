@@ -1,7 +1,5 @@
 // ============================================================
 // 04-ui.js - واجهة البحث المتقدم السريعة
-// الفكرة: يختار المستخدم تصنيفاً واحداً ثم يبحث عن دولة/مدينة،
-// وكل نتيجة تعرض رابط التصنيف المختار فقط بدلاً من إنشاء 48 رابطاً.
 // ============================================================
 let selectedAdvancedCategory = 0;
 
@@ -25,24 +23,58 @@ function getCategoryUrl(query, index = selectedAdvancedCategory) {
 
 function buildAdvancedCategoryPanel() {
     const categories = typeof getAdvancedSearches === 'function' ? getAdvancedSearches() : [];
-    return `<div class="advanced-category-panel" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:12px;contain:content;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-            <strong style="color:#1e293b;">⚡ البحث المتقدم السريع</strong>
-            <span style="font-size:12px;color:#64748b;">اختر تصنيفاً واحداً، ثم ابحث عن دولة أو مدينة من مربع البحث.</span>
+    const groups = {};
+    categories.forEach(item => {
+        const group = item.group || 'تصنيفات أخرى';
+        if (!groups[group]) groups[group] = [];
+        groups[group].push(item);
+    });
+
+    const groupLabels = {
+        'أساسي': '📺 البحث الأساسي',
+        'الترتيب': '🔥 الترتيب والفرز',
+        'التاريخ': '📅 حسب التاريخ',
+        'المدة': '⏱ حسب مدة الفيديو',
+        'الجودة': '🎥 الجودة والمشاهدة',
+        'مركب': '🧩 تصنيفات مركبة',
+        'نوع المحتوى': '🎬 نوع المحتوى',
+        'منصات': '🌐 المنصات والبحث الخارجي',
+        'قنوات محددة': '📺 القنوات المحددة'
+    };
+
+    const options = Object.entries(groups).map(([group, items]) => `
+        <optgroup label="${escapeHtml(groupLabels[group] || group)}">
+            ${items.map(item => `<option value="${item.index}" ${item.index === selectedAdvancedCategory ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
+        </optgroup>
+    `).join('');
+
+    return `<section class="advanced-category-panel" aria-label="اختيار تصنيف البحث المتقدم">
+        <div class="advanced-category-heading">
+            <div class="advanced-category-icon">⚡</div>
+            <div class="advanced-category-title-wrap">
+                <h3>البحث المتقدم</h3>
+                <p>اختر نوع البحث الذي تريد استخدامه مع المدينة أو الدولة.</p>
+            </div>
+            <span class="advanced-category-count">48 تصنيف</span>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" style="flex:1;min-width:230px;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:#1e293b;">
-                ${categories.map(item => `<option value="${item.index}" ${item.index === selectedAdvancedCategory ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
+        <label class="advanced-category-label" for="advanced-category-select">اختر التصنيف</label>
+        <div class="advanced-category-select-wrap">
+            <select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" aria-describedby="advanced-category-help">
+                ${options}
             </select>
-            <span id="advanced-category-label" style="font-size:12px;color:#64748b;">التصنيف الحالي: ${escapeHtml(getCategoryName())}</span>
+            <span class="advanced-category-chevron" aria-hidden="true">⌄</span>
         </div>
-    </div>`;
+        <div id="advanced-category-help" class="advanced-category-help">
+            <span>✓ التصنيف المختار:</span>
+            <strong id="advanced-category-label">${escapeHtml(getCategoryName())}</strong>
+        </div>
+    </section>`;
 }
 
 window.changeAdvancedCategory = function(value) {
     selectedAdvancedCategory = Number(value) || 0;
     const label = document.getElementById('advanced-category-label');
-    if (label) label.textContent = `التصنيف الحالي: ${getCategoryName()}`;
+    if (label) label.textContent = getCategoryName();
 
     document.querySelectorAll('.advanced-category-link').forEach(link => {
         const query = link.dataset.query || '';
@@ -146,7 +178,6 @@ function renderWikipediaResults(results, query, isMore = false) {
     resultsDiv.insertAdjacentHTML('beforeend', html);
 }
 
-// توافق مع أي كود قديم يستدعي toggleLinks: لا ننشئ 48 رابطاً عند الضغط.
 window.toggleLinks = function(index) {
     const data = allLinksData[index];
     if (!data) return;
@@ -171,4 +202,4 @@ function populateCountrySelect() {
     });
 }
 
-console.log('✅ 04-ui.js تم تحميله بنجاح — اختيار تصنيف واحد سريع بدلاً من 48 رابطاً');
+console.log('✅ 04-ui.js تم تحميله بنجاح — واجهة تصنيفات محسنة');
