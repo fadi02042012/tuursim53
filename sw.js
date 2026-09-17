@@ -1,5 +1,5 @@
-const CACHE_NAME='tuursim53-static-v5';
-const STATIC_ASSETS=['/','/index.html','/style.css','/assets/pastel-ui.css','/js/00-config.js','/js/01-data.js','/js/02-search.js','/js/03-links.js','/js/04-ui.js','/js/04-ui-original.js','/js/05-events.js','/js/app.js','/js/06-search-integration.js?v=20260918-fix3'];
+const CACHE_NAME='tuursim53-static-v6';
+const STATIC_ASSETS=['./','./index.html','./style.css','./assets/pastel-ui.css','./js/00-config.js','./js/01-data.js','./js/02-search.js','./js/03-links.js','./js/04-ui.js','./js/04-ui-original.js','./js/05-events.js','./js/app.js','./js/06-search-integration.js?v=20260918-fix3'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(STATIC_ASSETS)).then(()=>self.skipWaiting()));
 });
