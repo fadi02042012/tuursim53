@@ -1,6 +1,6 @@
 ﻿// ============================================================
 // 03-links.js - روابط YouTube والبحث المتقدم (51 رابط)
-// Lazy rendering: الروابط لا تُدرج في HTML إلا عند فتح البطاقة
+// Lazy rendering: الروابط لا تُنشأ إلا عند فتح البطاقة
 // ============================================================
 const searches = [
     { name: "📺 البحث العادي", base: "https://www.youtube.com/results?search_query=", suffix: "" },
@@ -58,37 +58,15 @@ const searches = [
 
 function generateAllLinks(query) {
     const encodedQuery = encodeURIComponent(String(query || ""));
-    const links = searches.map((search, index) => ({
+    return searches.map((search, index) => ({
         id: index + 1,
         name: search.name,
         url: search.base + encodedQuery + search.suffix
     }));
-
-    // 04-ui.js و02-search.js يستعملان links.map() لبناء HTML.
-    // نعطّل ذلك البناء المسبق فقط، مع إبقاء البيانات كاملة في __lazyItems.
-    const lazyLinks = new Proxy(links, {
-        get(target, prop, receiver) {
-            if (prop === 'map') {
-                return () => [];
-            }
-            if (prop === '__lazyItems') {
-                return target;
-            }
-            return Reflect.get(target, prop, receiver);
-        }
-    });
-
-    return lazyLinks;
-}
-
-function getRealLinks(links) {
-    return links && Array.isArray(links.__lazyItems)
-        ? links.__lazyItems
-        : (Array.isArray(links) ? links : []);
 }
 
 function renderLinksHTML(links) {
-    return getRealLinks(links).map(link => `
+    return links.map(link => `
         <a class="link-item" target="_blank" rel="noopener noreferrer"
            href="${link.url}"
            style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
@@ -97,6 +75,10 @@ function renderLinksHTML(links) {
         </a>
     `).join('');
 }
+
+window.getAdvancedLinksCount = function() {
+    return searches.length;
+};
 
 window.toggleLinks = function(index) {
     const container = document.getElementById(`links-${index}`);
@@ -110,6 +92,10 @@ window.toggleLinks = function(index) {
     const willExpand = container.style.display === 'none';
 
     if (willExpand && linksGrid && !container.dataset.rendered) {
+        // توليد الروابط فقط عند أول فتح للبطاقة.
+        if (!Array.isArray(data.links)) {
+            data.links = generateAllLinks(data.query);
+        }
         linksGrid.innerHTML = renderLinksHTML(data.links);
         container.dataset.rendered = 'true';
     }
@@ -146,7 +132,7 @@ window.toggleLinks = function(index) {
 
     const btn = document.querySelector(`[onclick="toggleLinks(${index})"]`);
     if (btn) {
-        const linksCount = getRealLinks(data.links).length;
+        const linksCount = Array.isArray(data.links) ? data.links.length : searches.length;
         btn.textContent = willExpand
             ? `📋 إخفاء الروابط (${linksCount})`
             : `📋 عرض الروابط (${linksCount})`;
@@ -154,5 +140,5 @@ window.toggleLinks = function(index) {
 };
 
 console.log('✅ 03-links.js تم تحميله بنجاح');
-console.log(`📊 عدد روابط YouTube: ${searches.length}`);
+console.log(`📊 عدد روابط البحث المتقدم: ${searches.length}`);
 console.log('⚡ Lazy Loading للروابط مفعل');
