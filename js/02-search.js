@@ -150,7 +150,6 @@ async function searchWikipediaMultilingual(query, limit = 30, offset = 0) {
     ];
     const groups = await Promise.all(requests);
 
-    // لا تسمح لطلب قديم بأن يعيد رسم الواجهة بعد طلب أحدث.
     if (requestId !== lastSearchRequestId) return [];
 
     const unique = new Map();
@@ -168,26 +167,23 @@ async function searchWikipediaMultilingual(query, limit = 30, offset = 0) {
 function prependTextQueryCard(query) {
     const text = String(query || '').trim();
     if (!text) return;
-    const links = generateAllLinks(text);
+
     const index = allLinksData.length;
-    allLinksData.push({ query: text, links, type: 'بحث نصي', name: text });
-    const linkItems = links.map(link => `
-        <a class="link-item" target="_blank" rel="noopener noreferrer" href="${link.url}" style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
-            <span class="link-number" style="color:#94a3b8;">#${link.id}</span>
-            <span class="link-name" style="margin-right:4px;">${escapeHtml(link.name)}</span>
-        </a>`).join('');
+    const linkCount = typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48;
+    allLinksData.push({ query: text, links: null, type: 'بحث نصي', name: text });
+
     const card = `
         <div class="card text-query-card" style="background:white;border-radius:12px;padding:0;margin-bottom:0;box-shadow:none;">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0;flex-wrap:wrap;">
                 <div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(text)}</span>
                 <span class="country-name" style="color:#64748b;margin-right:8px;">📝 بحث نصي</span></div>
-                <span style="font-size:12px;color:#94a3b8;">${links.length} رابط</span>
+                <span style="font-size:12px;color:#94a3b8;">${linkCount} رابط</span>
             </div>
             <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;">
                 <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}" style="padding:6px 12px;background:#10b981;color:white;border-radius:8px;text-decoration:none;">📍 خرائط</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}" style="padding:6px 12px;background:#4285f4;color:white;border-radius:8px;text-decoration:none;">🔍 Google</a>
                 <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}" style="padding:6px 12px;background:#ff0000;color:white;border-radius:8px;text-decoration:none;">▶ YouTube</a>
-                <button class="btn btn-secondary" onclick="toggleLinks(${index})" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">📋 عرض الروابط (${links.length})</button>
+                <button class="btn btn-secondary" onclick="toggleLinks(${index})" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">📋 عرض الروابط (${linkCount})</button>
                 <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button" aria-label="إضافة ${escapeHtml(text)} إلى المفضلة" style="padding:6px 12px;background:#f1f5f9;border:none;border-radius:8px;cursor:pointer;font-size:13px;">⭐ المفضلة</button>
             </div>
             <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;">
@@ -198,8 +194,8 @@ function prependTextQueryCard(query) {
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}" style="padding:4px 10px;background:#eef2ff;color:#4338ca;border-radius:8px;text-decoration:none;font-size:12px;">🎬 فيديو</a>
             </div>
             <div class="all-links-container" id="links-${index}" style="display:none;margin:0;padding:10px;background:#f8fafc;border-radius:8px;">
-                <div class="links-stats" style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>📌 ${links.length} رابط بحث متقدم</span><span style="font-size:12px;color:#94a3b8;">للبحث عن: ${escapeHtml(text)}</span></div>
-                <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">${linkItems}</div>
+                <div class="links-stats" style="display:flex;justify-content:space-between;margin-bottom:8px;"><span>📌 ${linkCount} رابط بحث متقدم</span><span style="font-size:12px;color:#94a3b8;">للبحث عن: ${escapeHtml(text)}</span></div>
+                <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;"></div>
             </div>
         </div>`;
     resultsDiv.insertAdjacentHTML('afterbegin', card);
@@ -236,4 +232,4 @@ async function handleSearch() {
     }
 }
 
-console.log('✅ 02-search.js تم تحميله بنجاح — البحث المؤكد فقط ينفذ طلبات الشبكة');
+console.log('✅ 02-search.js تم تحميله بنجاح — توليد الروابط متأخر وسريع');
