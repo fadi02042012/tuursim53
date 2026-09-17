@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YouTube Smart Search - البحث الذكي</title>
 <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+<link rel="preconnect" href="https://ar.wikipedia.org" crossorigin>
+<link rel="dns-prefetch" href="//ar.wikipedia.org">
 <link rel="stylesheet" href="/style.css?v=20260917-4">
 <link rel="stylesheet" href="/assets/pastel-ui.css?v=20260917-4">
 <style>
@@ -28,14 +30,14 @@
 <section id="results" aria-live="polite"></section>
 </main>
 <footer style="padding:24px;text-align:center;color:#888;font-size:12px;">© البحث الذكي</footer>
-<script src="/js/00-config.js?v=20260918-fix2"></script>
-<script src="/js/01-data.js?v=20260918-fix2"></script>
-<script src="/js/03-links.js?v=20260918"></script>
-<script src="/js/02-search.js?v=20260918"></script>
-<script src="/js/04-ui.js?v=20260918-fix"></script>
-<script src="/js/05-events.js?v=20260918"></script>
-<script src="/js/app.js?v=20260918-fix2"></script>
-<script src="/js/06-search-integration.js?v=20260918-1"></script>
+<script src="/js/00-config.js?v=20260918-fix3" defer></script>
+<script src="/js/01-data.js?v=20260918-fix3" defer></script>
+<script src="/js/03-links.js?v=20260918-fix1" defer></script>
+<script src="/js/02-search.js?v=20260918-fix1" defer></script>
+<script src="/js/04-ui.js?v=20260918-fix3" defer></script>
+<script src="/js/05-events.js?v=20260918-fix1" defer></script>
+<script src="/js/app.js?v=20260918-fix3" defer></script>
+<script src="/js/06-search-integration.js?v=20260918-fix2" defer></script>
 <script>(function(){const btn=document.getElementById('nextResultsSideBtn');if(btn)btn.addEventListener('click',()=>{if(typeof window.loadNextResultsPage==='function')window.loadNextResultsPage();});})();</script>
 </body>
 </html>
