@@ -38,7 +38,7 @@ function ensureAdvancedCategoryStyles() {
     `;
     document.head.appendChild(style);
 }
-function cardStyle(){return 'background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.08);contain:content;content-visibility:auto;';}
+function cardStyle(){return 'background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.08);contain:layout style;';}
 function linkCount(){return typeof getAdvancedLinksCount==='function'?getAdvancedLinksCount():48;}
 function getCategoryName(index=selectedAdvancedCategory){return typeof getAdvancedLinkName==='function'?getAdvancedLinkName(index):'📺 البحث العادي';}
 function getCategoryUrl(query,index=selectedAdvancedCategory){return typeof generateAdvancedLink==='function'?generateAdvancedLink(query,index):`https://www.youtube.com/results?search_query=${encodeURIComponent(query||'')}`;}
