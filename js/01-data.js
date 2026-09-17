@@ -3,6 +3,21 @@
 // ============================================================
 
 const INITIAL_RESULTS_LIMIT = 20;
+let globalCitiesLoaded = false;
+let globalCitiesLoading = null;
+
+function showReadyState(message = 'الواجهة جاهزة للبحث') {
+    resultsDiv.innerHTML = `
+        <div class="card no-results">
+            <div style="text-align:center;padding:40px;">
+                <div style="font-size:48px;margin-bottom:16px;">🌍</div>
+                <h3>${escapeHtml(message)}</h3>
+                <p style="color:#94a3b8;margin-top:8px;">اكتب اسم مدينة أو دولة، أو اختر دولة من القائمة.</p>
+                <p style="color:#94a3b8;font-size:12px;margin-top:4px;">يتم تحميل بيانات المدن حسب الحاجة لتجنب تجمّد الصفحة عند إعادة التحميل.</p>
+            </div>
+        </div>`;
+    countSpan.textContent = '0';
+}
 
 async function loadData() {
     try {
@@ -13,8 +28,6 @@ async function loadData() {
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
         countries = await countriesRes.json();
 
-        // ترتيب الدول أبجديًا حسب الاسم العربي قبل بناء القائمة المنسدلة.
-        // عند غياب الاسم العربي نستخدم الاسم الإنجليزي كبديل.
         const countryCollator = new Intl.Collator('ar', { sensitivity: 'base', numeric: false });
         countries.sort((a, b) => countryCollator.compare(
             String(a.name_ar || a.name || ''),
@@ -22,48 +35,55 @@ async function loadData() {
         ));
         populateCountrySelect();
 
-        // اعرض الواجهة مباشرة بدل انتظار تحليل ملف المدن الكبير.
-        resultsDiv.innerHTML = `
-            <div class="card no-results">
-                <div style="text-align:center;padding:40px;">
-                    <div style="font-size:48px;margin-bottom:16px;">🌍</div>
-                    <h3>جاهز للبحث</h3>
-                    <p style="color:#94a3b8;margin-top:8px;">يمكنك كتابة أي نص في مربع البحث.</p>
-                    <p style="color:#94a3b8;font-size:12px;margin-top:4px;">جاري تجهيز بيانات المدن في الخلفية...</p>
-                </div>
-            </div>`;
-        countSpan.textContent = '0';
-
-        // اترك للمتصفح فرصة رسم الواجهة قبل تحليل ملف المدن الكبير.
-        await new Promise(resolve => {
-            if ('requestIdleCallback' in window) requestIdleCallback(resolve, { timeout: 100 });
-            else setTimeout(resolve, 0);
-        });
-
-        statusDiv.textContent = '⏳ جاري تحميل بيانات المدن...';
-        const citiesRes = await fetch('output/cities.json', { cache: 'force-cache' });
-        if (!citiesRes.ok) throw new Error(`cities_http_${citiesRes.status}`);
-        const rawCities = await citiesRes.json();
-
-        // لا ننسخ كل سجل باستخدام spread؛ ذلك يضاعف الذاكرة ويبطئ أول دخول.
-        allCities = rawCities.map(city => {
-            city._searchKey = buildSearchableText(city);
-            return city;
-        });
-
-        statusDiv.textContent = `✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`;
+        // مهم: لا نحمّل output/cities.json عند بدء التشغيل.
+        // الملف الحالي حجمه ~40MB، وقراءته ثم JSON.parse ثم بناء _searchKey
+        // دفعة واحدة كان يجمّد الخيط الرئيسي ويجعل إعادة التحميل تبدو معلّقة.
+        showReadyState();
+        statusDiv.textContent = '✅ جاهز — اختر دولة أو ابدأ البحث';
         statusDiv.style.color = '#10b981';
-        renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
     } catch (error) {
         console.error('خطأ في تحميل البيانات:', error);
-        statusDiv.textContent = '⚠️ تعذر تحميل البيانات. يمكنك المحاولة مرة أخرى.';
+        statusDiv.textContent = '⚠️ تعذر تحميل بيانات الدول.';
         statusDiv.style.color = '#ef4444';
         resultsDiv.innerHTML = `
             <div class="card no-results"><div style="text-align:center;padding:40px;">
-                <div style="font-size:48px;">⚠️</div><h3>تعذر تحميل بيانات المدن</h3>
+                <div style="font-size:48px;">⚠️</div><h3>تعذر تحميل البيانات</h3>
                 <p style="color:#94a3b8;margin-top:8px;">تحقق من الاتصال ثم أعد تحميل الصفحة.</p>
             </div></div>`;
     }
+}
+
+// تحميل قاعدة المدن العالمية عند الطلب فقط، وليس أثناء بدء الصفحة.
+// هذه الدالة متاحة للتوافق ويمكن استدعاؤها لاحقاً من زر "تحميل جميع المدن".
+async function loadGlobalCities() {
+    if (globalCitiesLoaded) return allCities;
+    if (globalCitiesLoading) return globalCitiesLoading;
+
+    globalCitiesLoading = (async () => {
+        try {
+            updateStatus('⏳ جاري تحميل قاعدة المدن العالمية... قد يستغرق ذلك وقتاً على الأجهزة الضعيفة.', '#f59e0b');
+            const citiesRes = await fetch('output/cities.json', { cache: 'force-cache' });
+            if (!citiesRes.ok) throw new Error(`cities_http_${citiesRes.status}`);
+            const rawCities = await citiesRes.json();
+
+            allCities = rawCities.map(city => {
+                city._searchKey = buildSearchableText(city);
+                return city;
+            });
+            globalCitiesLoaded = true;
+            updateStatus(`✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`, '#10b981');
+            renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
+            return allCities;
+        } catch (error) {
+            console.error('خطأ في تحميل قاعدة المدن العالمية:', error);
+            updateStatus('❌ تعذر تحميل قاعدة المدن العالمية', '#ef4444');
+            throw error;
+        } finally {
+            globalCitiesLoading = null;
+        }
+    })();
+
+    return globalCitiesLoading;
 }
 
 async function loadAllCountryCities() {
@@ -87,6 +107,7 @@ async function loadAllCountryCities() {
         } catch (error) { console.warn(`فشل تحميل ${country.code}:`, error); }
     }
     allCities = allCitiesTemp;
+    globalCitiesLoaded = true;
     statusDiv.textContent = `✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`;
     statusDiv.style.color = '#10b981';
     renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
@@ -114,7 +135,8 @@ function showDemoData() {
         { city: 'دبي', city_ar: 'دبي', country: 'الإمارات', country_ar: 'الإمارات' }
     ];
     allCities.forEach(city => city._searchKey = buildSearchableText(city));
+    globalCitiesLoaded = true;
     renderResults({ cities: allCities, countries: [] });
 }
 
-console.log('✅ 01-data.js تم تحميله بنجاح');
+console.log('✅ 01-data.js تم تحميله بنجاح — قاعدة المدن العالمية أصبحت lazy-loaded');
