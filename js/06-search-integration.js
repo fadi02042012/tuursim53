@@ -9,6 +9,13 @@
         }
     }
 
+    function renderLinksGrid(links) {
+        return links.map(link => `
+            <a class="advanced-result-link" target="_blank" rel="noopener noreferrer" href="${escapeHtml(link.url)}" style="display:block;padding:7px 9px;border-radius:7px;background:#fff;border:1px solid #e2e8f0;text-decoration:none;color:#334155;font-size:12px;line-height:1.35;">
+                <span style="font-weight:700;">${escapeHtml(String(link.id))}. ${escapeHtml(link.name)}</span>
+            </a>`).join('');
+    }
+
     // إعادة تعريف بطاقة البحث بحيث تُنشئ الروابط محليًا فورًا، بدون fetch أو await.
     window.prependTextQueryCard = function (query) {
         const text = String(query || '').trim();
@@ -18,11 +25,6 @@
         const links = getAllAdvancedLinks(text);
         const linkCount = links.length || (typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48);
         allLinksData.push({ query: text, links, type: 'بحث نصي', name: text });
-
-        const linksHtml = links.map(link => `
-            <a class="advanced-result-link" target="_blank" rel="noopener noreferrer" href="${escapeHtml(link.url)}" style="display:block;padding:7px 9px;border-radius:7px;background:#fff;border:1px solid #e2e8f0;text-decoration:none;color:#334155;font-size:12px;line-height:1.35;">
-                <span style="font-weight:700;">${escapeHtml(String(link.id))}. ${escapeHtml(link.name)}</span>
-            </a>`).join('');
 
         const card = `
         <div class="card text-query-card" style="background:white;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);">
@@ -47,7 +49,7 @@
             </div>
             <div class="all-links-container" id="links-${index}" style="display:none;margin:0;padding:8px;background:#f8fafc;border-radius:8px;">
                 <div class="links-stats" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:7px;"><span>📌 ${linkCount} رابط بحث متقدم</span><span>للبحث عن: ${escapeHtml(text)}</span></div>
-                <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">${linksHtml}</div>
+                <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">${renderLinksGrid(links)}</div>
             </div>
         </div>`;
         resultsDiv.insertAdjacentHTML('afterbegin', card);
@@ -57,19 +59,19 @@
     window.toggleLinks = function (index) {
         const data = allLinksData[index];
         if (!data) return;
-        if (!Array.isArray(data.links) || !data.links.length) {
-            data.links = getAllAdvancedLinks(data.query);
-        }
+        if (!Array.isArray(data.links) || !data.links.length) data.links = getAllAdvancedLinks(data.query);
         const container = document.getElementById(`links-${index}`);
         if (!container) return;
         const grid = container.querySelector('.links-grid');
-        if (grid && !grid.children.length) {
-            grid.innerHTML = data.links.map(link => `
-                <a class="advanced-result-link" target="_blank" rel="noopener noreferrer" href="${escapeHtml(link.url)}" style="display:block;padding:7px 9px;border-radius:7px;background:#fff;border:1px solid #e2e8f0;text-decoration:none;color:#334155;font-size:12px;line-height:1.35;">
-                    <span style="font-weight:700;">${escapeHtml(String(link.id))}. ${escapeHtml(link.name)}</span>
-                </a>`).join('');
-        }
+        if (grid && !grid.children.length) grid.innerHTML = renderLinksGrid(data.links);
         container.style.display = container.style.display === 'none' ? 'block' : 'none';
+    };
+
+    // إصلاح اختيار الاقتراحات بعد جعل البحث المحلي متزامنًا.
+    window.selectCity = function (name) {
+        searchInput.value = String(name || '');
+        if (suggestionsDiv) suggestionsDiv.style.display = 'none';
+        handleSearch();
     };
 
     // البحث المحلي متزامن: تظهر البطاقة والروابط قبل أي خدمة خارجية.
