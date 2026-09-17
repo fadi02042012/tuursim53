@@ -5,7 +5,7 @@
 const SUGGESTIONS_DEBOUNCE_MS = 120;
 const MAX_AUTO_OPEN_LINKS = 20;
 const MAX_SUGGESTIONS = 12;
-const RESULTS_PAGE_SIZE = 50;
+const RESULTS_PAGE_SIZE = 10;
 
 let suggestionsTimeout = null;
 let currentFullResults = [];
@@ -152,7 +152,7 @@ async function searchWikipediaWithConfig(limit, message, extendedMessage) {
     updateStatus(message, '#f59e0b');
     wikipediaPage = 0;
     try {
-        const results = await searchWikipediaMultilingual(query, limit);
+        const results = await searchWikipediaMultilingual(query, Math.min(limit, RESULTS_PAGE_SIZE));
         if (!results.length) {
             updateStatus('❌ لم يتم العثور على نتائج في ويكيبيديا', '#ef4444');
             return showToast('❌ لم يتم العثور على نتائج في ويكيبيديا');
@@ -325,19 +325,20 @@ countrySelect.addEventListener('change', async function () {
     }
 });
 
-window.searchOnlyWikipedia = () => searchWikipediaWithConfig(30, '🔍 جاري البحث في ويكيبيديا...');
-window.searchAllWikipedia = () => searchWikipediaWithConfig(100, '🔍 جاري البحث الموسع في ويكيبيديا...', '📖 تم تحميل نتائج البحث الموسع في ويكيبيديا');
+// جميع عمليات ويكيبيديا تبدأ الآن بحد أقصى 10 نتائج في الدفعة الأولى.
+window.searchOnlyWikipedia = () => searchWikipediaWithConfig(RESULTS_PAGE_SIZE, '🔍 جاري البحث في ويكيبيديا...');
+window.searchAllWikipedia = () => searchWikipediaWithConfig(RESULTS_PAGE_SIZE, '🔍 جاري البحث في ويكيبيديا...', '📖 تم تحميل 10 نتائج في الدفعة الأولى');
 
 window.loadMoreWikipedia = async function () {
     const query = searchInput.value.trim();
     if (!query) return showToast('⚠️ الرجاء إدخال نص للبحث في ويكيبيديا');
 
     const nextPage = wikipediaPage + 1;
-    const offset = nextPage * CONFIG.WIKIPEDIA_PAGE_SIZE;
-    updateStatus(`⏳ جاري تحميل المزيد من ويكيبيديا...`, '#f59e0b');
+    const offset = nextPage * RESULTS_PAGE_SIZE;
+    updateStatus('⏳ جاري تحميل 10 نتائج إضافية من ويكيبيديا...', '#f59e0b');
 
     try {
-        const results = await searchWikipediaMultilingual(query, CONFIG.WIKIPEDIA_PAGE_SIZE, offset);
+        const results = await searchWikipediaMultilingual(query, RESULTS_PAGE_SIZE, offset);
         if (!results.length) {
             updateStatus('📖 تم عرض جميع النتائج المتاحة', '#94a3b8');
             return showToast('⚠️ لا توجد نتائج إضافية');
@@ -354,4 +355,4 @@ window.loadMoreWikipedia = async function () {
 window.addEventListener('load', sortCountryDropdown);
 countrySelect.addEventListener('focus', sortCountryDropdown);
 
-console.log('✅ 05-events.js تم تحميله بنجاح — نسخة أداء محسّنة');
+console.log('✅ 05-events.js تم تحميله بنجاح — 10 نتائج لكل دفعة');
