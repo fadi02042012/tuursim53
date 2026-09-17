@@ -1,0 +1,4 @@
+git switch main
+git add -A
+git commit -m "Upload complete website"
+git push origin main
