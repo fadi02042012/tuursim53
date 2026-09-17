@@ -173,6 +173,95 @@
         updateSummaryStats();
     };
 
+    // ============================================================
+    // تحسينات البحث وإمكانية الوصول
+    // ============================================================
+
+    function setupSearchUX() {
+        if (!searchInput) return;
+
+        // اختصار / للانتقال السريع إلى البحث، مع احترام حقول الإدخال الأخرى.
+        document.addEventListener('keydown', (event) => {
+            const target = event.target;
+            const isTypingField = target instanceof HTMLInputElement ||
+                target instanceof HTMLTextAreaElement ||
+                target?.isContentEditable;
+
+            if (event.key === '/' && !isTypingField && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                event.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+
+            if (event.key === 'Escape' && document.activeElement === searchInput) {
+                searchInput.value = '';
+                if (suggestionsDiv) suggestionsDiv.innerHTML = '';
+                if (typeof renderLocalCityResults === 'function' && allCities.length) {
+                    renderLocalCityResults(allCities);
+                }
+                updateStatus('⌨️ تم مسح البحث', '#64748b');
+            }
+        });
+
+        // إظهار حالة التركيز بوضوح لمستخدمي لوحة المفاتيح.
+        searchInput.addEventListener('focus', () => {
+            searchInput.setAttribute('aria-label', 'بحث عن مدينة أو دولة أو نص');
+        });
+
+        // عند اختيار اقتراح عبر لوحة المفاتيح/الفأرة، انتقل بصريًا إلى النتائج.
+        if (resultsDiv) {
+            const observer = new MutationObserver(() => {
+                const firstResult = resultsDiv.querySelector('.card');
+                if (firstResult && searchInput.dataset.scrollToResults === '1') {
+                    searchInput.dataset.scrollToResults = '0';
+                    firstResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+            observer.observe(resultsDiv, { childList: true });
+        }
+    }
+
+    // زر "مسح" صغير يظهر فقط أثناء وجود نص في البحث.
+    function setupClearSearchButton() {
+        if (!searchInput || !searchInput.parentElement) return;
+        const parent = searchInput.parentElement;
+        if (parent.querySelector('.search-clear-btn')) return;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'search-clear-btn';
+        button.textContent = '×';
+        button.title = 'مسح البحث';
+        button.setAttribute('aria-label', 'مسح البحث');
+        button.style.cssText = [
+            'position:absolute', 'inset-inline-end:8px', 'top:50%', 'transform:translateY(-50%)',
+            'width:32px', 'height:32px', 'border:0', 'border-radius:50%', 'background:transparent',
+            'color:#64748b', 'font-size:22px', 'line-height:1', 'cursor:pointer', 'display:none', 'z-index:2'
+        ].join(';');
+
+        const computed = getComputedStyle(parent);
+        if (computed.position === 'static') parent.style.position = 'relative';
+        parent.appendChild(button);
+
+        const updateVisibility = () => {
+            button.style.display = searchInput.value ? 'block' : 'none';
+        };
+
+        button.addEventListener('click', () => {
+            searchInput.value = '';
+            searchInput.focus();
+            if (suggestionsDiv) suggestionsDiv.innerHTML = '';
+            updateVisibility();
+            if (typeof renderLocalCityResults === 'function' && allCities.length) {
+                renderLocalCityResults(allCities);
+            }
+            updateStatus('⌨️ تم مسح البحث', '#64748b');
+        });
+
+        searchInput.addEventListener('input', updateVisibility);
+        updateVisibility();
+    }
+
     const resultsElement = document.getElementById('results');
     if (resultsElement) {
         const observer = new MutationObserver(() => {
@@ -186,6 +275,8 @@
     window.addEventListener('load', () => {
         updateSummaryStats();
         updateFavoriteButtons();
+        setupSearchUX();
+        setupClearSearchButton();
     });
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closeEnhancementModal();
