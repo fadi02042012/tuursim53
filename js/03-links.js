@@ -1,6 +1,5 @@
 ﻿// ============================================================
-// 03-links.js - روابط YouTube والبحث المتقدم (51 رابط)
-// Lazy rendering: لا يتم إنشاء عناصر <a> الثقيلة أثناء عرض النتائج
+// 03-links.js - روابط البحث المتقدم (48 رابط)
 // ============================================================
 const searches = [
     { name: "📺 البحث العادي", base: "https://www.youtube.com/results?search_query=", suffix: "" },
@@ -50,13 +49,10 @@ const searches = [
     { name: "📹 AOL Video", base: "https://search.aol.com/aol/video?q=", suffix: "" },
     { name: "📹 Yandex Video", base: "https://yandex.com/video/search?text=", suffix: "" },
     { name: "🌍 EarthCam", base: "https://www.earthcam.com/search/ft_search.php?term=", suffix: "" },
-    { name: "📷 WebCamTaxi", base: "https://www.webcamtaxi.com/en/search.html?searchword=", suffix: "&searchphrase=all" },
-    { name: "🏭 YouTube آلات", base: "https://www.youtube.com/results?search_query=%D8%A2%D9%84%D8%A9+OR+%D9%85%D8%A7%D9%83%D9%8A%D9%86%D8%A9+", suffix: "&sp=CAM%253D" },
-    { name: "🍳 YouTube طبخ", base: "https://www.youtube.com/results?search_query=%D8%B7%D8%A8%D8%AE+", suffix: "&sp=CAM%253D" },
-    { name: "🚁 Drone 4K", base: "https://www.youtube.com/results?search_query=DRONE+", suffix: "&sp=EgJwAQ%253D%253D" }
+    { name: "📷 WebCamTaxi", base: "https://www.webcamtaxi.com/en/search.html?searchword=", suffix: "&searchphrase=all" }
 ];
 
-function buildLinks(query) {
+function generateAllLinks(query) {
     const encodedQuery = encodeURIComponent(String(query || ""));
     return searches.map((search, index) => ({
         id: index + 1,
@@ -65,94 +61,9 @@ function buildLinks(query) {
     }));
 }
 
-function generateAllLinks(query) {
-    const realLinks = buildLinks(query);
-    // توافق مع 04-ui.js و02-search.js الحاليين: أثناء render يتم إرجاع
-    // قائمة خفيفة لا تحتوي على عناصر <a>. عند فتح البطاقة نستخدم realLinks.
-    return new Proxy(realLinks, {
-        get(target, prop, receiver) {
-            if (prop === 'map') {
-                return () => ({ join: () => '' });
-            }
-            if (prop === '__realLinks') {
-                return target;
-            }
-            return Reflect.get(target, prop, receiver);
-        }
-    });
-}
-
-function getRealLinks(links) {
-    if (links && Array.isArray(links.__realLinks)) return links.__realLinks;
-    return Array.isArray(links) ? links : [];
-}
-
-function renderLinksHTML(links) {
-    return getRealLinks(links).map(link => `
-        <a class="link-item" target="_blank" rel="noopener noreferrer" href="${link.url}" style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
-            <span class="link-number" style="color:#94a3b8;">#${link.id}</span>
-            <span class="link-name" style="margin-right:4px;">${escapeHtml(link.name)}</span>
-        </a>`).join('');
-}
-
 window.getAdvancedLinksCount = function() {
     return searches.length;
 };
 
-window.toggleLinks = function(index) {
-    const container = document.getElementById(`links-${index}`);
-    if (!container) return;
-
-    const data = allLinksData[index];
-    if (!data) return;
-
-    const card = container.closest('.card');
-    const linksGrid = container.querySelector('.links-grid');
-    const willExpand = container.style.display === 'none';
-
-    if (willExpand && linksGrid && !container.dataset.rendered) {
-        const links = getRealLinks(data.links);
-        linksGrid.innerHTML = renderLinksHTML(links);
-        container.dataset.rendered = 'true';
-    }
-
-    if (card) {
-        if (willExpand) {
-            card.style.setProperty('height', 'auto', 'important');
-            card.style.setProperty('min-height', '0', 'important');
-            card.style.setProperty('overflow', 'visible', 'important');
-            card.classList.add('links-expanded');
-        } else {
-            card.style.removeProperty('height');
-            card.style.removeProperty('min-height');
-            card.style.removeProperty('overflow');
-            card.classList.remove('links-expanded');
-        }
-    }
-
-    if (linksGrid) {
-        if (willExpand) {
-            linksGrid.style.setProperty('grid-template-columns', 'repeat(5, minmax(0, 1fr))', 'important');
-            linksGrid.style.setProperty('max-height', 'none', 'important');
-            linksGrid.style.setProperty('overflow', 'visible', 'important');
-            linksGrid.style.setProperty('width', '100%', 'important');
-        } else {
-            linksGrid.style.removeProperty('grid-template-columns');
-            linksGrid.style.removeProperty('max-height');
-            linksGrid.style.removeProperty('overflow');
-            linksGrid.style.removeProperty('width');
-        }
-    }
-
-    container.style.display = willExpand ? 'block' : 'none';
-
-    const btn = document.querySelector(`[onclick="toggleLinks(${index})"]`);
-    if (btn) {
-        const linksCount = getRealLinks(data.links).length || searches.length;
-        btn.textContent = willExpand ? `📋 إخفاء الروابط (${linksCount})` : `📋 عرض الروابط (${linksCount})`;
-    }
-};
-
 console.log('✅ 03-links.js تم تحميله بنجاح');
 console.log(`📊 عدد روابط البحث المتقدم: ${searches.length}`);
-console.log('⚡ Lazy Loading للروابط مفعل');
