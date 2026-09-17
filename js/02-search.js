@@ -1,5 +1,5 @@
 ﻿// ============================================================
-// 02-search.js - منطق البحث وبطاقة نص البحث
+// 02-search.js - منطق البحث وبطاقة بحث النص
 // ============================================================
 const RESULTS_PER_BATCH = 10;
 
@@ -45,13 +45,11 @@ async function translateArabicToEnglish(text) {
     } finally { clearTimeout(timeout); }
 }
 
-async function buildQueryVariants(query) {
+// مهم: هذه الدالة أصبحت فورية. لا تنتظر الترجمة أو أي خدمة خارجية.
+function buildQueryVariants(query) {
     const original = String(query || '').trim();
     if (!original) return [];
-    const variants = new Set([original, normalizeText(original)]);
-    const english = await translateArabicToEnglish(original);
-    if (english) { variants.add(english); variants.add(english.toLowerCase()); }
-    return [...variants].filter(Boolean);
+    return [...new Set([original, normalizeText(original)])].filter(Boolean);
 }
 
 function matchesAnyVariant(text, variants) {
@@ -80,24 +78,27 @@ function removeDuplicates(items) {
     });
 }
 
-async function performSearch(query) {
+// البحث المحلي يجب أن يكون متزامنًا وفوريًا.
+// أي خدمة خارجية ممنوعة من حجب بطاقة البحث أو النتائج المحلية.
+function performSearch(query) {
     const source = currentCountryCities.length ? currentCountryCities : allCities;
-    if (!query || !query.trim()) {
+    const text = String(query || '').trim();
+    if (!text) {
         return { cities: source.slice(0, RESULTS_PER_BATCH), countries: [] };
     }
 
-    const variants = await buildQueryVariants(query);
+    const variants = buildQueryVariants(text);
     const cities = removeDuplicates(source.filter(city => matchesAnyVariant([
         city.city, city.city_ar, city.country, city.country_ar, city.region,
         city.code, city.id, city.iso2, city.iso3, city.name
     ].filter(v => v !== undefined && v !== null).join(' '), variants)));
     const rankedCities = typeof sortCitiesByRelevance === 'function'
-        ? sortCitiesByRelevance(cities, query) : cities;
+        ? sortCitiesByRelevance(cities, text) : cities;
     const countryResults = countries.filter(country => matchesAnyVariant([
         country.name, country.name_ar, country.capital, country.capital_ar,
         country.code, country.iso2, country.iso3, country.id
     ].filter(v => v !== undefined && v !== null).join(' '), variants));
-    const q = normalizeText(query);
+    const q = normalizeText(text);
     countryResults.sort((a, b) => {
         const score = country => {
             const names = [country.name, country.name_ar, country.capital, country.capital_ar]
@@ -106,7 +107,10 @@ async function performSearch(query) {
         };
         return score(b) - score(a);
     });
-    return { cities: rankedCities.slice(0, RESULTS_PER_BATCH), countries: countryResults.slice(0, RESULTS_PER_BATCH) };
+    return {
+        cities: rankedCities.slice(0, RESULTS_PER_BATCH),
+        countries: countryResults.slice(0, RESULTS_PER_BATCH)
+    };
 }
 
 async function searchWikipediaLanguage(query, language, limit = RESULTS_PER_BATCH, offset = 0) {
@@ -140,7 +144,9 @@ async function searchWikipedia(query, limit = RESULTS_PER_BATCH, offset = 0) {
 
 async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, offset = 0) {
     const requestId = ++lastSearchRequestId;
-    const variants = await buildQueryVariants(query);
+    const original = String(query || '').trim();
+    const variants = buildQueryVariants(original);
+    // الترجمة اختيارية في الخلفية، وليست جزءًا من المسار الحرج.
     const requests = [
         ...variants.filter(looksLikeArabic).map(q => searchWikipediaLanguage(q, 'ar', limit, offset)),
         ...variants.filter(q => !looksLikeArabic(q)).map(q => searchWikipediaLanguage(q, 'en', limit, offset))
@@ -189,6 +195,7 @@ function prependTextQueryCard(query) {
     resultsDiv.insertAdjacentHTML('afterbegin', card);
 }
 
+// مسار احتياطي إذا استُخدمت هذه الدالة مباشرة من ملفات أخرى.
 async function handleSearch() {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
@@ -198,26 +205,28 @@ async function handleSearch() {
         return;
     }
 
-    const results = await performSearch(query);
-    if (results.cities.length || results.countries.length) {
-        renderResults(results);
-        prependTextQueryCard(query);
-        countSpan.textContent = results.cities.length + results.countries.length + 1;
-        return;
-    }
-
     allLinksData = [];
     prependTextQueryCard(query);
-    updateStatus('🔍 جاري البحث في ويكيبيديا...', '#f59e0b');
-    const wikiResults = await searchWikipediaMultilingual(query, RESULTS_PER_BATCH, 0);
-    if (wikiResults.length) {
-        renderWikipediaResults(wikiResults, query);
-        updateStatus(`📖 تم العثور على ${wikiResults.length} نتيجة في ويكيبيديا`, '#10b981');
-        countSpan.textContent = wikiResults.length + 1;
-    } else {
-        updateStatus('✅ تم إنشاء بطاقة للنص المدخل', '#10b981');
-        countSpan.textContent = '1';
+    countSpan.textContent = '1';
+    updateStatus('🔎 بطاقة البحث جاهزة؛ جاري جلب النتائج المحلية...', '#f59e0b');
+
+    try {
+        const results = performSearch(query);
+        if (results.cities.length || results.countries.length) {
+            renderResults(results);
+            prependTextQueryCard(query);
+            countSpan.textContent = String(results.cities.length + results.countries.length + 1);
+            updateStatus('✅ النتائج المحلية ظهرت؛ ويكيبيديا تعمل في الخلفية.', '#10b981');
+        }
+
+        if (typeof loadWikipediaForCurrentSearch === 'function') {
+            loadWikipediaForCurrentSearch(query, lastSearchRequestId)
+                .catch(error => console.warn('Wikipedia background search:', error));
+        }
+    } catch (error) {
+        console.error('خطأ في البحث المحلي:', error);
+        updateStatus('⚠️ ظهرت بطاقة البحث، وتعذر إكمال النتائج المحلية.', '#ef4444');
     }
 }
 
-console.log('✅ 02-search.js تم تحميله بنجاح — دفعات البحث: 10 نتائج');
+console.log('✅ 02-search.js تم تحميله بنجاح — البحث المحلي فوري وبدون انتظار خارجي');
