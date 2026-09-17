@@ -2,7 +2,6 @@
 // app.js - الملف الرئيسي
 // ============================================================
 
-// ضغط ارتفاع بطاقات النتائج: المحتوى فقط بدون فراغات زائدة
 const compactResultCardStyle = document.createElement('style');
 compactResultCardStyle.id = 'compact-result-card-style';
 compactResultCardStyle.textContent = `
@@ -16,11 +15,10 @@ compactResultCardStyle.textContent = `
 `;
 document.head.appendChild(compactResultCardStyle);
 
-// يتم تحميل البيانات تلقائياً عند بدء التشغيل
 loadData();
 
 // ============================================================
-// ترقيم النتائج: عرض 10 نتائج إضافية مع زر ثابت أعلى وأسفل
+// ترقيم النتائج: زر ثابت أعلى الشاشة وأسفلها لعرض 10 نتائج أخرى
 // ============================================================
 (() => {
     const PAGE_SIZE = 10;
@@ -31,14 +29,23 @@ loadData();
         const style = document.createElement('style');
         style.id = 'results-pagination-styles';
         style.textContent = `
-.results-pagination-bar{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;width:100%;padding:10px 0;margin:4px 0 10px;position:sticky;top:76px;z-index:30;}
-.results-pagination-bar.bottom{position:sticky;top:auto;bottom:10px;margin:12px 0 4px;}
+.results-pagination-bar{position:fixed;left:50%;transform:translateX(-50%);z-index:99999;display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);padding:8px 10px;margin:0;border-radius:16px;background:rgba(255,255,255,.96);border:1px solid #e2e8f0;box-shadow:0 10px 30px rgba(15,23,42,.16);backdrop-filter:blur(10px);direction:rtl;}
+.results-pagination-bar.top{top:78px;}
+.results-pagination-bar.bottom{bottom:14px;}
 .results-next-btn{min-height:44px;padding:10px 20px;border:1px solid #c7d2fe;border-radius:999px;background:linear-gradient(135deg,#6366f1,#ec4899);color:#fff;font:700 14px "Segoe UI",Tahoma,Arial,sans-serif;cursor:pointer;box-shadow:0 7px 20px rgba(99,102,241,.22);transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;}
 .results-next-btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(99,102,241,.28);}
+.results-next-btn:active{transform:translateY(0);}
 .results-next-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
-.results-pagination-info{font-size:12px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:7px 11px;}
+.results-pagination-info{font-size:12px;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:7px 11px;white-space:nowrap;}
+body.dark-mode .results-pagination-bar{background:rgba(15,23,42,.96);border-color:#334155;}
 body.dark-mode .results-pagination-info{background:#172033;border-color:#334155;color:#94a3b8;}
-@media(max-width:600px){.results-pagination-bar{top:58px;padding:7px 4px}.results-pagination-bar.bottom{bottom:6px}.results-next-btn{width:min(100%,330px);font-size:13px;padding:10px 14px}.results-pagination-info{font-size:11px}}
+@media(max-width:600px){
+.results-pagination-bar{width:calc(100vw - 16px);max-width:none;padding:7px 8px;border-radius:14px;gap:6px;}
+.results-pagination-bar.top{top:62px;}
+.results-pagination-bar.bottom{bottom:8px;}
+.results-next-btn{flex:1;min-height:42px;font-size:13px;padding:9px 12px;}
+.results-pagination-info{font-size:10px;padding:6px 8px;}
+}
 `;
         document.head.appendChild(style);
     }
@@ -84,20 +91,28 @@ body.dark-mode .results-pagination-info{background:#172033;border-color:#334155;
         };
     }
 
+    function removePaginationButtons(){
+        document.querySelectorAll('.results-pagination-bar').forEach(el=>el.remove());
+    }
+
     function addPaginationButtons(total,cursor){
         ensurePaginationStyles();
-        document.querySelectorAll('.results-pagination-bar').forEach(el=>el.remove());
+        removePaginationButtons();
         if(!total || cursor>=total) return;
-        const bar=extra=>{
+
+        const createBar=(position)=>{
             const el=document.createElement('div');
-            el.className=`results-pagination-bar ${extra}`;
+            el.className=`results-pagination-bar ${position}`;
+            el.setAttribute('role','navigation');
+            el.setAttribute('aria-label','عرض النتائج التالية');
             el.innerHTML=`<button type="button" class="results-next-btn">⬇️ عرض الـ10 نتائج التالية</button><span class="results-pagination-info">تم عرض ${Math.min(cursor,total)} من ${total} • متبقٍ ${total-cursor}</span>`;
             el.querySelector('button').addEventListener('click',loadNextPage);
-            return el;
+            document.body.appendChild(el);
         };
-        const top=bar('top'),bottom=bar('bottom');
-        resultsDiv.insertBefore(top,resultsDiv.firstChild);
-        resultsDiv.appendChild(bottom);
+
+        // الزران خارج #results حتى لا يختفيا عندما تقوم renderResults بإعادة بناء النتائج.
+        createBar('top');
+        createBar('bottom');
     }
 
     async function loadNextPage(){
@@ -118,12 +133,13 @@ body.dark-mode .results-pagination-info{background:#172033;border-color:#334155;
     }
 
     async function resetPagination(){
+        removePaginationButtons();
         const query=typeof searchInput!=='undefined'&&searchInput?searchInput.value.trim():'';
         state={query,cursor:0,items:[],initialized:false,rendering:false};
         try{
             const groups=await collectAllMatches(query);
             state.items=flatten(groups);
-            // البحث الحالي يعرض 20 عنصرًا (10 دول + 10 مدن)، والبحث الفارغ يعرض 10 مدن.
+            // البحث الحالي يعرض 20 عنصرًا عند وجود استعلام (10 دول + 10 مدن)، والفارغ يعرض 10 مدن.
             const initial=query?Math.min(PAGE_SIZE*2,state.items.length):Math.min(PAGE_SIZE,state.items.length);
             state.cursor=initial;
             state.initialized=true;
@@ -149,6 +165,7 @@ console.log('   - output/cities.json (اختياري)');
 console.log('   - output/by_country/*.json (لكل دولة)');
 console.log('📖 تم إضافة البحث المتقدم في ويكيبيديا العربية مع دعم ترقيم الصفحات');
 console.log('📊 عرض النتائج على دفعات: 10 نتائج إضافية');
+console.log('📌 أزرار التالي ثابتة أعلى وأسفل الشاشة');
 console.log('📋 تم ترتيب الروابط بشكل منطقي حسب الفئات المختلفة');
 console.log('🛡️ الحماية الفعلية: تهريب HTML (XSS) + noopener/noreferrer + anti-clickjacking');
 console.log('🚀 ابدأ البحث الآن!');
