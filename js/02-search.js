@@ -163,38 +163,31 @@ function prependTextQueryCard(query) {
     const text = String(query || '').trim();
     if (!text) return;
     const index = allLinksData.length;
-    const linkCount = typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48;
     allLinksData.push({ query: text, links: null, type: 'بحث نصي', name: text });
 
     const card = `
-        <div class="card text-query-card" style="background:white;border-radius:12px;padding:0;margin-bottom:0;box-shadow:none;">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0;flex-wrap:wrap;">
+        <div class="card text-query-card" style="background:white;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
                 <div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(text)}</span>
                 <span class="country-name" style="color:#64748b;margin-right:8px;">📝 بحث نصي</span></div>
-                <span style="font-size:12px;color:#94a3b8;">${linkCount} رابط</span>
             </div>
-            <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;">
+            <div class="btn-group" style="display:flex;gap:8px;flex-wrap:wrap;">
                 <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}">📍 خرائط</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}">🔍 Google</a>
                 <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}">▶ YouTube</a>
-                <button class="btn btn-secondary" onclick="toggleLinks(${index})">📋 عرض الروابط (${linkCount})</button>
+                <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" href="${escapeHtml(getCategoryUrl(text))}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
                 <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button">⭐ المفضلة</button>
             </div>
-            <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:0;padding:0;">
+            <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;padding:0;">
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}">🌍 السياحة</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق ' + text)}">🏨 فنادق</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم ' + text)}">🍽️ مطاعم</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('صور ' + text)}">📷 صور</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}">🎬 فيديو</a>
             </div>
-            <div class="all-links-container" id="links-${index}" style="display:none;margin:0;padding:10px;background:#f8fafc;border-radius:8px;">
-                <div class="links-stats"><span>📌 ${linkCount} رابط بحث متقدم</span><span>للبحث عن: ${escapeHtml(text)}</span></div>
-                <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;"></div>
-            </div>
         </div>`;
     resultsDiv.insertAdjacentHTML('afterbegin', card);
 }
-
 // مسار احتياطي إذا استُخدمت هذه الدالة مباشرة من ملفات أخرى.
 async function handleSearch() {
     clearTimeout(searchTimeout);
