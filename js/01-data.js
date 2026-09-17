@@ -24,16 +24,35 @@ async function loadData() {
         statusDiv.textContent = '⏳ جاري تحميل الدول...';
         statusDiv.style.color = '#f59e0b';
 
-        const countriesRes = await fetch('output/countries.json?v=20260918-data1', { cache: 'no-store' });
+        // استخدم مسارًا مبنيًا على عنوان الصفحة حتى يعمل الموقع أيضًا داخل GitHub Pages /tuursim53/
+        const dataUrl = new URL('output/countries.json', document.baseURI).href;
+        const countriesRes = await fetch(dataUrl + '?v=20260918-data2', { cache: 'no-store' });
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
-        countries = await countriesRes.json();
+        const rawCountries = await countriesRes.text();
+        try {
+            countries = JSON.parse(rawCountries);
+        } catch (parseError) {
+            throw new Error('countries_invalid_json');
+        }
+        if (!Array.isArray(countries)) throw new Error('countries_not_array');
 
         const countryCollator = new Intl.Collator('ar', { sensitivity: 'base', numeric: false });
         countries.sort((a, b) => countryCollator.compare(
             String(a.name_ar || a.name || ''),
             String(b.name_ar || b.name || '')
         ));
-        populateCountrySelect();
+        if (typeof populateCountrySelect === 'function') populateCountrySelect();
+        else {
+            countrySelect.innerHTML = '<option value="">🌐 كل الدول</option>';
+            countries.forEach(c => {
+                countryMap[c.code] = c.name_ar || c.name || c.code;
+                countryNames[c.code] = c.name || c.code;
+                const option = document.createElement('option');
+                option.value = c.code;
+                option.textContent = c.name_ar || c.name || c.code;
+                countrySelect.appendChild(option);
+            });
+        }
 
         // مهم: لا نحمّل output/cities.json عند بدء التشغيل.
         // الملف الحالي حجمه ~40MB، وقراءته ثم JSON.parse ثم بناء _searchKey
