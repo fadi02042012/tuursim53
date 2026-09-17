@@ -1,5 +1,6 @@
 ﻿// ============================================================
 // 03-links.js - روابط YouTube والبحث المتقدم (51 رابط)
+// Lazy rendering: الروابط لا تُدرج في HTML إلا عند فتح البطاقة
 // ============================================================
 const searches = [
     { name: "📺 البحث العادي", base: "https://www.youtube.com/results?search_query=", suffix: "" },
@@ -56,25 +57,65 @@ const searches = [
 ];
 
 function generateAllLinks(query) {
-    const encodedQuery = encodeURIComponent(query);
-    return searches.map((search, index) => ({
+    const encodedQuery = encodeURIComponent(String(query || ""));
+    const links = searches.map((search, index) => ({
         id: index + 1,
         name: search.name,
         url: search.base + encodedQuery + search.suffix
     }));
+
+    // 04-ui.js و02-search.js يستعملان links.map() لبناء HTML.
+    // نعطّل ذلك البناء المسبق فقط، مع إبقاء البيانات كاملة في __lazyItems.
+    const lazyLinks = new Proxy(links, {
+        get(target, prop, receiver) {
+            if (prop === 'map') {
+                return () => [];
+            }
+            if (prop === '__lazyItems') {
+                return target;
+            }
+            return Reflect.get(target, prop, receiver);
+        }
+    });
+
+    return lazyLinks;
+}
+
+function getRealLinks(links) {
+    return links && Array.isArray(links.__lazyItems)
+        ? links.__lazyItems
+        : (Array.isArray(links) ? links : []);
+}
+
+function renderLinksHTML(links) {
+    return getRealLinks(links).map(link => `
+        <a class="link-item" target="_blank" rel="noopener noreferrer"
+           href="${link.url}"
+           style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
+            <span class="link-number" style="color:#94a3b8;">#${link.id}</span>
+            <span class="link-name" style="margin-right:4px;">${escapeHtml(link.name)}</span>
+        </a>
+    `).join('');
 }
 
 window.toggleLinks = function(index) {
     const container = document.getElementById(`links-${index}`);
     if (!container) return;
 
+    const data = allLinksData[index];
+    if (!data) return;
+
     const card = container.closest('.card');
     const linksGrid = container.querySelector('.links-grid');
     const willExpand = container.style.display === 'none';
 
+    if (willExpand && linksGrid && !container.dataset.rendered) {
+        linksGrid.innerHTML = renderLinksHTML(data.links);
+        container.dataset.rendered = 'true';
+    }
+
     if (card) {
         if (willExpand) {
-            // السماح للبطاقة بالتمدد بالكامل عند فتح الروابط.
             card.style.setProperty('height', 'auto', 'important');
             card.style.setProperty('min-height', '0', 'important');
             card.style.setProperty('overflow', 'visible', 'important');
@@ -89,7 +130,6 @@ window.toggleLinks = function(index) {
 
     if (linksGrid) {
         if (willExpand) {
-            // الروابط نفسها: 5 أعمدة، مع تمدد كامل وبدون تمرير مخفي.
             linksGrid.style.setProperty('grid-template-columns', 'repeat(5, minmax(0, 1fr))', 'important');
             linksGrid.style.setProperty('max-height', 'none', 'important');
             linksGrid.style.setProperty('overflow', 'visible', 'important');
@@ -106,12 +146,13 @@ window.toggleLinks = function(index) {
 
     const btn = document.querySelector(`[onclick="toggleLinks(${index})"]`);
     if (btn) {
-        const linksCount = allLinksData[index]?.links.length || 0;
-        btn.textContent = willExpand ?
-            `📋 إخفاء الروابط (${linksCount})` :
-            `📋 عرض الروابط (${linksCount})`;
+        const linksCount = getRealLinks(data.links).length;
+        btn.textContent = willExpand
+            ? `📋 إخفاء الروابط (${linksCount})`
+            : `📋 عرض الروابط (${linksCount})`;
     }
 };
 
 console.log('✅ 03-links.js تم تحميله بنجاح');
 console.log(`📊 عدد روابط YouTube: ${searches.length}`);
+console.log('⚡ Lazy Loading للروابط مفعل');
