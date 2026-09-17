@@ -19,24 +19,25 @@ document.head.appendChild(compactResultCardStyle);
 loadData();
 
 // ============================================================
-// ترقيم النتائج الموحد - زر ثابت أعلى وأسفل الشاشة
+// ترقيم النتائج الموحد - زران ثابتان دائمًا أعلى وأسفل الشاشة
 // ============================================================
 (() => {
     const PAGE_SIZE = 10;
     let state = { query:'', cursor:0, items:[], rendering:false };
     let internalRender = false;
     let refreshTimer = null;
+    let installed = false;
 
     function ensureStyles() {
         if (document.getElementById('results-pagination-styles')) return;
         const style = document.createElement('style');
         style.id = 'results-pagination-styles';
         style.textContent = `
-.results-pagination-bar{position:fixed!important;left:50%!important;transform:translateX(-50%)!important;z-index:2147483647!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;width:min(94vw,560px)!important;padding:8px 10px!important;margin:0!important;border-radius:16px!important;background:#fff!important;border:2px solid #6366f1!important;box-shadow:0 10px 35px rgba(15,23,42,.25)!important;direction:rtl!important;}
+.results-pagination-bar{position:fixed!important;left:50%!important;transform:translateX(-50%)!important;z-index:2147483647!important;display:flex!important;justify-content:center!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;width:min(94vw,560px)!important;padding:8px 10px!important;margin:0!important;border-radius:16px!important;background:#fff!important;border:2px solid #6366f1!important;box-shadow:0 10px 35px rgba(15,23,42,.25)!important;direction:rtl!important;visibility:visible!important;opacity:1!important;}
 .results-pagination-bar.top{top:76px!important;}
 .results-pagination-bar.bottom{bottom:12px!important;}
 .results-next-btn{min-height:46px!important;padding:10px 24px!important;border:0!important;border-radius:999px!important;background:linear-gradient(135deg,#4f46e5,#db2777)!important;color:#fff!important;font:800 15px "Segoe UI",Tahoma,Arial,sans-serif!important;cursor:pointer!important;box-shadow:0 6px 18px rgba(79,70,229,.35)!important;white-space:nowrap!important;}
-.results-next-btn:hover{filter:brightness(1.06)!important;}
+.results-next-btn:disabled{background:#94a3b8!important;cursor:not-allowed!important;box-shadow:none!important;opacity:.9!important;}
 .results-pagination-info{font-size:12px!important;color:#334155!important;background:#f1f5f9!important;border:1px solid #cbd5e1!important;border-radius:999px!important;padding:7px 11px!important;white-space:nowrap!important;font-weight:700!important;}
 body.dark-mode .results-pagination-bar{background:#0f172a!important;border-color:#818cf8!important;}
 body.dark-mode .results-pagination-info{background:#1e293b!important;border-color:#475569!important;color:#e2e8f0!important;}
@@ -78,12 +79,14 @@ body.dark-mode .results-pagination-info{background:#1e293b!important;border-colo
     function addButtons(total,cursor){
         ensureStyles();
         removeButtons();
-        if(!total || cursor>=total) return;
+        const remaining=Math.max(0,total-cursor);
         const make=position=>{
             const bar=document.createElement('div');
             bar.className=`results-pagination-bar ${position}`;
-            bar.innerHTML=`<button type="button" class="results-next-btn">⬇️ التالي — عرض 10 نتائج أخرى</button><span class="results-pagination-info">تم عرض ${Math.min(cursor,total)} من ${total} • المتبقي ${total-cursor}</span>`;
-            bar.querySelector('.results-next-btn').addEventListener('click',loadNextPage);
+            const disabled=remaining===0?' disabled':'';
+            bar.innerHTML=`<button type="button" class="results-next-btn"${disabled}>⬇️ التالي — عرض 10 نتائج أخرى</button><span class="results-pagination-info">${total ? `تم عرض ${Math.min(cursor,total)} من ${total} • المتبقي ${remaining}` : 'جاري تجهيز النتائج…'}</span>`;
+            const button=bar.querySelector('.results-next-btn');
+            button.addEventListener('click',loadNextPage);
             document.body.appendChild(bar);
         };
         make('top');
@@ -102,16 +105,20 @@ body.dark-mode .results-pagination-info{background:#1e293b!important;border-colo
     }
 
     async function loadNextPage(){
-        if(state.rendering || state.cursor>=state.items.length) return;
+        if(state.rendering) return;
+        if(!state.items.length){ await refreshPagination(); return; }
+        if(state.cursor>=state.items.length){ return; }
         state.rendering=true;
         const nextCursor=Math.min(state.cursor+PAGE_SIZE,state.items.length);
         try{
             internalRender=true;
             renderResults(split(state.items.slice(0,nextCursor)));
-            if(state.query && (state.items.length>0) && typeof prependTextQueryCard==='function') prependTextQueryCard(state.query);
-        } finally {
-            internalRender=false;
+            if(state.query && typeof prependTextQueryCard==='function') prependTextQueryCard(state.query);
             state.cursor=nextCursor;
+        }catch(error){
+            console.error('خطأ في عرض الدفعة التالية:',error);
+        }finally{
+            internalRender=false;
             state.rendering=false;
         }
         addButtons(state.items.length,state.cursor);
@@ -121,24 +128,38 @@ body.dark-mode .results-pagination-info{background:#1e293b!important;border-colo
         if(typeof countSpan!=='undefined'&&countSpan) countSpan.textContent=String(state.cursor+(state.query?1:0));
     }
 
-    // نعتمد على renderResults نفسها حتى يعمل الزران مع زر البحث وEnter وتغيير الدولة.
-    const originalRenderResults=window.renderResults;
-    if(typeof originalRenderResults==='function'){
+    function installRenderHook(){
+        if(installed || typeof window.renderResults!=='function') return false;
+        installed=true;
+        const originalRenderResults=window.renderResults;
         window.renderResults=function(groups){
             const result=originalRenderResults(groups);
             if(!internalRender){
                 clearTimeout(refreshTimer);
-                refreshTimer=setTimeout(()=>refreshPagination(),50);
+                refreshTimer=setTimeout(()=>refreshPagination(),120);
             }
             return result;
         };
+        return true;
     }
 
     window.refreshResultsPagination=refreshPagination;
     window.clearResultsPagination=removeButtons;
+    window.loadNextResultsPage=loadNextPage;
+
     ensureStyles();
+    // أظهر الزرين فورًا حتى لا يختفيا قبل اكتمال البيانات.
+    addButtons(0,0);
+
+    // تثبيت الربط بعد تحميل بقية الملفات/البيانات، مع إعادة المزامنة عدة مرات.
+    installRenderHook();
+    [0,200,600,1200,2500,5000].forEach(delay=>setTimeout(async()=>{
+        installRenderHook();
+        try{await refreshPagination();}catch(error){console.warn('تعذر تحديث ترقيم النتائج:',error);}
+    },delay));
+
+    console.log('✅ أزرار التالي ثابتة أعلى وأسفل الشاشة — 10 نتائج إضافية');
 })();
 
 console.log('✅ تم تحميل التطبيق بنجاح');
 console.log(`📊 عدد روابط YouTube: ${searches.length}`);
-console.log('📌 ترقيم موحد: زر ثابت أعلى وأسفل الشاشة، 10 نتائج إضافية في كل ضغطة');
