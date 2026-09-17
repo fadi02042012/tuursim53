@@ -1,6 +1,5 @@
 // ============================================================
 // 07-enhancements.js - وظائف UX الإضافية
-// هذه الطبقة مستقلة عن منطق البحث ومصادر البيانات.
 // ============================================================
 
 (() => {
@@ -18,16 +17,47 @@
     };
 
     const writeFavorites = (items) => {
-        localStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
+        try {
+            localStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
+            return true;
+        } catch (error) {
+            console.warn('تعذر حفظ المفضلة:', error);
+            return false;
+        }
     };
 
-    // مفتاح ثابت للمفضلة يمنع اختلاف الحالة بين نتائج البحث النصي وويكيبيديا.
     const favoriteKey = (item) => {
         const type = item?.type || '';
         const name = item?.name || '';
         const query = item?.query || name;
         return `${type}:${String(name).trim().toLowerCase()}:${String(query).trim().toLowerCase()}`;
     };
+
+    // Toast مستقل وآمن حتى لو لم تكن دالة showToast موجودة في بقية التطبيق.
+    function notifyFavorite(message) {
+        if (typeof window.showToast === 'function') {
+            try {
+                window.showToast(message);
+                return;
+            } catch (error) {
+                console.warn('تعذر عرض التنبيه القديم:', error);
+            }
+        }
+
+        const old = document.querySelector('.favorite-toast-fallback');
+        if (old) old.remove();
+        const toast = document.createElement('div');
+        toast.className = 'favorite-toast-fallback';
+        toast.textContent = message;
+        toast.style.cssText = [
+            'position:fixed', 'bottom:24px', 'left:50%', 'transform:translateX(-50%)',
+            'z-index:99999', 'padding:10px 18px', 'border-radius:10px',
+            'background:#0f172a', 'color:#fff', 'font-size:14px',
+            'box-shadow:0 8px 24px rgba(0,0,0,.2)', 'pointer-events:none'
+        ].join(';');
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1800);
+    }
 
     function applyTheme(theme) {
         const dark = theme === 'dark';
@@ -129,7 +159,6 @@
             return;
         }
 
-        // نتائج المدن والدول تُعرض بالطريقة المعتادة.
         const favoriteCities = favorites
             .filter(item => item.type === 'مدينة' || item.type === 'city' || !item.type)
             .map(item => {
@@ -146,7 +175,6 @@
                     || { name, name_ar: '' };
             });
 
-        // نتائج ويكيبيديا محفوظة أيضًا؛ نعيد البحث عنها وعرضها في نفس بطاقة ويكيبيديا.
         const favoriteWiki = favorites.filter(item => item.type === 'ويكيبيديا' || item.type === 'wikipedia');
 
         renderResults({ cities: favoriteCities, countries: favoriteCountries });
@@ -174,7 +202,6 @@
 
     function updateFavoriteButtons() {
         const keys = new Set(readFavorites().map(favoriteKey));
-
         document.querySelectorAll('.favorite-toggle').forEach((button) => {
             const index = Number(button.dataset.favoriteIndex);
             const item = allLinksData?.[index];
@@ -187,20 +214,18 @@
             button.setAttribute('aria-label', active
                 ? `إزالة ${item.name || item.query || ''} من المفضلة`
                 : `إضافة ${item.name || item.query || ''} إلى المفضلة`);
-
-            // حالة مرئية واضحة حتى لو لم يوجد CSS خاص بالفئة.
             button.style.background = active ? '#fef3c7' : '#f1f5f9';
             button.style.color = active ? '#92400e' : '#334155';
             button.style.fontWeight = active ? '700' : '400';
         });
     }
 
-    window.toggleFavorite = function toggleFavorite(index) {
+    function doToggleFavorite(index) {
         const numericIndex = Number(index);
         const item = allLinksData?.[numericIndex];
         if (!item) {
             console.warn('تعذر تحديد النتيجة لإضافتها إلى المفضلة:', index);
-            return;
+            return false;
         }
 
         const favorites = readFavorites();
@@ -209,20 +234,37 @@
 
         if (existing >= 0) {
             favorites.splice(existing, 1);
-            showToast('تمت إزالة العنصر من المفضلة');
+            if (!writeFavorites(favorites)) return false;
+            notifyFavorite('تمت إزالة العنصر من المفضلة');
         } else {
             favorites.push({
                 query: item.query || item.name || '',
                 name: item.name || item.query || '',
                 type: item.type || 'مدينة'
             });
-            showToast('⭐ تمت إضافة العنصر إلى المفضلة');
+            if (!writeFavorites(favorites)) return false;
+            notifyFavorite('⭐ تمت إضافة العنصر إلى المفضلة');
         }
 
-        writeFavorites(favorites);
         updateFavoriteButtons();
         updateSummaryStats();
+        return true;
+    }
+
+    // الدالة العامة تبقى متاحة للتوافق مع الأزرار القديمة ذات onclick.
+    window.toggleFavorite = function toggleFavorite(index) {
+        doToggleFavorite(index);
     };
+
+    // التقاط النقر قبل onclick القديم يمنع تنفيذ الحدث مرتين، ويضمن عمل المفضلة
+    // حتى لو كانت بطاقة النتيجة أُعيد رسمها ديناميكيًا أو اختلف ترتيب السكربتات.
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest?.('.favorite-toggle');
+        if (!button) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        doToggleFavorite(button.dataset.favoriteIndex);
+    }, true);
 
     // ============================================================
     // تحسينات البحث وإمكانية الوصول
