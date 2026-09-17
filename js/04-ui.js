@@ -68,8 +68,7 @@ function renderEmptySearch(){
     countSpan.textContent='0';
     updateStatus('ℹ️ لا توجد نتائج محلية؛ ويكيبيديا متاحة بشكل منفصل.','#64748b');
 }
-function renderWikipediaResults(results,query,isMore=false){if(!results?.length)return;let html='';if(!isMore)html+=buildAdvancedCategoryPanel();results.forEach(item=>{const index=allLinksData.length;allLinksData.push({query:item.title,links:null,type:'ويكيبيديا',name:item.title});const wc=item.wordcount?`📝 ${Number(item.wordcount).toLocaleString()} كلمة`:'';html+=`<div class="card" style="${cardStyle()}"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:17px;font-weight:bold;color:#1e293b;">${escapeHtml(item.title)}</span><span style="color:#64748b;margin-right:7px;font-size:13px;">📖 ويكيبيديا</span>${wc?`<span style="color:#94a3b8;font-size:11px;margin-right:5px;">${wc}</span>`:''}</div></div><p style="margin:0 0 9px;color:#64748b;font-size:13px;line-height:1.5;">${escapeHtml(item.snippet||'')}</p>${buttonsHtml(item.title,index,item.title,item.url)}</div>`;});if(!isMore)html+=`<div style="text-align:center;margin:14px 0;"><button type="button" onclick="loadMoreWikipedia()" style="padding:10px 24px;background:#3b82f6;color:white;border:0;border-radius:8px;cursor:pointer;">📚 تحميل 10 نتائج إضافية</button></div>`;resultsDiv.insertAdjacentHTML('beforeend',html);}
-window.toggleLinks=function(index){
+function(index){
     const data=allLinksData[Number(index)];
     const container=document.getElementById('links-'+Number(index));
     if(!data||!container)return;
