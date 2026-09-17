@@ -21,7 +21,13 @@
         localStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
     };
 
-    const favoriteKey = (item) => `${item.type || ''}:${item.query || item.name || ''}`;
+    // مفتاح ثابت للمفضلة يمنع اختلاف الحالة بين نتائج البحث النصي وويكيبيديا.
+    const favoriteKey = (item) => {
+        const type = item?.type || '';
+        const name = item?.name || '';
+        const query = item?.query || name;
+        return `${type}:${String(name).trim().toLowerCase()}:${String(query).trim().toLowerCase()}`;
+    };
 
     function applyTheme(theme) {
         const dark = theme === 'dark';
@@ -123,6 +129,7 @@
             return;
         }
 
+        // نتائج المدن والدول تُعرض بالطريقة المعتادة.
         const favoriteCities = favorites
             .filter(item => item.type === 'مدينة' || item.type === 'city' || !item.type)
             .map(item => {
@@ -139,35 +146,79 @@
                     || { name, name_ar: '' };
             });
 
+        // نتائج ويكيبيديا محفوظة أيضًا؛ نعيد البحث عنها وعرضها في نفس بطاقة ويكيبيديا.
+        const favoriteWiki = favorites.filter(item => item.type === 'ويكيبيديا' || item.type === 'wikipedia');
+
         renderResults({ cities: favoriteCities, countries: favoriteCountries });
-        countSpan.textContent = String(favoriteCities.length + favoriteCountries.length);
+
+        if (favoriteWiki.length > 0) {
+            const wikiQueries = favoriteWiki.map(item => item.query || item.name).filter(Boolean);
+            try {
+                const wikiResults = [];
+                for (const wikiQuery of wikiQueries) {
+                    const matches = await searchWikipediaMultilingual(wikiQuery, 1);
+                    if (matches.length > 0) wikiResults.push(matches[0]);
+                }
+                if (wikiResults.length > 0) {
+                    renderWikipediaResults(wikiResults, wikiResults.map(item => item.title).join(' '), false);
+                }
+            } catch (error) {
+                console.warn('تعذر تحميل بعض مفضلة ويكيبيديا:', error);
+            }
+        }
+
+        countSpan.textContent = String(favoriteCities.length + favoriteCountries.length + favoriteWiki.length);
         updateStatus(`⭐ تم عرض ${favorites.length} من المفضلة`, '#f59e0b');
+        updateFavoriteButtons();
     };
 
     function updateFavoriteButtons() {
         const keys = new Set(readFavorites().map(favoriteKey));
+
         document.querySelectorAll('.favorite-toggle').forEach((button) => {
-            const item = allLinksData?.[Number(button.dataset.favoriteIndex)];
-            const active = item && keys.has(favoriteKey(item));
-            button.classList.toggle('is-favorite', Boolean(active));
-            const nextLabel = active ? '★ محفوظة' : '☆ مفضلة';
-            if (button.textContent !== nextLabel) button.textContent = nextLabel;
-            button.setAttribute('aria-pressed', String(Boolean(active)));
+            const index = Number(button.dataset.favoriteIndex);
+            const item = allLinksData?.[index];
+            if (!item) return;
+
+            const active = keys.has(favoriteKey(item));
+            button.classList.toggle('is-favorite', active);
+            button.textContent = active ? '★ محفوظة' : '☆ مفضلة';
+            button.setAttribute('aria-pressed', String(active));
+            button.setAttribute('aria-label', active
+                ? `إزالة ${item.name || item.query || ''} من المفضلة`
+                : `إضافة ${item.name || item.query || ''} إلى المفضلة`);
+
+            // حالة مرئية واضحة حتى لو لم يوجد CSS خاص بالفئة.
+            button.style.background = active ? '#fef3c7' : '#f1f5f9';
+            button.style.color = active ? '#92400e' : '#334155';
+            button.style.fontWeight = active ? '700' : '400';
         });
     }
 
     window.toggleFavorite = function toggleFavorite(index) {
-        const item = allLinksData?.[Number(index)];
-        if (!item) return;
+        const numericIndex = Number(index);
+        const item = allLinksData?.[numericIndex];
+        if (!item) {
+            console.warn('تعذر تحديد النتيجة لإضافتها إلى المفضلة:', index);
+            return;
+        }
+
         const favorites = readFavorites();
-        const existing = favorites.findIndex((favorite) => favoriteKey(favorite) === favoriteKey(item));
+        const key = favoriteKey(item);
+        const existing = favorites.findIndex((favorite) => favoriteKey(favorite) === key);
+
         if (existing >= 0) {
             favorites.splice(existing, 1);
             showToast('تمت إزالة العنصر من المفضلة');
         } else {
-            favorites.push({ query: item.query, name: item.name, type: item.type });
+            favorites.push({
+                query: item.query || item.name || '',
+                name: item.name || item.query || '',
+                type: item.type || 'مدينة'
+            });
             showToast('⭐ تمت إضافة العنصر إلى المفضلة');
         }
+
         writeFavorites(favorites);
         updateFavoriteButtons();
         updateSummaryStats();
@@ -180,7 +231,6 @@
     function setupSearchUX() {
         if (!searchInput) return;
 
-        // اختصار / للانتقال السريع إلى البحث، مع احترام حقول الإدخال الأخرى.
         document.addEventListener('keydown', (event) => {
             const target = event.target;
             const isTypingField = target instanceof HTMLInputElement ||
@@ -203,12 +253,10 @@
             }
         });
 
-        // إظهار حالة التركيز بوضوح لمستخدمي لوحة المفاتيح.
         searchInput.addEventListener('focus', () => {
             searchInput.setAttribute('aria-label', 'بحث عن مدينة أو دولة أو نص');
         });
 
-        // عند اختيار اقتراح عبر لوحة المفاتيح/الفأرة، انتقل بصريًا إلى النتائج.
         if (resultsDiv) {
             const observer = new MutationObserver(() => {
                 const firstResult = resultsDiv.querySelector('.card');
@@ -221,7 +269,6 @@
         }
     }
 
-    // زر "مسح" صغير يظهر فقط أثناء وجود نص في البحث.
     function setupClearSearchButton() {
         if (!searchInput || !searchInput.parentElement) return;
         const parent = searchInput.parentElement;
