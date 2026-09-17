@@ -24,7 +24,7 @@ async function loadData() {
         statusDiv.textContent = '⏳ جاري تحميل الدول...';
         statusDiv.style.color = '#f59e0b';
 
-        const countriesRes = await fetch('output/countries.json', { cache: 'force-cache' });
+        const countriesRes = await fetch('output/countries.json?v=20260918-data1', { cache: 'no-store' });
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
         countries = await countriesRes.json();
 
@@ -91,7 +91,7 @@ async function loadAllCountryCities() {
     let loaded = 0;
     for (const country of countries) {
         try {
-            const res = await fetch(`output/by_country/${country.code}.json`, { cache: 'force-cache' });
+            const res = await fetch(`output/by_country/${country.code}.json?v=20260918-data1`, { cache: 'no-store' });
             if (!res.ok) continue;
             const data = await res.json();
             const countryName = countryNames[country.code] || country.code;
@@ -115,7 +115,7 @@ async function loadAllCountryCities() {
 
 async function loadCountryCities(code) {
     if (!code) return [];
-    const res = await fetch(`output/by_country/${code}.json`, { cache: 'force-cache' });
+    const res = await fetch(`output/by_country/${code}.json?v=20260918-data1`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`country_http_${res.status}`);
     const data = await res.json();
     const countryName = countryMap[code] || code;
