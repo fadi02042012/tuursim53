@@ -194,16 +194,24 @@ async function handleSearch() {
     const query = searchInput.value.trim();
     if (!query) {
         const source = currentCountryCities.length ? currentCountryCities : allCities;
-        renderResults({ cities: source.slice(0, RESULTS_PER_BATCH), countries: [] });
+        if (source.length) {
+            renderResults({ cities: source.slice(0, RESULTS_PER_BATCH), countries: [] });
+        } else {
+            renderResults({ cities: [], countries: countries.slice(0, RESULTS_PER_BATCH) });
+        }
         return;
     }
 
     allLinksData = [];
     prependTextQueryCard(query);
     countSpan.textContent = '1';
-    updateStatus('🔎 بطاقة البحث جاهزة؛ جاري جلب النتائج المحلية...', '#f59e0b');
+    updateStatus('🔎 جاري تجهيز البيانات المحلية...', '#f59e0b');
 
     try {
+        // البحث العالمي يحتاج قاعدة المدن. لا نحمّلها عند فتح الصفحة حتى لا تتجمد الواجهة.
+        if (!currentCountryCities.length && !allCities.length) {
+            await loadGlobalCities();
+        }
         const results = performSearch(query);
         if (results.cities.length || results.countries.length) {
             renderResults(results);
