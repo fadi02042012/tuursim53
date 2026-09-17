@@ -37,7 +37,7 @@
                 <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}">📍 خرائط</a>
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}">🔍 Google</a>
                 <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}">▶ YouTube</a>
-                <button class="btn btn-secondary" type="button" onclick="toggleLinks(${index})">📋 الروابط (${linkCount})</button>
+
                 <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button">⭐ المفضلة</button>
             </div>
             <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px;padding:0;">
