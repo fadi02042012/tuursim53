@@ -57,8 +57,9 @@ async function loadData() {
         // مهم: لا نحمّل output/cities.json عند بدء التشغيل.
         // الملف الحالي حجمه ~40MB، وقراءته ثم JSON.parse ثم بناء _searchKey
         // دفعة واحدة كان يجمّد الخيط الرئيسي ويجعل إعادة التحميل تبدو معلّقة.
-        showReadyState();
-        statusDiv.textContent = '✅ جاهز — اختر دولة أو ابدأ البحث';
+        // اعرض الدول فورًا بدل ترك منطقة النتائج فارغة.
+        renderResults({ cities: [], countries: countries.slice(0, INITIAL_RESULTS_LIMIT) });
+        statusDiv.textContent = `✅ تم تحميل ${countries.length.toLocaleString()} دولة — اختر دولة أو ابدأ البحث`;
         statusDiv.style.color = '#10b981';
     } catch (error) {
         console.error('خطأ في تحميل البيانات:', error);
