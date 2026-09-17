@@ -39,5 +39,10 @@
 <script src="/js/app.js?v=20260918-fix3" defer></script>
 <script src="/js/06-search-integration.js?v=20260918-fix2" defer></script>
 <script>(function(){const btn=document.getElementById('nextResultsSideBtn');if(btn)btn.addEventListener('click',()=>{if(typeof window.loadNextResultsPage==='function')window.loadNextResultsPage();});})();</script>
+<script>
+if('serviceWorker' in navigator){
+ window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js?v=2').catch(console.warn));
+}
+</script>
 </body>
 </html>
