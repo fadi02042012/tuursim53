@@ -30,10 +30,10 @@
         const type = item?.type || '';
         const name = item?.name || '';
         const query = item?.query || name;
-        return `${type}:${String(name).trim().toLowerCase()}:${String(query).trim().toLowerCase()}`;
+        const url = item?.url || '';
+        return `${type}:${String(name).trim().toLowerCase()}:${String(query).trim().toLowerCase()}:${String(url).trim().toLowerCase()}`;
     };
 
-    // Toast مستقل وآمن حتى لو لم تكن دالة showToast موجودة في بقية التطبيق.
     function notifyFavorite(message) {
         if (typeof window.showToast === 'function') {
             try {
@@ -200,11 +200,47 @@
         updateFavoriteButtons();
     };
 
+    // يحل مشكلة نتائج ويكيبيديا/البحث النصي: هذه النتائج لا تكون موجودة
+    // داخل allLinksData، لذلك نستخرج بياناتها من نفس البطاقة التي ضغط عليها المستخدم.
+    function getFavoriteItemFromButton(button) {
+        if (!button) return null;
+
+        const index = Number(button.dataset.favoriteIndex);
+        if (Number.isInteger(index) && index >= 0 && Array.isArray(allLinksData) && allLinksData[index]) {
+            return allLinksData[index];
+        }
+
+        const card = button.closest('.card');
+        if (!card) return null;
+
+        const explicitQuery = button.dataset.favoriteQuery || '';
+        const explicitName = button.dataset.favoriteName || '';
+        const explicitType = button.dataset.favoriteType || '';
+        const wikiLink = card.querySelector('a[href*="wikipedia.org"]');
+        const titleElement = card.querySelector('.wiki-title, .wikipedia-title, [data-wiki-title], h3, h4, .card-title, .title');
+        const cityElement = card.querySelector('.city-name');
+        const countryElement = card.querySelector('.country-name');
+
+        let name = explicitName || titleElement?.textContent?.trim() || cityElement?.textContent?.trim() || '';
+        let query = explicitQuery || name;
+        let type = explicitType || (wikiLink ? 'ويكيبيديا' : (countryElement && !cityElement ? 'دولة' : 'مدينة'));
+        const url = wikiLink?.href || button.dataset.favoriteUrl || '';
+
+        // بعض بطاقات ويكيبيديا تضع العنوان داخل الرابط نفسه بدون class ثابت.
+        if (!name && wikiLink) {
+            name = wikiLink.textContent.trim() || wikiLink.getAttribute('title') || '';
+            query = name;
+        }
+
+        if (!name && !query && !url) return null;
+
+        return { name: name || query || url, query: query || name || url, type, url };
+    }
+
     function updateFavoriteButtons() {
         const keys = new Set(readFavorites().map(favoriteKey));
         document.querySelectorAll('.favorite-toggle').forEach((button) => {
-            const index = Number(button.dataset.favoriteIndex);
-            const item = allLinksData?.[index];
+            const item = getFavoriteItemFromButton(button);
             if (!item) return;
 
             const active = keys.has(favoriteKey(item));
@@ -220,11 +256,15 @@
         });
     }
 
-    function doToggleFavorite(index) {
-        const numericIndex = Number(index);
-        const item = allLinksData?.[numericIndex];
+    function doToggleFavorite(target) {
+        const button = typeof target === 'object' ? target : null;
+        const item = button ? getFavoriteItemFromButton(button) : (() => {
+            const numericIndex = Number(target);
+            return Array.isArray(allLinksData) ? allLinksData[numericIndex] : null;
+        })();
+
         if (!item) {
-            console.warn('تعذر تحديد النتيجة لإضافتها إلى المفضلة:', index);
+            console.warn('تعذر تحديد النتيجة لإضافتها إلى المفضلة:', target);
             return false;
         }
 
@@ -240,7 +280,8 @@
             favorites.push({
                 query: item.query || item.name || '',
                 name: item.name || item.query || '',
-                type: item.type || 'مدينة'
+                type: item.type || 'مدينة',
+                ...(item.url ? { url: item.url } : {})
             });
             if (!writeFavorites(favorites)) return false;
             notifyFavorite('⭐ تمت إضافة العنصر إلى المفضلة');
@@ -251,19 +292,18 @@
         return true;
     }
 
-    // الدالة العامة تبقى متاحة للتوافق مع الأزرار القديمة ذات onclick.
     window.toggleFavorite = function toggleFavorite(index) {
         doToggleFavorite(index);
     };
 
-    // التقاط النقر قبل onclick القديم يمنع تنفيذ الحدث مرتين، ويضمن عمل المفضلة
-    // حتى لو كانت بطاقة النتيجة أُعيد رسمها ديناميكيًا أو اختلف ترتيب السكربتات.
+    // التقاط النقر قبل onclick القديم يمنع التنفيذ المزدوج، ويعمل أيضًا
+    // مع البطاقات التي تُنشأ ديناميكيًا مثل نتائج ويكيبيديا والبحث النصي.
     document.addEventListener('click', (event) => {
         const button = event.target.closest?.('.favorite-toggle');
         if (!button) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        doToggleFavorite(button.dataset.favoriteIndex);
+        doToggleFavorite(button);
     }, true);
 
     // ============================================================
