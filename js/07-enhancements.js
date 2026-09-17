@@ -26,12 +26,12 @@
         }
     };
 
+    // هوية المفضلة تعتمد على العنصر نفسه، وليس على فهرس داخل allLinksData.
     const favoriteKey = (item) => {
-        const type = item?.type || '';
-        const name = item?.name || '';
-        const query = item?.query || name;
-        const url = item?.url || '';
-        return `${type}:${String(name).trim().toLowerCase()}:${String(query).trim().toLowerCase()}:${String(url).trim().toLowerCase()}`;
+        const type = String(item?.type || '').trim().toLowerCase();
+        const name = String(item?.name || item?.query || '').trim().toLowerCase();
+        const url = String(item?.url || '').trim().toLowerCase();
+        return `${type}:${name}:${url}`;
     };
 
     function notifyFavorite(message) {
@@ -102,25 +102,44 @@
 
     function getFavoriteItemFromButton(button) {
         if (!button) return null;
+
+        // مهم: نقرأ البطاقة التي ضغط عليها المستخدم أولاً.
+        // allLinksData يعاد بناؤها مع كل بحث/عرض نتائج، لذلك لا يجوز استخدام index
+        // كمصدر للحقيقة؛ وإلا قد يتم حفظ نتيجة مختلفة أو تحديد عدة نتائج معاً.
+        const card = button.closest('.card');
+        if (card) {
+            const explicitName = button.dataset.favoriteName || '';
+            const explicitQuery = button.dataset.favoriteQuery || '';
+            const explicitType = button.dataset.favoriteType || '';
+            const explicitUrl = button.dataset.favoriteUrl || '';
+            const wikiLink = card.querySelector('a.btn-wiki[href*="wikipedia.org"], a[href*="wikipedia.org"]');
+            const titleElement = card.querySelector('.wiki-title, .wikipedia-title, [data-wiki-title], h3, h4, .card-title, .title, .city-name');
+            const cityElement = card.querySelector('.city-name');
+            const countryElement = card.querySelector('.country-name');
+
+            let name = explicitName || titleElement?.textContent?.trim() || cityElement?.textContent?.trim() || '';
+            let query = explicitQuery || name;
+            let type = explicitType;
+            if (!type) {
+                if (wikiLink) type = 'ويكيبيديا';
+                else if (countryElement && !cityElement) type = 'دولة';
+                else if (card.classList.contains('text-query-card')) type = 'بحث نصي';
+                else type = 'مدينة';
+            }
+            const url = explicitUrl || wikiLink?.href || '';
+
+            if (!name && wikiLink) {
+                name = wikiLink.textContent.trim() || wikiLink.getAttribute('title') || '';
+                query = name;
+            }
+            if (!name && !query && !url) return null;
+            return { name: name || query || url, query: query || name || url, type, url };
+        }
+
+        // توافق مع زر قديم خارج البطاقات.
         const index = Number(button.dataset.favoriteIndex);
         if (Number.isInteger(index) && index >= 0 && Array.isArray(allLinksData) && allLinksData[index]) return allLinksData[index];
-
-        const card = button.closest('.card');
-        if (!card) return null;
-        const explicitQuery = button.dataset.favoriteQuery || '';
-        const explicitName = button.dataset.favoriteName || '';
-        const explicitType = button.dataset.favoriteType || '';
-        const wikiLink = card.querySelector('a[href*="wikipedia.org"]');
-        const titleElement = card.querySelector('.wiki-title, .wikipedia-title, [data-wiki-title], h3, h4, .card-title, .title');
-        const cityElement = card.querySelector('.city-name');
-        const countryElement = card.querySelector('.country-name');
-        let name = explicitName || titleElement?.textContent?.trim() || cityElement?.textContent?.trim() || '';
-        let query = explicitQuery || name;
-        const type = explicitType || (wikiLink ? 'ويكيبيديا' : (countryElement && !cityElement ? 'دولة' : 'مدينة'));
-        const url = wikiLink?.href || button.dataset.favoriteUrl || '';
-        if (!name && wikiLink) { name = wikiLink.textContent.trim() || wikiLink.getAttribute('title') || ''; query = name; }
-        if (!name && !query && !url) return null;
-        return { name: name || query || url, query: query || name || url, type, url };
+        return null;
     }
 
     function updateFavoriteButtons() {
@@ -148,7 +167,7 @@
     window.updateFavoriteButtons = updateFavoriteButtons;
 
     function doToggleFavorite(target) {
-        const button = typeof target === 'object' ? target : null;
+        const button = target && typeof target === 'object' ? target : null;
         const item = button ? getFavoriteItemFromButton(button) : (Array.isArray(allLinksData) ? allLinksData[Number(target)] : null);
         if (!item) return false;
 
@@ -171,6 +190,7 @@
 
     window.toggleFavorite = index => doToggleFavorite(index);
 
+    // حدث واحد فقط للمفضلة، ويقرأ البطاقة/الزر الذي تم الضغط عليه.
     document.addEventListener('click', event => {
         const button = event.target.closest?.('.favorite-toggle');
         if (!button) return;
