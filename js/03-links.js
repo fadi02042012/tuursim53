@@ -1,6 +1,6 @@
 ﻿// ============================================================
 // 03-links.js - روابط YouTube والبحث المتقدم (51 رابط)
-// Lazy rendering: الروابط لا تُنشأ إلا عند فتح البطاقة
+// Lazy rendering: لا يتم إنشاء عناصر <a> الثقيلة أثناء عرض النتائج
 // ============================================================
 const searches = [
     { name: "📺 البحث العادي", base: "https://www.youtube.com/results?search_query=", suffix: "" },
@@ -56,7 +56,7 @@ const searches = [
     { name: "🚁 Drone 4K", base: "https://www.youtube.com/results?search_query=DRONE+", suffix: "&sp=EgJwAQ%253D%253D" }
 ];
 
-function generateAllLinks(query) {
+function buildLinks(query) {
     const encodedQuery = encodeURIComponent(String(query || ""));
     return searches.map((search, index) => ({
         id: index + 1,
@@ -65,15 +65,34 @@ function generateAllLinks(query) {
     }));
 }
 
+function generateAllLinks(query) {
+    const realLinks = buildLinks(query);
+    // توافق مع 04-ui.js و02-search.js الحاليين: أثناء render يتم إرجاع
+    // قائمة خفيفة لا تحتوي على عناصر <a>. عند فتح البطاقة نستخدم realLinks.
+    return new Proxy(realLinks, {
+        get(target, prop, receiver) {
+            if (prop === 'map') {
+                return () => ({ join: () => '' });
+            }
+            if (prop === '__realLinks') {
+                return target;
+            }
+            return Reflect.get(target, prop, receiver);
+        }
+    });
+}
+
+function getRealLinks(links) {
+    if (links && Array.isArray(links.__realLinks)) return links.__realLinks;
+    return Array.isArray(links) ? links : [];
+}
+
 function renderLinksHTML(links) {
-    return links.map(link => `
-        <a class="link-item" target="_blank" rel="noopener noreferrer"
-           href="${link.url}"
-           style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
+    return getRealLinks(links).map(link => `
+        <a class="link-item" target="_blank" rel="noopener noreferrer" href="${link.url}" style="padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;">
             <span class="link-number" style="color:#94a3b8;">#${link.id}</span>
             <span class="link-name" style="margin-right:4px;">${escapeHtml(link.name)}</span>
-        </a>
-    `).join('');
+        </a>`).join('');
 }
 
 window.getAdvancedLinksCount = function() {
@@ -92,11 +111,8 @@ window.toggleLinks = function(index) {
     const willExpand = container.style.display === 'none';
 
     if (willExpand && linksGrid && !container.dataset.rendered) {
-        // توليد الروابط فقط عند أول فتح للبطاقة.
-        if (!Array.isArray(data.links)) {
-            data.links = generateAllLinks(data.query);
-        }
-        linksGrid.innerHTML = renderLinksHTML(data.links);
+        const links = getRealLinks(data.links);
+        linksGrid.innerHTML = renderLinksHTML(links);
         container.dataset.rendered = 'true';
     }
 
@@ -132,10 +148,8 @@ window.toggleLinks = function(index) {
 
     const btn = document.querySelector(`[onclick="toggleLinks(${index})"]`);
     if (btn) {
-        const linksCount = Array.isArray(data.links) ? data.links.length : searches.length;
-        btn.textContent = willExpand
-            ? `📋 إخفاء الروابط (${linksCount})`
-            : `📋 عرض الروابط (${linksCount})`;
+        const linksCount = getRealLinks(data.links).length || searches.length;
+        btn.textContent = willExpand ? `📋 إخفاء الروابط (${linksCount})` : `📋 عرض الروابط (${linksCount})`;
     }
 };
 
