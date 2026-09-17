@@ -2286,3 +2286,26 @@ body.dark-mode .msn-section-nav { background: #1f2937; border-color: #46556b; }
     margin: 18px 0 0;
     padding: 18px 22px;
 }
+
+
+/* Performance: تقليل تكلفة الصور والعناصر خارج نافذة العرض */
+img {
+  max-width: 100%;
+  height: auto;
+}
+img[loading="lazy"] {
+  content-visibility: auto;
+}
+.suggestion {
+  contain: layout style;
+}
+.suggestions-box, #suggestions {
+  min-height: 0;
+}
+@media (max-width: 768px) {
+  .suggestion {
+    min-height: 44px;
+    padding: 12px 14px !important;
+    font-size: 16px;
+  }
+}
