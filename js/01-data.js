@@ -82,7 +82,8 @@ async function loadGlobalCities() {
     globalCitiesLoading = (async () => {
         try {
             updateStatus('⏳ جاري تحميل قاعدة المدن العالمية... قد يستغرق ذلك وقتاً على الأجهزة الضعيفة.', '#f59e0b');
-            const citiesRes = await fetch('output/cities.json', { cache: 'force-cache' });
+            const citiesUrl = new URL('output/cities.json', document.baseURI).href;
+            const citiesRes = await fetch(citiesUrl + '?v=20260918-data2', { cache: 'no-store' });
             if (!citiesRes.ok) throw new Error(`cities_http_${citiesRes.status}`);
             const rawCities = await citiesRes.json();
 
@@ -111,7 +112,8 @@ async function loadAllCountryCities() {
     let loaded = 0;
     for (const country of countries) {
         try {
-            const res = await fetch(`output/by_country/${country.code}.json?v=20260918-data1`, { cache: 'no-store' });
+            const countryUrl = new URL(`output/by_country/${country.code}.json`, document.baseURI).href;
+            const res = await fetch(countryUrl + '?v=20260918-data2', { cache: 'no-store' });
             if (!res.ok) continue;
             const data = await res.json();
             const countryName = countryNames[country.code] || country.code;
@@ -135,7 +137,8 @@ async function loadAllCountryCities() {
 
 async function loadCountryCities(code) {
     if (!code) return [];
-    const res = await fetch(`output/by_country/${code}.json?v=20260918-data1`, { cache: 'no-store' });
+    const countryUrl = new URL(`output/by_country/${code}.json`, document.baseURI).href;
+    const res = await fetch(countryUrl + '?v=20260918-data2', { cache: 'no-store' });
     if (!res.ok) throw new Error(`country_http_${res.status}`);
     const data = await res.json();
     const countryName = countryMap[code] || code;
