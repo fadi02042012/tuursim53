@@ -12,6 +12,14 @@ async function loadData() {
         const countriesRes = await fetch('output/countries.json', { cache: 'force-cache' });
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
         countries = await countriesRes.json();
+
+        // ترتيب الدول أبجديًا حسب الاسم العربي قبل بناء القائمة المنسدلة.
+        // عند غياب الاسم العربي نستخدم الاسم الإنجليزي كبديل.
+        const countryCollator = new Intl.Collator('ar', { sensitivity: 'base', numeric: false });
+        countries.sort((a, b) => countryCollator.compare(
+            String(a.name_ar || a.name || ''),
+            String(b.name_ar || b.name || '')
+        ));
         populateCountrySelect();
 
         // اعرض الواجهة مباشرة بدل انتظار تحليل ملف المدن الكبير.
