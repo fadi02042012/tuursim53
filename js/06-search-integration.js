@@ -57,11 +57,11 @@
 
     // عرض الروابط الموجودة في الذاكرة فورًا. لا فتح نافذة جديدة ولا انتظار شبكة.
     window.toggleLinks = function (index) {
-        const data = allLinksData[index];
-        if (!data) return;
+        const safeIndex = Number(index);
+        const data = allLinksData[safeIndex];
+        const container = document.getElementById(`links-${safeIndex}`);
+        if (!data || !container) return;
         if (!Array.isArray(data.links) || !data.links.length) data.links = getAllAdvancedLinks(data.query);
-        const container = document.getElementById(`links-${index}`);
-        if (!container) return;
         const grid = container.querySelector('.links-grid');
         if (grid && !grid.children.length) grid.innerHTML = renderLinksGrid(data.links);
         container.style.display = container.style.display === 'none' ? 'block' : 'none';
