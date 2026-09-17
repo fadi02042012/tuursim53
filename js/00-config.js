@@ -33,4 +33,12 @@ const statusDiv = document.getElementById('status');
 const suggestionsDiv = document.getElementById('suggestions');
 const countSpan = document.getElementById('count');
 
+// طبقة شكل فقط: تحميل ثيم Pastel مستقل، دون لمس منطق البحث أو البيانات.
+(() => {
+    const theme = document.createElement('link');
+    theme.rel = 'stylesheet';
+    theme.href = 'assets/pastel-ui.css?v=20260917-1';
+    document.head.appendChild(theme);
+})();
+
 console.log('✅ 00-config.js تم تحميله بنجاح');
