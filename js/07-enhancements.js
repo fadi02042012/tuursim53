@@ -129,17 +129,22 @@
             const item = getFavoriteItemFromButton(button);
             if (!item) return;
             const active = keys.has(favoriteKey(item));
+            const nextText = active ? '★ محفوظة' : '☆ مفضلة';
+            const nextBackground = active ? '#fef3c7' : '#f1f5f9';
+            const nextColor = active ? '#92400e' : '#334155';
+            const nextWeight = active ? '700' : '400';
+
             button.classList.toggle('is-favorite', active);
-            button.textContent = active ? '★ محفوظة' : '☆ مفضلة';
+            if (button.textContent !== nextText) button.textContent = nextText;
             button.setAttribute('aria-pressed', String(active));
-            button.setAttribute('aria-label', active ? `إزالة ${item.name || item.query || ''} من المفضلة` : `إضافة ${item.name || item.query || ''} إلى المفضلة`);
-            button.style.background = active ? '#fef3c7' : '#f1f5f9';
-            button.style.color = active ? '#92400e' : '#334155';
-            button.style.fontWeight = active ? '700' : '400';
+            const nextLabel = active ? `إزالة ${item.name || item.query || ''} من المفضلة` : `إضافة ${item.name || item.query || ''} إلى المفضلة`;
+            if (button.getAttribute('aria-label') !== nextLabel) button.setAttribute('aria-label', nextLabel);
+            if (button.style.background !== nextBackground) button.style.background = nextBackground;
+            if (button.style.color !== nextColor) button.style.color = nextColor;
+            if (button.style.fontWeight !== nextWeight) button.style.fontWeight = nextWeight;
         });
     }
 
-    // متاح للملفات الأخرى بعد إعادة رسم نتائج ديناميكية.
     window.updateFavoriteButtons = updateFavoriteButtons;
 
     function doToggleFavorite(target) {
@@ -230,10 +235,6 @@
             }
         });
         searchInput.addEventListener('focus', () => searchInput.setAttribute('aria-label', 'بحث عن مدينة أو دولة أو نص'));
-        if (resultsDiv) {
-            const observer = new MutationObserver(() => updateFavoriteButtons());
-            observer.observe(resultsDiv, { childList: true, subtree: true });
-        }
     }
 
     try { applyTheme(localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'); } catch (_) {}
