@@ -26,7 +26,6 @@
         }
     };
 
-    // هوية المفضلة تعتمد على العنصر نفسه، وليس على فهرس داخل allLinksData.
     const favoriteKey = (item) => {
         const type = String(item?.type || '').trim().toLowerCase();
         const name = String(item?.name || item?.query || '').trim().toLowerCase();
@@ -102,10 +101,6 @@
 
     function getFavoriteItemFromButton(button) {
         if (!button) return null;
-
-        // مهم: نقرأ البطاقة التي ضغط عليها المستخدم أولاً.
-        // allLinksData يعاد بناؤها مع كل بحث/عرض نتائج، لذلك لا يجوز استخدام index
-        // كمصدر للحقيقة؛ وإلا قد يتم حفظ نتيجة مختلفة أو تحديد عدة نتائج معاً.
         const card = button.closest('.card');
         if (card) {
             const explicitName = button.dataset.favoriteName || '';
@@ -133,10 +128,32 @@
                 query = name;
             }
             if (!name && !query && !url) return null;
-            return { name: name || query || url, query: query || name || url, type, url };
+
+            const item = { name: name || query || url, query: query || name || url, type, url };
+
+            // نحفظ بيانات البطاقة نفسها حتى تظهر المفضلة لاحقًا بنفس العنصر،
+            // بدل البحث عن اسم مشابه داخل قاعدة المدن مرة أخرى.
+            if (type === 'مدينة') {
+                const countryText = countryElement?.textContent?.trim() || '';
+                const populationText = card.querySelector('[style*="font-size:13px"]')?.textContent?.replace(/[^0-9]/g, '') || '';
+                item.city = cityElement?.textContent?.trim() || name;
+                item.city_ar = '';
+                item.country = countryText;
+                item.country_ar = '';
+                if (populationText) item.population = populationText;
+            } else if (type === 'دولة') {
+                item.country = name;
+                item.country_ar = countryElement?.textContent?.trim() || '';
+                const capitalText = card.textContent?.match(/العاصمة:\s*([^\n]+)/)?.[1]?.trim();
+                if (capitalText) item.capital = capitalText;
+            } else if (type === 'ويكيبيديا') {
+                item.snippet = card.querySelector('p')?.textContent?.trim() || '';
+                const dateText = [...card.querySelectorAll('span')].map(el => el.textContent?.trim()).find(text => text?.startsWith('📅'));
+                if (dateText) item.timestamp = dateText.replace(/^📅\s*/, '');
+            }
+            return item;
         }
 
-        // توافق مع زر قديم خارج البطاقات.
         const index = Number(button.dataset.favoriteIndex);
         if (Number.isInteger(index) && index >= 0 && Array.isArray(allLinksData) && allLinksData[index]) return allLinksData[index];
         return null;
@@ -152,7 +169,6 @@
             const nextBackground = active ? '#fef3c7' : '#f1f5f9';
             const nextColor = active ? '#92400e' : '#334155';
             const nextWeight = active ? '700' : '400';
-
             button.classList.toggle('is-favorite', active);
             if (button.textContent !== nextText) button.textContent = nextText;
             button.setAttribute('aria-pressed', String(active));
@@ -179,7 +195,12 @@
             if (!writeFavorites(favorites)) return false;
             notifyFavorite('تمت إزالة العنصر من المفضلة');
         } else {
-            favorites.push({ query: item.query || item.name || '', name: item.name || item.query || '', type: item.type || 'مدينة', ...(item.url ? { url: item.url } : {}) });
+            favorites.push({
+                ...item,
+                query: item.query || item.name || '',
+                name: item.name || item.query || '',
+                type: item.type || 'مدينة'
+            });
             if (!writeFavorites(favorites)) return false;
             notifyFavorite('⭐ تمت إضافة العنصر إلى المفضلة');
         }
@@ -190,7 +211,6 @@
 
     window.toggleFavorite = index => doToggleFavorite(index);
 
-    // حدث واحد فقط للمفضلة، ويقرأ البطاقة/الزر الذي تم الضغط عليه.
     document.addEventListener('click', event => {
         const button = event.target.closest?.('.favorite-toggle');
         if (!button) return;
@@ -199,9 +219,13 @@
         doToggleFavorite(button);
     }, true);
 
-    window.showFavorites = async function showFavorites() {
+    window.showFavorites = function showFavorites() {
         closeEnhancementModal();
         const favorites = readFavorites();
+
+        resultsDiv.innerHTML = '';
+        allLinksData = [];
+
         if (!favorites.length) {
             resultsDiv.innerHTML = '<div class="card no-results"><div style="text-align:center;padding:40px;"><div style="font-size:48px;">⭐</div><h3>لا توجد عناصر مفضلة</h3><p style="color:#94a3b8;margin-top:8px;">استخدم زر المفضلة داخل أي نتيجة لحفظها هنا.</p></div></div>';
             countSpan.textContent = '0';
@@ -209,33 +233,48 @@
             return;
         }
 
-        const favoriteCities = favorites.filter(item => ['مدينة','city'].includes(item.type) || !item.type).map(item => {
-            const name = item.name || item.query || '';
-            return (allCities || []).find(city => String(city.city || '').toLowerCase() === name.toLowerCase()) || { city: name, city_ar: '', country: '', country_ar: '' };
-        });
-        const favoriteCountries = favorites.filter(item => ['دولة','country'].includes(item.type)).map(item => {
-            const name = item.name || item.query || '';
-            return (countries || []).find(country => String(country.name || '').toLowerCase() === name.toLowerCase()) || { name, name_ar: '' };
-        });
-        const favoriteWiki = favorites.filter(item => ['ويكيبيديا','wikipedia'].includes(item.type));
-        const favoriteText = favorites.filter(item => item.type === 'بحث نصي');
+        // لا نعيد البحث في allCities ولا في ويكيبيديا.
+        // المفضلة تعرض فقط البيانات التي تم حفظها عند الضغط على زر ⭐.
+        const favoriteCities = favorites.filter(item => ['مدينة', 'city'].includes(item.type) || !item.type).map(item => ({
+            city: item.city || item.name || item.query || '',
+            city_ar: item.city_ar || '',
+            country: item.country || '',
+            country_ar: item.country_ar || '',
+            population: item.population || ''
+        }));
 
-        renderResults({ cities: favoriteCities, countries: favoriteCountries });
-        if (favoriteText.length) favoriteText.slice(0, 10).forEach(item => {
-            if (typeof prependTextQueryCard === 'function') prependTextQueryCard(item.query || item.name);
-        });
-        if (favoriteWiki.length) {
-            const wikiResults = [];
-            for (const item of favoriteWiki.slice(0, 10)) {
-                try {
-                    const matches = await searchWikipediaMultilingual(item.query || item.name, 1);
-                    if (matches[0]) wikiResults.push(matches[0]);
-                } catch (_) {}
-            }
-            if (wikiResults.length && typeof renderWikipediaResults === 'function') renderWikipediaResults(wikiResults, wikiResults[0].title, true);
+        const favoriteCountries = favorites.filter(item => ['دولة', 'country'].includes(item.type)).map(item => ({
+            name: item.name || item.country || item.query || '',
+            name_ar: item.country_ar || '',
+            capital: item.capital || ''
+        }));
+
+        const favoriteWiki = favorites.filter(item => ['ويكيبيديا', 'wikipedia'].includes(item.type)).map(item => ({
+            title: item.name || item.query || '',
+            snippet: item.snippet || '',
+            url: item.url || '',
+            wordcount: item.wordcount || '',
+            timestamp: item.timestamp || ''
+        }));
+
+        const favoriteText = favorites.filter(item => item.type === 'بحث نصي');
+        const renderedCount = favoriteCities.length + favoriteCountries.length + favoriteWiki.length + favoriteText.length;
+
+        // نستخدم نفس قوالب النتائج للمدن والدول، لكن بالبيانات المحفوظة فقط.
+        if (favoriteCities.length || favoriteCountries.length) {
+            renderResults({ cities: favoriteCities, countries: favoriteCountries });
         }
-        countSpan.textContent = String(favorites.length);
-        updateStatus(`⭐ تم عرض ${favorites.length} من المفضلة`, '#f59e0b');
+
+        if (favoriteWiki.length && typeof renderWikipediaResults === 'function') {
+            renderWikipediaResults(favoriteWiki, '', true);
+        }
+
+        if (favoriteText.length && typeof prependTextQueryCard === 'function') {
+            favoriteText.forEach(item => prependTextQueryCard(item.query || item.name || ''));
+        }
+
+        countSpan.textContent = String(renderedCount);
+        updateStatus(`⭐ تم عرض ${renderedCount} عنصر محفوظ فقط`, '#f59e0b');
         updateFavoriteButtons();
     };
 
