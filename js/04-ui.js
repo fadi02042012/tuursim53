@@ -1,68 +1,65 @@
 // ============================================================
-// 04-ui.js - واجهة سريعة: لا نبني روابط 48 إلا عند الطلب
+// 04-ui.js - واجهة البحث المتقدم السريعة
+// الفكرة: يختار المستخدم تصنيفاً واحداً ثم يبحث عن دولة/مدينة،
+// وكل نتيجة تعرض رابط التصنيف المختار فقط بدلاً من إنشاء 48 رابطاً.
 // ============================================================
-const LINK_RENDER_CHUNK = 8;
+let selectedAdvancedCategory = 0;
 
-function buildAdvancedLinksPlaceholder(index, query) {
-    const count = typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48;
-    return `<div class="all-links-container" id="links-${index}" style="display:none;margin-top:10px;padding:8px;background:#f8fafc;border-radius:8px;contain:content;">
-        <div class="links-stats" style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>📌 ${count} رابط بحث متقدم</span><span style="font-size:12px;color:#94a3b8;">للبحث عن: ${escapeHtml(query)}</span></div>
-        <div class="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:5px;"></div>
+function cardStyle() {
+    return 'background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.08);contain:content;content-visibility:auto;';
+}
+
+function linkCount() {
+    return typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48;
+}
+
+function getCategoryName(index = selectedAdvancedCategory) {
+    return typeof getAdvancedLinkName === 'function' ? getAdvancedLinkName(index) : '📺 البحث العادي';
+}
+
+function getCategoryUrl(query, index = selectedAdvancedCategory) {
+    return typeof generateAdvancedLink === 'function'
+        ? generateAdvancedLink(query, index)
+        : `https://www.youtube.com/results?search_query=${encodeURIComponent(query || '')}`;
+}
+
+function buildAdvancedCategoryPanel() {
+    const categories = typeof getAdvancedSearches === 'function' ? getAdvancedSearches() : [];
+    return `<div class="advanced-category-panel" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:12px;contain:content;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <strong style="color:#1e293b;">⚡ البحث المتقدم السريع</strong>
+            <span style="font-size:12px;color:#64748b;">اختر تصنيفاً واحداً، ثم ابحث عن دولة أو مدينة من مربع البحث.</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" style="flex:1;min-width:230px;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;background:white;color:#1e293b;">
+                ${categories.map(item => `<option value="${item.index}" ${item.index === selectedAdvancedCategory ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}
+            </select>
+            <span id="advanced-category-label" style="font-size:12px;color:#64748b;">التصنيف الحالي: ${escapeHtml(getCategoryName())}</span>
+        </div>
     </div>`;
 }
 
-function linkCount() { return typeof getAdvancedLinksCount === 'function' ? getAdvancedLinksCount() : 48; }
+window.changeAdvancedCategory = function(value) {
+    selectedAdvancedCategory = Number(value) || 0;
+    const label = document.getElementById('advanced-category-label');
+    if (label) label.textContent = `التصنيف الحالي: ${getCategoryName()}`;
 
-function createLinkNode(link) {
-    const a = document.createElement('a');
-    a.className = 'link-item';
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.href = link.url;
-    a.style.cssText = 'padding:4px 8px;background:white;border-radius:4px;text-decoration:none;color:inherit;contain:layout paint;';
-    const n = document.createElement('span');
-    n.className = 'link-number'; n.style.color = '#94a3b8'; n.textContent = `#${link.id}`;
-    const name = document.createElement('span');
-    name.className = 'link-name'; name.style.marginRight = '4px'; name.textContent = link.name;
-    a.append(n, name);
-    return a;
-}
+    document.querySelectorAll('.advanced-category-link').forEach(link => {
+        const query = link.dataset.query || '';
+        link.href = getCategoryUrl(query, selectedAdvancedCategory);
+        const text = link.querySelector('.advanced-category-link-text');
+        if (text) text.textContent = `⚡ ${getCategoryName()}`;
+    });
+};
 
-function renderAdvancedLinksOnOpen(index) {
-    const container = document.getElementById(`links-${index}`);
-    const data = allLinksData[index];
-    if (!container || !data || container.dataset.rendering === 'true' || container.dataset.rendered === 'true') return;
-    const grid = container.querySelector('.links-grid');
-    if (!grid) return;
-
-    container.dataset.rendering = 'true';
-    if (!Array.isArray(data.links)) data.links = generateAllLinks(data.query);
-    const links = data.links;
-    let cursor = 0;
-
-    const renderChunk = () => {
-        const fragment = document.createDocumentFragment();
-        const end = Math.min(cursor + LINK_RENDER_CHUNK, links.length);
-        for (; cursor < end; cursor++) fragment.appendChild(createLinkNode(links[cursor]));
-        grid.appendChild(fragment);
-        if (cursor < links.length) {
-            (window.requestAnimationFrame || window.setTimeout)(renderChunk, 0);
-        } else {
-            container.dataset.rendering = 'false';
-            container.dataset.rendered = 'true';
-        }
-    };
-    renderChunk();
-}
-
-function cardStyle() { return 'background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.08);contain:content;content-visibility:auto;'; }
 function buttonsHtml(query, index, mapsQuery = query, wikiUrl = '') {
+    const advancedUrl = getCategoryUrl(query);
     return `<div class="btn-group" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
         <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}">📍 خرائط</a>
         <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(query)}">🔍 Google</a>
         <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}">▶ YouTube</a>
         ${wikiUrl ? `<a class="btn btn-wiki" target="_blank" rel="noopener noreferrer" href="${wikiUrl}">📖 Wiki</a>` : ''}
-        <button type="button" class="btn btn-secondary advanced-links-btn" data-links-index="${index}" onclick="toggleLinks(${index})">📋 عرض الروابط (${linkCount()})</button>
+        <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(query)}" target="_blank" rel="noopener noreferrer" href="${advancedUrl}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
     </div>`;
 }
 
@@ -71,10 +68,11 @@ function renderResults({ cities = [], countries = [] }) {
     allLinksData = [];
     if (!cities.length && !countries.length) return renderEmptySearch();
 
-    const parts = [`<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    const parts = [buildAdvancedCategoryPanel()];
+    parts.push(`<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
         <button type="button" onclick="searchOnlyWikipedia()" style="padding:10px 20px;background:#3b82f6;color:white;border:0;border-radius:9px;cursor:pointer;">📖 بحث في ويكيبيديا</button>
         <button type="button" onclick="searchAllWikipedia()" style="padding:10px 20px;background:#8b5cf6;color:white;border:0;border-radius:9px;cursor:pointer;">🔍 بحث موسع</button>
-    </div>`];
+    </div>`);
     let total = 0;
 
     if (countries.length) {
@@ -86,10 +84,9 @@ function renderResults({ cities = [], countries = [] }) {
             const index = allLinksData.length;
             allLinksData.push({ query, links: null, type: 'دولة', name });
             parts.push(`<div class="card" style="${cardStyle()}">
-                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(name)}</span><span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(nameAr || name)}</span></div><span style="font-size:12px;color:#94a3b8;">${linkCount()} رابط</span></div>
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(name)}</span><span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(nameAr || name)}</span></div></div>
                 ${capital ? `<div style="font-size:13px;color:#475569;margin-bottom:7px;">🏛️ العاصمة: ${escapeHtml(capital)}</div>` : ''}
                 ${buttonsHtml(query, index, name)}
-                ${buildAdvancedLinksPlaceholder(index, query)}
             </div>`);
         });
     }
@@ -104,7 +101,7 @@ function renderResults({ cities = [], countries = [] }) {
             const index = allLinksData.length;
             allLinksData.push({ query, links: null, type: 'مدينة', name: city });
             parts.push(`<div class="card" style="${cardStyle()}">
-                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(city)}</span>${cityAr ? `<span style="color:#64748b;font-size:15px;margin-right:4px;">(${escapeHtml(cityAr)})</span>` : ''}<span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(country)}</span>${countryAr ? `<span style="color:#64748b;">(${escapeHtml(countryAr)})</span>` : ''}</div><span style="font-size:12px;color:#94a3b8;">${linkCount()} رابط</span></div>
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(city)}</span>${cityAr ? `<span style="color:#64748b;font-size:15px;margin-right:4px;">(${escapeHtml(cityAr)})</span>` : ''}<span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(country)}</span>${countryAr ? `<span style="color:#64748b;">(${escapeHtml(countryAr)})</span>` : ''}</div></div>
                 ${population ? `<div style="font-size:12px;color:#94a3b8;margin-bottom:7px;">👥 ${Number(population).toLocaleString()}</div>` : ''}
                 ${buttonsHtml(query, index, city)}
                 <div class="seo-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
@@ -114,7 +111,6 @@ function renderResults({ cities = [], countries = [] }) {
                     <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('معالم سياحية '+city+' '+country)}">🏛️ معالم</a>
                     <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السفر إلى '+city+' '+country)}">✈️ السفر</a>
                 </div>
-                ${buildAdvancedLinksPlaceholder(index, query)}
             </div>`);
         });
     }
@@ -139,27 +135,22 @@ function renderEmptySearch() {
 function renderWikipediaResults(results, query, isMore = false) {
     if (!results?.length) return;
     let html = '';
-    if (!isMore) html += `<div class="wiki-toolbar" style="margin:10px 0 8px;padding:8px 12px;background:#f1f5f9;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><h3 style="font-size:15px;color:#1e293b;margin:0;">📖 نتائج ويكيبيديا</h3><button type="button" onclick="loadMoreWikipedia()" style="padding:6px 14px;background:#3b82f6;color:white;border:0;border-radius:6px;cursor:pointer;">📚 تحميل 10 أخرى</button></div>`;
+    if (!isMore) html += buildAdvancedCategoryPanel();
     results.forEach(item => {
         const index = allLinksData.length;
         allLinksData.push({ query: item.title, links: null, type: 'ويكيبيديا', name: item.title });
         const wc = item.wordcount ? `📝 ${Number(item.wordcount).toLocaleString()} كلمة` : '';
-        html += `<div class="card" style="${cardStyle()}"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:17px;font-weight:bold;color:#1e293b;">${escapeHtml(item.title)}</span><span style="color:#64748b;margin-right:7px;font-size:13px;">📖 ويكيبيديا</span>${wc ? `<span style="color:#94a3b8;font-size:11px;margin-right:5px;">${wc}</span>` : ''}</div><span style="font-size:12px;color:#94a3b8;">${linkCount()} رابط</span></div><p style="margin:0 0 9px;color:#64748b;font-size:13px;line-height:1.5;">${escapeHtml(item.snippet || '')}</p>${buttonsHtml(item.title, index, item.title, item.url)}${buildAdvancedLinksPlaceholder(index, item.title)}</div>`;
+        html += `<div class="card" style="${cardStyle()}"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:17px;font-weight:bold;color:#1e293b;">${escapeHtml(item.title)}</span><span style="color:#64748b;margin-right:7px;font-size:13px;">📖 ويكيبيديا</span>${wc ? `<span style="color:#94a3b8;font-size:11px;margin-right:5px;">${wc}</span>` : ''}</div></div><p style="margin:0 0 9px;color:#64748b;font-size:13px;line-height:1.5;">${escapeHtml(item.snippet || '')}</p>${buttonsHtml(item.title, index, item.title, item.url)}</div>`;
     });
     if (!isMore) html += `<div style="text-align:center;margin:14px 0;"><button type="button" onclick="loadMoreWikipedia()" style="padding:10px 24px;background:#3b82f6;color:white;border:0;border-radius:8px;cursor:pointer;">📚 تحميل 10 نتائج إضافية</button></div>`;
     resultsDiv.insertAdjacentHTML('beforeend', html);
 }
 
+// توافق مع أي كود قديم يستدعي toggleLinks: لا ننشئ 48 رابطاً عند الضغط.
 window.toggleLinks = function(index) {
-    const container = document.getElementById(`links-${index}`);
-    if (!container || !allLinksData[index]) return;
-    const open = container.style.display === 'none';
-    if (open) {
-        container.style.display = 'block';
-        renderAdvancedLinksOnOpen(index);
-    } else container.style.display = 'none';
-    const btn = document.querySelector(`.advanced-links-btn[data-links-index="${index}"]`);
-    if (btn) btn.textContent = open ? `📋 إخفاء الروابط (${linkCount()})` : `📋 عرض الروابط (${linkCount()})`;
+    const data = allLinksData[index];
+    if (!data) return;
+    window.open(getCategoryUrl(data.query), '_blank', 'noopener');
 };
 
 window.selectCity = function(name) {
@@ -180,4 +171,4 @@ function populateCountrySelect() {
     });
 }
 
-console.log('✅ 04-ui.js تم تحميله بنجاح — واجهة روابط سريعة');
+console.log('✅ 04-ui.js تم تحميله بنجاح — اختيار تصنيف واحد سريع بدلاً من 48 رابطاً');
