@@ -38,7 +38,7 @@ function ensureAdvancedCategoryStyles() {
     `;
     document.head.appendChild(style);
 }
-function cardStyle(){return 'background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.08);contain:content;content-visibility:auto;';}
+function cardStyle(){return 'background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 5px rgba(0,0,0,.08);';}
 function linkCount(){return typeof getAdvancedLinksCount==='function'?getAdvancedLinksCount():48;}
 function getCategoryName(index=selectedAdvancedCategory){return typeof getAdvancedLinkName==='function'?getAdvancedLinkName(index):'📺 البحث العادي';}
 function getCategoryUrl(query,index=selectedAdvancedCategory){return typeof generateAdvancedLink==='function'?generateAdvancedLink(query,index):`https://www.youtube.com/results?search_query=${encodeURIComponent(query||'')}`;}
@@ -96,6 +96,25 @@ window.selectCity=function(name){
 };
 function populateCountrySelect(){countrySelect.innerHTML='<option value="">🌐 كل الدول</option>';countries.forEach(c=>{const displayName=c.name_ar||c.name||c.code;countryMap[c.code]=displayName;countryNames[c.code]=c.name||c.code;const option=document.createElement('option');option.value=c.code;option.textContent=displayName;countrySelect.appendChild(option);});}
 console.log('✅ 04-ui.js تم تحميله بنجاح — واجهة تصنيفات احترافية ومتجاوبة');
+
+// تثبيت روابط البحث المتقدم عند النقر: إعادة توليد الرابط من نص البطاقة
+// تمنع بقاء href قديم بعد الانتقال بين المدن وإعادة رسم النتائج.
+(() => {
+    if (window.__advancedLinkClickGuard) return;
+    window.__advancedLinkClickGuard = true;
+    document.addEventListener('click', event => {
+        const link = event.target.closest?.('.advanced-category-link');
+        if (!link) return;
+        const query = link.dataset.query || '';
+        const url = getCategoryUrl(query, selectedAdvancedCategory);
+        if (!url) {
+            event.preventDefault();
+            return;
+        }
+        link.href = url;
+    }, true);
+})();
+
 
 
 // تحسينات الأداء: لا توجد شبكة في مسار واجهة البحث.
