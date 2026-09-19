@@ -32,7 +32,7 @@ function sortCitiesForCountry(cities, countryCode) {
     const source = [...(cities || [])];
     const code = String(countryCode || '').toUpperCase();
 
-    const country = countries.find(c => String(c.code || '').toUpperCase() === code) || {};
+    const country = (Array.isArray(countries) ? countries : []).find(c => String(c.code || '').toUpperCase() === code) || {};
     const capital = normalizeText(country.capital || country.capital_en || country.capital_ar || '');
     const featured = (typeof FEATURED_CITIES_BY_COUNTRY !== 'undefined' ? (FEATURED_CITIES_BY_COUNTRY[code] || []) : []).map(normalizeText);
 
