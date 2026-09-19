@@ -161,67 +161,89 @@ function sortCitiesForCountry(cities, countryCode) {
     return [...capitalCities, ...featuredCities, ...largestCities, ...sortCitiesAlphabetically(remaining)];
 }
 window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
-    const code = String(countryCode || '').toUpperCase();
-    if (!code || !currentCountryCities.length) {
+    const code = String(countryCode || '').trim().toUpperCase();
+    if (!code || !Array.isArray(currentCountryCities) || !currentCountryCities.length) {
         showToast('⚠️ اختر دولة أولاً');
         return;
     }
 
+    const button = document.getElementById('webCitySortBtn');
+    if (button) button.disabled = true;
     updateStatus('🌐 جاري جلب ترتيب المدن من الويب...', '#f59e0b');
 
     try {
-        // جلب العاصمة والمدن ذات بيانات السكان من Wikidata.
-        const query = 'SELECT ?city ?cityLabel ?population ?capitalLabel WHERE {' +
-            ' ?country wdt:P297 "' + code + '".' +
-            ' OPTIONAL { ?country wdt:P36 ?capital. ?capital rdfs:label ?capitalLabel. FILTER(LANG(?capitalLabel) = "en") }' +
-            ' ?city wdt:P17 ?country; wdt:P1082 ?population.' +
-            ' SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }' +
-            '} ORDER BY DESC(?population) LIMIT 1000';
+        // WDQS يدعم JSON عبر GET، ويُستخدم هنا فقط عند ضغط الزر.
+        const query = [
+            'SELECT ?city ?cityLabel ?population ?sitelinks ?capitalLabel WHERE {',
+            '  ?country wdt:P297 "' + code + '".',
+            '  OPTIONAL {',
+            '    ?country wdt:P36 ?capital.',
+            '    ?capital rdfs:label ?capitalLabel.',
+            '    FILTER(LANG(?capitalLabel) = "en")',
+            '  }',
+            '  ?city wdt:P17 ?country; wdt:P1082 ?population.',
+            '  OPTIONAL { ?city wikibase:sitelinks ?sitelinks. }',
+            '  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }',
+            '}',
+            'ORDER BY DESC(?sitelinks) DESC(?population)',
+            'LIMIT 1000'
+        ].join(' ');
 
         const url = 'https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query);
         const response = await fetch(url, {
+            method: 'GET',
             mode: 'cors',
             headers: { 'Accept': 'application/sparql-results+json' }
         });
         if (!response.ok) throw new Error('wikidata_http_' + response.status);
 
         const data = await response.json();
-        const rows = data?.results?.bindings || [];
+        const rows = Array.isArray(data?.results?.bindings) ? data.results.bindings : [];
         if (!rows.length) throw new Error('wikidata_empty');
 
         const webCities = new Map();
         let webCapital = '';
 
-        rows.forEach(row => {
+        for (const row of rows) {
             const name = row?.cityLabel?.value || '';
             const key = normalizeCityNameForMatch(name);
-            if (!key) return;
+            if (!key) continue;
 
             if (row?.capitalLabel?.value) {
                 webCapital = normalizeCityNameForMatch(row.capitalLabel.value);
             }
 
             const population = Number(row?.population?.value || 0);
+            const sitelinks = Number(row?.sitelinks?.value || 0);
             const old = webCities.get(key);
-            if (!old || population > old.population) {
-                webCities.set(key, { population });
+
+            if (!old || population > old.population || sitelinks > old.sitelinks) {
+                webCities.set(key, { population, sitelinks });
             }
-        });
+        }
 
         const cityNames = city => [
             city?.city, city?.name, city?.city_name,
             city?.city_ar, city?.name_ar, city?.city_name_ar
         ].filter(Boolean).map(normalizeCityNameForMatch);
 
-        const keyOf = city => cityNames(city)[0] || String(city?.id ?? city?.city_id ?? '');
-        const populationOf = city => Math.max(
-            0,
-            ...cityNames(city).map(name => webCities.get(name)?.population || 0)
-        );
+        const keyOf = city =>
+            cityNames(city)[0] ||
+            String(city?.id ?? city?.city_id ?? '');
+
+        const webInfo = city => cityNames(city)
+            .map(name => webCities.get(name))
+            .filter(Boolean);
+
+        const populationOf = city =>
+            Math.max(0, ...webInfo(city).map(info => info.population || 0));
+
+        const fameOf = city =>
+            Math.max(0, ...webInfo(city).map(info => info.sitelinks || 0));
 
         const used = new Set();
 
-        const takeOne = predicate => {
+        const takeFirst = predicate => {
             const city = currentCountryCities.find(item => {
                 const key = keyOf(item);
                 return !used.has(key) && predicate(item);
@@ -231,27 +253,41 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
         };
 
         // 1) العاصمة.
-        const capital = takeOne(city =>
+        const capital = takeFirst(city =>
             webCapital && cityNames(city).some(name =>
-                name === webCapital || name.includes(webCapital) || webCapital.includes(name)
+                name === webCapital ||
+                name.includes(webCapital) ||
+                webCapital.includes(name)
             )
         );
 
-        // 2) أشهر المدن: نستخدم المدن الأعلى حضوراً في بيانات الويب المتاحة،
-        // ثم 3) أكبر المدن سكاناً.
-        const webMatched = currentCountryCities
-            .filter(city => !used.has(keyOf(city)) && populationOf(city) > 0)
-            .sort((a, b) => populationOf(b) - populationOf(a));
+        // 2) أشهر المدن: أعلى حضور في بيانات الويب (عدد روابط ويكيبيديا).
+        const candidates = currentCountryCities.filter(city =>
+            !used.has(keyOf(city)) && webInfo(city).length > 0
+        );
 
-        const famous = webMatched.slice(0, 5);
+        const famous = [...candidates]
+            .sort((a, b) =>
+                fameOf(b) - fameOf(a) ||
+                populationOf(b) - populationOf(a) ||
+                String(a?.city || '').localeCompare(String(b?.city || ''), 'en', { sensitivity: 'base' })
+            )
+            .slice(0, 5);
+
         famous.forEach(city => used.add(keyOf(city)));
 
-        const largest = webMatched
-            .filter(city => !used.has(keyOf(city)))
+        // 3) أكبر المدن حسب عدد السكان.
+        const largest = candidates
+            .filter(city => !used.has(keyOf(city)) && populationOf(city) > 0)
+            .sort((a, b) =>
+                populationOf(b) - populationOf(a) ||
+                String(a?.city || '').localeCompare(String(b?.city || ''), 'en', { sensitivity: 'base' })
+            )
             .slice(0, 5);
+
         largest.forEach(city => used.add(keyOf(city)));
 
-        // 4) بقية المدن A-Z.
+        // 4) كل ما تبقى أبجديًا A-Z، بدون فقدان أو تكرار أي مدينة.
         const remaining = currentCountryCities.filter(city => !used.has(keyOf(city)));
 
         renderLocalCityResults([
@@ -261,12 +297,14 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
             ...sortCitiesAlphabetically(remaining)
         ]);
 
-        updateStatus('✅ تم ترتيب المدن اعتماداً على بيانات الويب: العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z', '#10b981');
+        updateStatus('✅ تم ترتيب المدن: العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z', '#10b981');
     } catch (error) {
         console.error('خطأ في ترتيب المدن من الويب:', error);
-        updateStatus('❌ تعذر جلب بيانات الويب، بقيت المدن كما هي', '#ef4444');
         renderLocalCityResults(currentCountryCities);
+        updateStatus('❌ تعذر جلب بيانات الويب، عُرضت المدن كما هي', '#ef4444');
         showToast('❌ تعذر الاتصال بمصدر الويب');
+    } finally {
+        if (button) button.disabled = false;
     }
 }
 
