@@ -84,7 +84,7 @@ const FEATURED_CITIES_BY_COUNTRY = {
     KP: ["Pyongyang","Hamhung","Chongjin","Wonsan","Sariwon","Kaesong","Pyongsong","Kanggye","Sinuiju","Nampo"],
     TH: ["Bangkok","Chiang Mai","Phuket","Pattaya","Hat Yai","Nakhon Ratchasima","Udon Thani","Khon Kaen","Surat Thani","Ubon Ratchathani"],
     ID: ["Jakarta","Denpasar","Surabaya","Bandung","Medan","Semarang","Makassar","Palembang","Yogyakarta","Batam"],
-    MY: ["Kuala Lumpur","George Town","Johor Bahru","Ipoh","Kota Kinabalu","Kuching","Malacca City","Shah Alam","Petaling Jaya"],
+    MY: ["Kuala Lumpur","George Town","Johor Bahru","Ipoh","Kota Kinabalu","Kuching","Malacca City","Shah Alam","Petaling Jaya","Kuala Terengganu"],
     VN: ["Hanoi","Ho Chi Minh City","Da Nang","Hoi An","Hue","Nha Trang","Duong Dong","Can Tho","Hai Phong","Da Lat"],
     PH: ["Manila","Cebu City","Davao City","Quezon City","Zamboanga City","Bacolod","Iloilo City","Baguio","Malay","Tagaytay"],
     TR: ["Ankara","Istanbul","Antalya","Izmir","Bursa","Gaziantep","Konya","Kayseri","Mersin","Adana"],
@@ -393,7 +393,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
         if (!rows.length) throw new Error('wikidata_empty');
 
         const webCities = new Map();
-        let webCapital = '';
+        // استخدم عاصمة بيانات الموقع كـ fallback قبل Wikidata.\n        let webCapital = normalizeCityNameForMatch(getCountryCapital(code));
 
         for (const row of rows) {
             const name = row?.cityLabel?.value || '';
@@ -466,7 +466,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
                 const br = Math.min(...cityNames(b).map(name => featuredRank.has(name) ? featuredRank.get(name) : Infinity));
                 return ar - br;
             })
-            .slice(0, 5);
+            .slice(0, 10);
 
         famous.forEach(city => used.add(keyOf(city)));
 
