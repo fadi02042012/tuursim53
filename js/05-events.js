@@ -27,12 +27,7 @@ function getCountryCapital(countryCode) {
     const country = list.find(item => String(item?.code || '').toUpperCase() === code);
     return String(country?.capital || country?.capital_en || country?.capital_ar || '').trim();
 }
-function updateStatus(message, color = '#64748b') {
-    if (statusDiv) {
-        statusDiv.textContent = message;
-        statusDiv.style.color = color;
-    }
-}
+
 
 function sortCitiesAlphabetically(cities) {
     // بقية المدن تُرتب حسب الاسم الإنجليزي فقط من A إلى Z.
@@ -104,7 +99,7 @@ function normalizeCityNameForMatch(value) {
         .replace(/ى/g, 'ي').replace(/ة/g, 'ه')
         .replace(/[ًٌٍَُِّْـ]/g, '')
         .replace(/[’'\`,.-]/g, ' ')
-        .replace(/\\s+/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim();
 }
 
@@ -181,7 +176,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
     try {
         // WDQS يدعم JSON عبر GET، ويُستخدم هنا فقط عند ضغط الزر.
         const query = [
-            'SELECT ?city ?cityLabel ?population ?sitelinks ?capitalLabel WHERE {',
+            'SELECT ?city ?cityLabel ?population ?capitalLabel WHERE {',
             '  ?country wdt:P297 "' + code + '".',
             '  OPTIONAL {',
             '    ?country wdt:P36 ?capital.',
@@ -189,10 +184,9 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
             '    FILTER(LANG(?capitalLabel) = "en")',
             '  }',
             '  ?city wdt:P17 ?country; wdt:P1082 ?population.',
-            '  OPTIONAL { ?city wikibase:sitelinks ?sitelinks. }',
             '  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }',
             '}',
-            'ORDER BY DESC(?sitelinks) DESC(?population)',
+            'ORDER BY DESC(?population)',
             'LIMIT 1000'
         ].join(' ');
 
@@ -221,11 +215,10 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
             }
 
             const population = Number(row?.population?.value || 0);
-            const sitelinks = Number(row?.sitelinks?.value || 0);
             const old = webCities.get(key);
 
-            if (!old || population > old.population || sitelinks > old.sitelinks) {
-                webCities.set(key, { population, sitelinks });
+            if (!old || population > old.population) {
+                webCities.set(key, { population });
             }
         }
 
@@ -245,8 +238,6 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
         const populationOf = city =>
             Math.max(0, ...webInfo(city).map(info => info.population || 0));
 
-        const fameOf = city =>
-            Math.max(0, ...webInfo(city).map(info => info.sitelinks || 0));
 
         const used = new Set();
 
@@ -268,17 +259,23 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
             )
         );
 
-        // 2) أشهر المدن: أعلى حضور في بيانات الويب (عدد روابط ويكيبيديا).
-        const candidates = currentCountryCities.filter(city =>
-            !used.has(keyOf(city)) && webInfo(city).length > 0
-        );
+        // 2) المدن الأشهر: القائمة المحلية الموثوقة للدولة، مع مطابقة أسماء الويب.
+        const featuredNames = (FEATURED_CITIES_BY_COUNTRY[code] || [])
+            .map(normalizeCityNameForMatch)
+            .filter(Boolean);
+        const featuredRank = new Map();
+        featuredNames.forEach((name, index) => {
+            if (!featuredRank.has(name)) featuredRank.set(name, index);
+        });
 
-        const famous = [...candidates]
-            .sort((a, b) =>
-                fameOf(b) - fameOf(a) ||
-                populationOf(b) - populationOf(a) ||
-                String(a?.city || '').localeCompare(String(b?.city || ''), 'en', { sensitivity: 'base' })
-            )
+        const famous = currentCountryCities
+            .filter(city => !used.has(keyOf(city)))
+            .filter(city => cityNames(city).some(name => featuredRank.has(name)))
+            .sort((a, b) => {
+                const ar = Math.min(...cityNames(a).map(name => featuredRank.has(name) ? featuredRank.get(name) : Infinity));
+                const br = Math.min(...cityNames(b).map(name => featuredRank.has(name) ? featuredRank.get(name) : Infinity));
+                return ar - br;
+            })
             .slice(0, 5);
 
         famous.forEach(city => used.add(keyOf(city)));
