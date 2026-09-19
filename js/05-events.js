@@ -150,10 +150,24 @@ function sortCountryDropdown() {
     countrySelect.value = selectedValue;
 }
 
-function renderLocalCityResults(sortedCities) {
+function renderLocalCityResults(sortedCities, countryCode = '') {
     currentFullResults = Array.isArray(sortedCities) ? sortedCities : [];
     currentDisplayLimit = Math.min(RESULTS_PAGE_SIZE, currentFullResults.length || RESULTS_PAGE_SIZE);
     renderResults({ cities: currentFullResults.slice(0, currentDisplayLimit), countries: [] });
+
+    const featuredNames = (FEATURED_CITIES_BY_COUNTRY[countryCode] || []).map(normalizeCityNameForMatch);
+    if (featuredNames.length && currentFullResults.length) {
+        const firstCityNames = [currentFullResults[0]?.city, currentFullResults[0]?.city_ar]
+            .map(normalizeCityNameForMatch);
+        if (firstCityNames.some(name => featuredNames.includes(name))) {
+            const heading = document.createElement('div');
+            heading.className = 'featured-cities-heading';
+            heading.textContent = '⭐ أشهر المدن';
+            heading.setAttribute('aria-label', 'أشهر المدن');
+            heading.style.cssText = 'width:100%;margin:0 0 12px;padding:12px 16px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:18px;font-weight:700;text-align:right;box-sizing:border-box;';
+            resultsDiv.insertBefore(heading, resultsDiv.firstChild);
+        }
+    }
     updateShowMoreButton();
 }
 
@@ -383,7 +397,7 @@ countrySelect.addEventListener('change', async function () {
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
         updateStatus(`✅ ${currentCountryCities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
+        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code), code);
         return;
     }
 
@@ -394,7 +408,7 @@ countrySelect.addEventListener('change', async function () {
         countryCitiesCache.set(code, cities);
         currentCountryCities = cities;
         updateStatus(`✅ ${cities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesForCountry(cities, code));
+        renderLocalCityResults(sortCitiesForCountry(cities, code), code);
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
