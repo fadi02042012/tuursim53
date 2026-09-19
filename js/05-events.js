@@ -27,6 +27,84 @@ function sortCitiesAlphabetically(cities) {
     );
 }
 
+// المدن الأشهر تظهر أولاً عند اختيار الدولة، ثم بقية المدن أبجدياً.
+const FEATURED_CITIES_BY_COUNTRY = {
+    AE: ['Dubai','دبي','Abu Dhabi','أبو ظبي','Sharjah','الشارقة','Ajman','عجمان'],
+    SA: ['Riyadh','الرياض','Jeddah','جدة','Mecca','Makkah','مكة','Medina','Madinah','المدينة المنورة','Dammam','الدمام','Taif','الطائف'],
+    YE: ['Sanaa','صنعاء','Aden','عدن','Taiz','تعز','Al Hudaydah','Hodeidah','الحديدة','Mukalla','المكلا','Ibb','إب','Marib','مأرب','Shibam','شبام','Zabid','زبيد'],
+    EG: ['Cairo','القاهرة','Alexandria','الإسكندرية','Giza','الجيزة','Luxor','الأقصر','Aswan','أسوان','Sharm El Sheikh','شرم الشيخ','Hurghada','الغردقة'],
+    TR: ['Istanbul','إسطنبول','Ankara','أنقرة','Izmir','إزمير','Antalya','أنطاليا','Bursa','بورصة','Cappadocia','كابادوكيا'],
+    US: ['New York','New York City','نيويورك','Los Angeles','لوس أنجلوس','Chicago','شيكاغو','Miami','ميامي','San Francisco','سان فرانسيسكو','Las Vegas','لاس فيغاس','Washington','واشنطن'],
+    GB: ['London','لندن','Edinburgh','إدنبرة','Manchester','مانشستر','Liverpool','ليفربول','Birmingham','برمنغهام','Oxford','أكسفورد','Cambridge','كامبريدج'],
+    FR: ['Paris','باريس','Nice','نيس','Lyon','ليون','Marseille','مرسيليا','Bordeaux','بوردو','Strasbourg','ستراسبورغ','Cannes','كان'],
+    IT: ['Rome','روما','Milan','ميلانو','Venice','البندقية','Florence','فلورنسا','Naples','نابولي','Turin','تورينو','Bologna','بولونيا'],
+    ES: ['Madrid','مدريد','Barcelona','برشلونة','Seville','إشبيلية','Valencia','فالنسيا','Granada','غرناطة','Malaga','مالقة','Bilbao','بلباو'],
+    DE: ['Berlin','برلين','Munich','ميونخ','Hamburg','هامبورغ','Frankfurt','فرانكفورت','Cologne','كولونيا','Dresden','دريسدن'],
+    MA: ['Marrakesh','Marrakech','مراكش','Casablanca','الدار البيضاء','Rabat','الرباط','Fes','فاس','Tangier','طنجة','Chefchaouen','شفشاون','Agadir','أكادير'],
+    JO: ['Amman','عمان','Petra','البتراء','Aqaba','العقبة','Jerash','جرش','Madaba','مادبا'],
+    OM: ['Muscat','مسقط','Salalah','صلالة','Nizwa','نزوى','Sur','صور','Sohar','صحار'],
+    QA: ['Doha','الدوحة','Al Wakrah','الوكرة','Al Khor','الخور'],
+    BH: ['Manama','المنامة','Muharraq','المحرق','Riffa','الرفاع'],
+    KW: ['Kuwait City','مدينة الكويت','Salmiya','السالمية','Hawally','حولي'],
+    IQ: ['Baghdad','بغداد','Erbil','أربيل','Basra','البصرة','Najaf','النجف','Karbala','كربلاء','Mosul','الموصل'],
+    IR: ['Tehran','طهران','Isfahan','أصفهان','Shiraz','شيراز','Mashhad','مشهد','Tabriz','تبريز','Yazd','يزد'],
+    IN: ['Mumbai','مومباي','Delhi','دلهي','New Delhi','نيودلهي','Agra','أغرا','Jaipur','جايبور','Bengaluru','بنغالور','Varanasi','فاراناسي','Kolkata','كولكاتا'],
+    JP: ['Tokyo','طوكيو','Kyoto','كيوتو','Osaka','أوساكا','Hiroshima','هيروشيما','Nara','نارا','Sapporo','سابورو'],
+    TH: ['Bangkok','بانكوك','Phuket','بوكيت','Chiang Mai','شيانغ ماي','Pattaya','باتايا','Krabi','كرابي'],
+    MY: ['Kuala Lumpur','كوالالمبور','George Town','جورج تاون','Malacca','ملاكا','Langkawi','لنكاوي','Johor Bahru','جوهور باهرو'],
+    ID: ['Jakarta','جاكرتا','Bali','بالي','Denpasar','دينباسار','Bandung','باندونغ','Yogyakarta','يوغياكارتا','Surabaya','سورابايا'],
+    AU: ['Sydney','سيدني','Melbourne','ملبورن','Brisbane','بريزبن','Perth','بيرث','Gold Coast','غولد كوست','Canberra','كانبيرا'],
+    CA: ['Toronto','تورونتو','Vancouver','فانكوفر','Montreal','مونتريال','Quebec City','مدينة كيبيك','Calgary','كالغاري','Ottawa','أوتاوا'],
+    BR: ['Rio de Janeiro','ريو دي جانيرو','São Paulo','Sao Paulo','ساو باولو','Brasília','برازيليا','Salvador','سلفادور','Fortaleza','فورتاليزا'],
+    MX: ['Mexico City','مكسيكو سيتي','Cancun','كانكون','Guadalajara','غوادالاخارا','Playa del Carmen','بلايا ديل كارمن','Tulum','تولوم'],
+    ZA: ['Cape Town','كيب تاون','Johannesburg','جوهانسبرغ','Durban','ديربان','Pretoria','بريتوريا'],
+    RU: ['Moscow','موسكو','Saint Petersburg','سانت بطرسبورغ','Kazan','قازان','Sochi','سوتشي','Novosibirsk','نوفوسيبيرسك'],
+    PL: ['Warsaw','وارسو','Krakow','كراكوف','Gdansk','غدانسك','Wroclaw','فروتسواف','Poznan','بوزنان'],
+    CZ: ['Prague','براغ','Brno','برنو','Karlovy Vary','كارلوفي فاري','Cesky Krumlov','تشيسكي كروملوف']
+};
+
+function normalizeCityNameForMatch(value) {
+    return String(value || '').toLowerCase()
+        .normalize('NFD')
+        .replace(/[\\u0300-\\u036f]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+        .replace(/[ًٌٍَُِّْـ]/g, '')
+        .replace(/[’'\`,.-]/g, ' ')
+        .replace(/\\s+/g, ' ')
+        .trim();
+}
+
+function sortCitiesForCountry(cities, countryCode) {
+    const source = [...(cities || [])];
+    const featuredNames = (FEATURED_CITIES_BY_COUNTRY[countryCode] || []).map(normalizeCityNameForMatch);
+    if (!featuredNames.length) return sortCitiesAlphabetically(source);
+
+    const rank = new Map(featuredNames.map((name, index) => [name, index]));
+    const featured = [];
+    const rest = [];
+    const usedRanks = new Set();
+
+    source.forEach(city => {
+        const names = [city.city, city.city_ar].map(normalizeCityNameForMatch).filter(Boolean);
+        const match = names.find(name => rank.has(name));
+        if (match !== undefined) {
+            const r = rank.get(match);
+            if (!usedRanks.has(r)) {
+                featured.push({ city, rank: r });
+                usedRanks.add(r);
+            } else {
+                rest.push(city);
+            }
+        } else {
+            rest.push(city);
+        }
+    });
+
+    featured.sort((a, b) => a.rank - b.rank);
+    return [...featured.map(item => item.city), ...sortCitiesAlphabetically(rest)];
+}
+
 function escapeRegex(str) {
     return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -305,7 +383,7 @@ countrySelect.addEventListener('change', async function () {
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
         updateStatus(`✅ ${currentCountryCities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesAlphabetically(currentCountryCities));
+        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
         return;
     }
 
@@ -316,7 +394,7 @@ countrySelect.addEventListener('change', async function () {
         countryCitiesCache.set(code, cities);
         currentCountryCities = cities;
         updateStatus(`✅ ${cities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesAlphabetically(cities));
+        renderLocalCityResults(sortCitiesForCountry(cities, code));
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
