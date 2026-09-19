@@ -198,8 +198,26 @@ async function handleSearch() {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
     if (!query) {
-        const source = currentCountryCities.length ? currentCountryCities : allCities;
-        if (source.length) {
+        // الضغط على زر "بحث" بدون نص يجب ألا يعيد ترتيب مدن الدولة
+        // إلى ترتيب الملف الخام. حافظ على الترتيب المطلوب: العاصمة،
+        // المدن الأشهر، الأكبر سكاناً، ثم A-Z.
+        const source = currentCountryCities.length
+            ? (typeof sortCitiesForCountry === 'function'
+                ? sortCitiesForCountry(currentCountryCities, countrySelect?.value || '')
+                : currentCountryCities.slice())
+            : (typeof sortCitiesAlphabetically === 'function'
+                ? sortCitiesAlphabetically(allCities)
+                : allCities.slice());
+
+        if (currentCountryCities.length) {
+            currentFullResults = source;
+            currentDisplayLimit = Math.min(RESULTS_PER_BATCH, source.length);
+            renderResults({ cities: source.slice(0, currentDisplayLimit), countries: [] });
+            if (typeof updateShowMoreButton === 'function') updateShowMoreButton();
+            if (typeof window.refreshResultsPagination === 'function') {
+                window.refreshResultsPagination();
+            }
+        } else if (source.length) {
             renderResults({ cities: source.slice(0, RESULTS_PER_BATCH), countries: [] });
         } else {
             renderResults({ cities: [], countries: countries.slice(0, RESULTS_PER_BATCH) });
