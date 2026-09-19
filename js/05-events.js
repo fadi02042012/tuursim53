@@ -25,7 +25,8 @@ function getCountryCapital(countryCode) {
     const code = String(countryCode || '').toUpperCase();
     const list = Array.isArray(countries) ? countries : [];
     const country = list.find(item => String(item?.code || '').toUpperCase() === code);
-    return String(country?.capital || country?.capital_en || country?.capital_ar || '').trim();
+    const localCapital = {"AI":"The Valley","AS":"Pago Pago","AW":"Oranjestad","AX":"Mariehamn","BL":"Gustavia","BM":"Hamilton","BQ":"Kralendijk","CC":"West Island","CK":"Avarua","CW":"Willemstad","CX":"Flying Fish Cove","FK":"Stanley","FO":"Tórshavn","GG":"Saint Peter Port","GI":"Gibraltar","GL":"Nuuk","GP":"Basse-Terre","GS":"King Edward Point","GU":"Hagåtña","HK":"Victoria","IM":"Douglas","IO":"Diego Garcia","JE":"Saint Helier","KI":"South Tarawa","KY":"George Town","MF":"Marigot","MO":"Macau","MP":"Saipan","MQ":"Fort-de-France","MS":"Brades","NC":"Nouméa","NF":"Kingston","NU":"Alofi","PF":"Papeete","PM":"Saint-Pierre","PN":"Adamstown","PR":"San Juan","RE":"Saint-Denis","SH":"Jamestown","SJ":"Longyearbyen","SX":"Philipsburg","TC":"Cockburn Town","TF":"Port-aux-Français","TK":"Fakaofo","UM":"Palmyra Atoll","VG":"Road Town","VI":"Charlotte Amalie","WF":"Mata-Utu","YT":"Mamoudzou"};
+    return String(country?.capital || country?.capital_en || country?.capital_ar || localCapital[code] || '').trim();
 }
 
 
@@ -242,7 +243,61 @@ const FEATURED_CITIES_BY_COUNTRY = {
     VU: ["Port Vila","Luganville","Isangel","Lakatoro","Sola","Lenakel","Saratamata","Longana","Port-Olry","Norsup"],
     WS: ["Apia","Vaitele","Faleula","Siusega","Malie","Safotulafai","Salelologa","Asau","Mulifanua","Leulumoega"],
     XK: ["Pristina","Prizren","Peja","Gjakova","Mitrovica","Ferizaj","Gjilan","Vushtrri","Rahovec","Suhareka"],
-    TW: ["Taipei","New Taipei City","Kaohsiung","Taichung","Tainan","Taoyuan","Hsinchu","Keelung","Chiayi","Changhua"]
+    TW: ["Taipei","New Taipei City","Kaohsiung","Taichung","Tainan","Taoyuan","Hsinchu","Keelung","Chiayi","Changhua"],
+    AI: ["The Valley","Sandy Ground","Blowing Point","George Hill","Island Harbour","South Hill","Stoney Ground","East End","West End","North Hill"],
+    AQ: [],
+    AS: ["Pago Pago","Tafuna","Leone","Faleniu","Mapusagafou","Nu'uuli","Vaitogi","Fagatogo","Utulei","Aua"],
+    AW: ["Oranjestad","San Nicolaas","Noord","Santa Cruz","Savaneta","Paradera","Pos Chiquito","Tanki Leendert","Madiki","Ponton"],
+    AX: ["Mariehamn","Jomala","Finström","Lemland","Saltvik","Sund","Hammarland","Eckerö","Geta","Vårdö"],
+    BL: ["Gustavia"],
+    BM: ["Hamilton","St. George's","Somerset Village","Flatts Village","Devonshire Village","Smith's","Warwick","Paget","Pembroke","Sandys"],
+    BQ: ["Kralendijk","Oranjestad","The Bottom","Windwardside","Rincon","Dorp Tera Kora","Dorp Antriol","Belnem","Hato","Nikiboko"],
+    BV: [],
+    CC: ["West Island"],
+    CK: ["Avarua","Arutanga"],
+    CW: ["Willemstad","Sint Michiel","Westpunt","Barber","Dorp Soto","Tera Cora","Julianadorp","Santa Rosa","Daniel","Lagun"],
+    CX: ["Flying Fish Cove"],
+    FK: ["Stanley"],
+    FO: ["Tórshavn","Klaksvík","Hoyvík","Argir","Fuglafjørður","Vágur","Tvøroyri","Vestmanna","Sørvágur","Saltangará"],
+    GG: ["Saint Peter Port","Saint Sampson","Vale","St. Andrew","St. Martin","St. Saviour","Castel","Forest","Torteval","Saint Pierre du Bois"],
+    GI: ["Gibraltar"],
+    GL: ["Nuuk","Sisimiut","Ilulissat","Qaqortoq","Aasiaat","Maniitsoq","Tasiilaq","Paamiut","Narsaq","Upernavik"],
+    GP: ["Basse-Terre","Les Abymes","Pointe-à-Pitre","Le Gosier","Sainte-Anne","Petit-Bourg","Baie-Mahault","Le Moule","Capesterre-Belle-Eau","Saint-François"],
+    GS: ["King Edward Point"],
+    GU: ["Hagåtña","Dededo","Yigo","Tamuning","Mangilao","Barrigada","Santa Rita","Agat","Inarajan","Merizo"],
+    HK: ["Victoria","Kowloon","Tsuen Wan","Sha Tin","Yuen Long","Tuen Mun","Tai Po","Fanling","Sai Kung","Lantau Island"],
+    HM: [],
+    IM: ["Douglas","Ramsey","Peel","Castletown","Port Erin","Port St Mary","Laxey","Onchan","Kirk Michael","Foxdale"],
+    IO: ["Diego Garcia"],
+    JE: ["Saint Helier","Saint Clement","Saint Saviour","Saint Brelade","Grouville","Saint Peter"],
+    KI: ["South Tarawa","Betio","Bairiki","Bikenibeu","Teaoraereke","Bonriki","Eita","Buariki","Butaritari","London"],
+    KY: ["George Town","West Bay","Bodden Town","North Side","East End","East End Village","North Side Village","Cayman Brac","Little Cayman","Savannah"],
+    MF: ["Marigot","Grand Case","Quartier-d'Orléans","Cul-de-Sac","Sandy Ground","Friar's Bay","Orient Bay","Hope Estate","Anse Marcel"],
+    MO: ["Macau","Taipa","Coloane","Cotai","Nossa Senhora de Fátima","São Lourenço","São Lázaro","Santo António"],
+    MP: ["Saipan","Garapan","San Jose","Capitol Hill","Susupe","Dandan","Kagman","Chalan Kanoa","Tanapag","San Vicente"],
+    MQ: ["Fort-de-France","Le Lamentin","Le Robert","Schoelcher","Le François","Ducos","La Trinité","Rivière-Salée","Saint-Joseph","Le Marin"],
+    MS: ["Brades","Plymouth","Salem","Little Bay"],
+    NC: ["Nouméa","Mont-Dore","Dumbéa","Païta","Koné","Poindimié","Bourail","La Foa","Voh","Hienghène"],
+    NF: ["Kingston"],
+    NU: ["Alofi"],
+    PF: ["Papeete","Faaa","Punaauia","Pirae","Mahina","Papara","Moorea-Maiao","Uturoa","Bora-Bora","Teva I Uta"],
+    PM: ["Saint-Pierre","Miquelon"],
+    PN: ["Adamstown"],
+    PR: ["San Juan","Bayamón","Carolina","Ponce","Caguas","Guaynabo","Mayagüez","Arecibo","Toa Baja","Trujillo Alto"],
+    RE: ["Saint-Denis","Saint-Paul","Le Tampon","Saint-Pierre","Saint-André","Le Port","Saint-Louis","Saint-Benoît","Sainte-Marie","La Possession"],
+    SH: ["Jamestown","Half Tree Hollow","Longwood","Georgetown","Levelwood","Sandy Bay"],
+    SJ: ["Longyearbyen","Barentsburg"],
+    SX: ["Philipsburg","Lower Prince's Quarter","Upper Prince's Quarter","Cole Bay","Cay Bay","Simpson Bay","Dutch Quarter"],
+    TC: ["Cockburn Town","Providenciales","Grand Turk","Grace Bay","Five Cays","Blue Hills","The Bight","Whitby","South Caicos","North Caicos"],
+    TF: ["Port-aux-Français"],
+    TK: ["Fakaofo","Nukunonu","Atafu"],
+    UM: ["Palmyra Atoll","Johnston Atoll","Midway Atoll","Wake Island","Hickam Field","Sand Island","Eastern Island"],
+    VG: ["Road Town","Spanish Town"],
+    VI: ["Charlotte Amalie","Christiansted","Cruz Bay","Frederiksted","Red Hook","Anna's Retreat","Coral Bay","Charlotte Amalie West"],
+    WF: ["Mata-Utu","Leava","Alo","Sigave","Hihifo","Vaitupu","Halalo","Teesi"],
+    YT: ["Mamoudzou","Koungou","Dzaoudzi","Dembeni","Bandraboua","Mtsamboro","Pamandzi","Sada","Bandrele","Acoua"],
+    CS: [],
+    AN: []
 };
 
 // جميع رموز الدول مفعّلة: الدول ذات القائمة المخصصة تستخدمها،
