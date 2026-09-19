@@ -238,7 +238,7 @@ async function handleSearch() {
             : '';
 
         if (selectedCountryCode) {
-            if (!currentCountryCities.length || currentCountryCode !== selectedCountryCode) {
+            if (!currentCountryCities.length) {
                 await loadCountryCities(selectedCountryCode);
             }
         } else if (!currentCountryCities.length && !allCities.length) {
