@@ -143,12 +143,18 @@ async function loadCountryCities(code) {
     const data = await res.json();
     const countryName = countryMap[code] || code;
     const countryNameAr = countries.find(c => c.code === code)?.name_ar || countryName;
-    return data.map(city => {
+    const cities = data.map(city => {
         city.country = countryName;
         city.country_ar = countryNameAr;
         city._searchKey = buildSearchableText(city);
         return city;
     });
+
+    // رتّب الدولة قبل إعادتها لأول مرة، وليس فقط بعد اكتمال العرض.
+    // هذا يمنع ظهور ترتيب الملف الخام في أول اختيار للدولة.
+    return typeof sortCitiesForCountry === 'function'
+        ? sortCitiesForCountry(cities, code)
+        : cities;
 }
 
 function showDemoData() {
