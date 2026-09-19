@@ -120,6 +120,8 @@ function sortCitiesForCountry(cities, countryCode) {
         .filter(Boolean);
 
     if (!featuredNames.length) {
+        // لا توجد قائمة يدوية؟ أنشئ قائمة أشهر تلقائية لكل دولة من بياناتها.
+        // بهذا تصبح جميع الدول، وليس الـ34 فقط، ضمن نفس نظام التصنيف.
         const autoFeatured = [...source]
             .filter(city => Number(city?.population) > 0)
             .sort((a, b) =>
@@ -135,6 +137,9 @@ function sortCitiesForCountry(cities, countryCode) {
             ])
             .filter(Boolean)
             .map(normalizeCityNameForMatch);
+
+        // خزّن القائمة التي تم توليدها للدولة، لتصبح متاحة لباقي وظائف الموقع.
+        if (featuredNames.length) FEATURED_CITIES_BY_COUNTRY[code] = [...featuredNames];
     }
 
     const used = new Set();
@@ -302,7 +307,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
         famous.forEach(city => used.add(keyOf(city)));
 
         // 3) أكبر المدن حسب عدد السكان.
-        const largest = candidates
+        const largest = currentCountryCities
             .filter(city => !used.has(keyOf(city)) && populationOf(city) > 0)
             .sort((a, b) =>
                 populationOf(b) - populationOf(a) ||
