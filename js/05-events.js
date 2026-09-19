@@ -160,6 +160,60 @@ function sortCitiesForCountry(cities, countryCode) {
     const remaining = source.filter(city => !used.has(keyOf(city)));
     return [...capitalCities, ...featuredCities, ...largestCities, ...sortCitiesAlphabetically(remaining)];
 }
+async function sortCitiesFromWeb(countryCode) {
+    const code = String(countryCode || '').toUpperCase();
+    if (!code || !currentCountryCities.length) {
+        showToast('⚠️ اختر دولة أولاً');
+        return;
+    }
+    updateStatus('🌐 جاري جلب ترتيب المدن من معلومات الويب...', '#f59e0b');
+    try {
+        const query = '\nSELECT ?city ?cityLabel ?population ?sitelinks ?capitalLabel WHERE {\n  ?country wdt:P297 "' + code + '".\n  OPTIONAL {\n    ?country wdt:P36 ?capital.\n    ?capital rdfs:label ?capitalLabel.\n    FILTER(LANG(?capitalLabel) = "en")\n  }\n  ?city wdt:P17 ?country;\n        wdt:P1082 ?population.\n  OPTIONAL { ?city wikibase:sitelinks ?sitelinks. }\n  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }\n}\nLIMIT 500';
+        const url = 'https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query);
+        const response = await fetch(url, { headers: { 'Accept': 'application/sparql-results+json' } });
+        if (!response.ok) throw new Error('web_ranking_http_' + response.status);
+        const data = await response.json();
+        const rows = data?.results?.bindings || [];
+        if (!rows.length) throw new Error('web_ranking_empty');
+        const webCities = new Map();
+        let webCapital = '';
+        rows.forEach(row => {
+            const name = row?.cityLabel?.value || '';
+            const key = normalizeCityNameForMatch(name);
+            if (!key) return;
+            if (row?.capitalLabel?.value) webCapital = normalizeCityNameForMatch(row.capitalLabel.value);
+            const population = Number(row?.population?.value || 0);
+            const sitelinks = Number(row?.sitelinks?.value || 0);
+            const old = webCities.get(key);
+            if (!old || population > old.population || sitelinks > old.sitelinks) webCities.set(key, { population, sitelinks });
+        });
+        const cityNames = city => [city?.city, city?.name, city?.city_name, city?.city_ar, city?.name_ar, city?.city_name_ar].filter(Boolean).map(normalizeCityNameForMatch);
+        const keyOf = city => cityNames(city)[0] || String(city?.id ?? city?.city_id ?? '');
+        const matchesWeb = city => cityNames(city).some(name => webCities.has(name));
+        const used = new Set();
+        const take = predicate => currentCountryCities.filter(city => {
+            const key = keyOf(city);
+            if (used.has(key) || !predicate(city)) return false;
+            used.add(key);
+            return true;
+        });
+        const capital = take(city => webCapital && cityNames(city).some(name => name === webCapital || name.includes(webCapital) || webCapital.includes(name)));
+        const famous = take(matchesWeb).sort((a,b) => Math.max(...cityNames(b).map(n => webCities.get(n)?.sitelinks || 0)) - Math.max(...cityNames(a).map(n => webCities.get(n)?.sitelinks || 0))).slice(0,5);
+        const famousKeys = new Set(famous.map(keyOf));
+        famous.forEach(c => used.add(keyOf(c)));
+        const largest = take(matchesWeb).sort((a,b) => Math.max(...cityNames(b).map(n => webCities.get(n)?.population || 0)) - Math.max(...cityNames(a).map(n => webCities.get(n)?.population || 0))).slice(0,5);
+        largest.forEach(c => used.add(keyOf(c)));
+        const remaining = currentCountryCities.filter(city => !used.has(keyOf(city)));
+        renderLocalCityResults([...capital, ...famous, ...largest, ...sortCitiesAlphabetically(remaining)]);
+        updateStatus('✅ تم ترتيب المدن: العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z، اعتماداً على بيانات الويب', '#10b981');
+    } catch (error) {
+        console.error('خطأ في ترتيب المدن من الويب:', error);
+        updateStatus('⚠️ تعذر جلب ترتيب الويب، عُرضت المدن كما هي', '#f59e0b');
+        renderLocalCityResults(currentCountryCities);
+        showToast('⚠️ تعذر جلب بيانات ترتيب المدن من الويب');
+    }
+}
+
 function escapeRegex(str) {
     return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -417,6 +471,8 @@ document.getElementById('clearResults')?.addEventListener('click', () => {
 // ============================================================
 // تغيير الدولة: إلغاء الطلب السابق ومنع سباق الطلبات
 // ============================================================
+document.getElementById('webCitySortBtn')?.addEventListener('click', () => sortCitiesFromWeb(countrySelect?.value || ''));
+
 countrySelect.addEventListener('change', async function () {
     const code = this.value;
     const requestId = ++countryLoadRequestId;
@@ -438,7 +494,7 @@ countrySelect.addEventListener('change', async function () {
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
         updateStatus(`✅ ${currentCountryCities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
+        renderLocalCityResults(currentCountryCities);
         return;
     }
 
@@ -449,7 +505,7 @@ countrySelect.addEventListener('change', async function () {
         countryCitiesCache.set(code, cities);
         currentCountryCities = cities;
         updateStatus(`✅ ${cities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesForCountry(cities, code));
+        renderLocalCityResults(cities);
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
