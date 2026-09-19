@@ -23,7 +23,8 @@ function updateStatus(message, color = '#64748b') {
 
 function getCountryCapital(countryCode) {
     const code = String(countryCode || '').toUpperCase();
-    const country = countries.find(item => String(item?.code || '').toUpperCase() === code);
+    const list = Array.isArray(countries) ? countries : [];
+    const country = list.find(item => String(item?.code || '').toUpperCase() === code);
     return String(country?.capital || country?.capital_en || country?.capital_ar || '').trim();
 }
 function updateStatus(message, color = '#64748b') {
@@ -98,7 +99,7 @@ ALL_COUNTRY_CODES.forEach(code => {
 function normalizeCityNameForMatch(value) {
     return String(value || '').toLowerCase()
         .normalize('NFD')
-        .replace(/[\\u0300-\\u036f]/g, '')
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/[أإآٱ]/g, 'ا')
         .replace(/ى/g, 'ي').replace(/ة/g, 'ه')
         .replace(/[ًٌٍَُِّْـ]/g, '')
@@ -149,12 +150,18 @@ function sortCitiesForCountry(cities, countryCode) {
     });
 
     // 3) أكبر المدن سكاناً، بعد استبعاد العاصمة والمدن الأشهر.
-    const largestCities = take(city => Number(city?.population) > 0)
+    const largestCandidates = source.filter(city =>
+        !used.has(keyOf(city)) && Number(city?.population) > 0
+    );
+
+    const largestCities = [...largestCandidates]
         .sort((a, b) =>
             Number(b.population || 0) - Number(a.population || 0) ||
             String(a.city || '').localeCompare(String(b.city || ''), 'en', { sensitivity: 'base', numeric: true })
         )
         .slice(0, 5);
+
+    largestCities.forEach(city => used.add(keyOf(city)));
 
     // 4) بقية المدن A-Z.
     const remaining = source.filter(city => !used.has(keyOf(city)));
@@ -587,7 +594,7 @@ countrySelect.addEventListener('change', async function () {
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
         updateStatus(`✅ ${currentCountryCities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(currentCountryCities);
+        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
         return;
     }
 
@@ -598,7 +605,7 @@ countrySelect.addEventListener('change', async function () {
         countryCitiesCache.set(code, cities);
         currentCountryCities = cities;
         updateStatus(`✅ ${cities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(cities);
+        renderLocalCityResults(sortCitiesForCountry(cities, code));
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
