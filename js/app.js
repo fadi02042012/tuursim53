@@ -93,6 +93,36 @@ document.head.appendChild(compactResultCardStyle);
 
  function loadNextPage(){
   if(state.rendering)return;
+
+  // مدن الدولة: استخدم نفس القائمة المحلية المرتبة التي تظهر للمستخدم.
+  // لا نعتمد على حالة ترقيم ثانية حتى لا يظهر الزر "لا توجد نتائج"
+  // بينما توجد آلاف المدن فعلياً.
+  const localCountryMode = !((searchInput?.value || '').trim()) &&
+      Array.isArray(currentCountryCities) && currentCountryCities.length &&
+      Array.isArray(currentFullResults) && currentFullResults.length;
+
+  if(localCountryMode){
+   const current = Math.min(
+    PAGE_SIZE,
+    Array.isArray(currentFullResults) ? currentFullResults.length : 0
+   );
+   const next = Math.min(currentDisplayLimit + PAGE_SIZE, currentFullResults.length);
+   if(next <= currentDisplayLimit)return;
+
+   state.rendering=true;
+   try{
+    currentDisplayLimit=next;
+    renderResults({cities:currentFullResults.slice(0,currentDisplayLimit),countries:[]});
+    if(typeof updateShowMoreButton==='function')updateShowMoreButton();
+    state.cursor=next;
+   }catch(e){console.error('خطأ في عرض دفعة المدن التالية:',e);}
+   finally{state.rendering=false;}
+
+   sync(currentFullResults.length,currentDisplayLimit);
+   if(typeof updateFavoriteButtons==='function')updateFavoriteButtons();
+   return;
+  }
+
   if(!state.items.length){refreshPagination();if(!state.items.length)return;}
   if(state.cursor>=state.items.length)return;
   state.rendering=true;
