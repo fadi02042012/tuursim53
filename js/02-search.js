@@ -231,10 +231,21 @@ async function handleSearch() {
     updateStatus('🔎 جاري تجهيز البيانات المحلية...', '#f59e0b');
 
     try {
-        // البحث العالمي يحتاج قاعدة المدن. لا نحمّلها عند فتح الصفحة حتى لا تتجمد الواجهة.
-        if (!currentCountryCities.length && !allCities.length) {
+        // عند اختيار دولة، يجب أن يعمل البحث داخل مدن الدولة فقط.
+        // لا نستخدم قاعدة المدن العالمية كبديل قبل اكتمال تحميل ملف الدولة.
+        const selectedCountryCode = typeof countrySelect !== 'undefined'
+            ? String(countrySelect?.value || '').trim()
+            : '';
+
+        if (selectedCountryCode) {
+            if (!currentCountryCities.length || currentCountryCode !== selectedCountryCode) {
+                await loadCountryCities(selectedCountryCode);
+            }
+        } else if (!currentCountryCities.length && !allCities.length) {
+            // البحث العالمي يحتاج قاعدة المدن عند عدم اختيار دولة.
             await loadGlobalCities();
         }
+
         const results = performSearch(query);
         if (results.cities.length || results.countries.length) {
             renderResults(results);
