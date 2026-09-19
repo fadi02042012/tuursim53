@@ -27,6 +27,46 @@ function sortCitiesAlphabetically(cities) {
     );
 }
 
+// ترتيب المدن للدولة: العاصمة ← المدن الأشهر ← الأكبر سكاناً ← بقية المدن A-Z.
+function sortCitiesForCountry(cities, countryCode) {
+    const source = [...(cities || [])];
+    const code = String(countryCode || '').toUpperCase();
+
+    const country = countries.find(c => String(c.code || '').toUpperCase() === code) || {};
+    const capital = normalizeText(country.capital || country.capital_en || country.capital_ar || '');
+    const featured = (FEATURED_CITIES_BY_COUNTRY?.[code] || []).map(normalizeText);
+
+    const getName = city => normalizeText(city?.city || city?.name || '');
+    const isCapital = city => capital && getName(city) === capital;
+    const featuredRank = city => {
+        const name = getName(city);
+        const index = featured.indexOf(name);
+        return index >= 0 ? index : Infinity;
+    };
+
+    const used = new Set();
+    const take = predicate => source.filter(city => {
+        const key = city?.id ?? city?.city_id ?? getName(city);
+        if (used.has(key) || !predicate(city)) return false;
+        used.add(key);
+        return true;
+    });
+
+    const capitalCities = take(isCapital);
+    const featuredCities = take(city => !isCapital(city) && featuredRank(city) !== Infinity)
+        .sort((a, b) => featuredRank(a) - featuredRank(b));
+
+    const largestCities = take(city => !isCapital(city) && featuredRank(city) === Infinity)
+        .sort((a, b) => Number(b.population || 0) - Number(a.population || 0));
+
+    const remaining = source.filter(city => {
+        const key = city?.id ?? city?.city_id ?? getName(city);
+        return !used.has(key);
+    });
+
+    return [...capitalCities, ...featuredCities, ...largestCities, ...sortCitiesAlphabetically(remaining)];
+}
+
 function escapeRegex(str) {
     return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -305,7 +345,7 @@ countrySelect.addEventListener('change', async function () {
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
         updateStatus(`✅ ${currentCountryCities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesAlphabetically(currentCountryCities));
+        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
         return;
     }
 
@@ -316,7 +356,7 @@ countrySelect.addEventListener('change', async function () {
         countryCitiesCache.set(code, cities);
         currentCountryCities = cities;
         updateStatus(`✅ ${cities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
-        renderLocalCityResults(sortCitiesAlphabetically(cities));
+        renderLocalCityResults(sortCitiesForCountry(cities, code));
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
