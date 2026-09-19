@@ -21,52 +21,145 @@ function updateStatus(message, color = '#64748b') {
     }
 }
 
-function sortCitiesAlphabetically(cities) {
-    return [...(cities || [])].sort((a, b) =>
-        String(a.city || '').localeCompare(String(b.city || ''), 'en', { sensitivity: 'base' })
-    );
+function getCountryCapital(countryCode) {
+    const code = String(countryCode || '').toUpperCase();
+    const country = countries.find(item => String(item?.code || '').toUpperCase() === code);
+    return String(country?.capital || country?.capital_en || country?.capital_ar || '').trim();
+}
+function updateStatus(message, color = '#64748b') {
+    if (statusDiv) {
+        statusDiv.textContent = message;
+        statusDiv.style.color = color;
+    }
 }
 
-// ترتيب المدن للدولة: العاصمة ← المدن الأشهر ← الأكبر سكاناً ← بقية المدن A-Z.
+function sortCitiesAlphabetically(cities) {
+    // بقية المدن تُرتب حسب الاسم الإنجليزي فقط من A إلى Z.
+    return [...(cities || [])].sort((a, b) => {
+        const nameA = String(a?.city || '').trim();
+        const nameB = String(b?.city || '').trim();
+
+        return nameA.localeCompare(nameB, 'en', {
+            sensitivity: 'base',
+            numeric: true,
+            ignorePunctuation: true
+        }) || nameA.localeCompare(nameB, 'en');
+    });
+}
+
+// المدن الأشهر تظهر أولاً عند اختيار الدولة، ثم بقية المدن أبجدياً.
+const FEATURED_CITIES_BY_COUNTRY = {
+    AE: ['Dubai','دبي','Abu Dhabi','أبو ظبي','Sharjah','الشارقة','Ajman','عجمان'],
+    SA: ['Riyadh','الرياض','Jeddah','جدة','Mecca','Makkah','مكة','Medina','Madinah','المدينة المنورة','Dammam','الدمام','Taif','الطائف'],
+    YE: ['Sanaa','صنعاء','Aden','عدن','Taiz','تعز','Al Hudaydah','Hodeidah','الحديدة','Mukalla','المكلا','Ibb','إب','Marib','مأرب','Shibam','شبام','Zabid','زبيد'],
+    EG: ['Cairo','القاهرة','Alexandria','الإسكندرية','Giza','الجيزة','Luxor','الأقصر','Aswan','أسوان','Sharm El Sheikh','شرم الشيخ','Hurghada','الغردقة'],
+    ET: ['Addis Ababa','أديس أبابا','Dire Dawa','دير داوا','Mekelle','Mek\'ele','Mekele','مكلي','Adama','Nazret','Bahir Dar','Hawassa','Gondar'],
+    TR: ['Istanbul','إسطنبول','Ankara','أنقرة','Izmir','إزمير','Antalya','أنطاليا','Bursa','بورصة','Cappadocia','كابادوكيا'],
+    US: ['New York','New York City','نيويورك','Los Angeles','لوس أنجلوس','Chicago','شيكاغو','Miami','ميامي','San Francisco','سان فرانسيسكو','Las Vegas','لاس فيغاس','Washington','واشنطن'],
+    GB: ['London','لندن','Edinburgh','إدنبرة','Manchester','مانشستر','Liverpool','ليفربول','Birmingham','برمنغهام','Oxford','أكسفورد','Cambridge','كامبريدج'],
+    FR: ['Paris','باريس','Nice','نيس','Lyon','ليون','Marseille','مرسيليا','Bordeaux','بوردو','Strasbourg','ستراسبورغ','Cannes','كان'],
+    IT: ['Rome','روما','Milan','ميلانو','Venice','البندقية','Florence','فلورنسا','Naples','نابولي','Turin','تورينو','Bologna','بولونيا'],
+    ES: ['Madrid','مدريد','Barcelona','برشلونة','Seville','إشبيلية','Valencia','فالنسيا','Granada','غرناطة','Malaga','مالقة','Bilbao','بلباو'],
+    DE: ['Berlin','برلين','Munich','ميونخ','Hamburg','هامبورغ','Frankfurt','فرانكفورت','Cologne','كولونيا','Dresden','دريسدن'],
+    MA: ['Marrakesh','Marrakech','مراكش','Casablanca','الدار البيضاء','Rabat','الرباط','Fes','فاس','Tangier','طنجة','Chefchaouen','شفشاون','Agadir','أكادير'],
+    JO: ['Amman','عمان','Petra','البتراء','Aqaba','العقبة','Jerash','جرش','Madaba','مادبا'],
+    OM: ['Muscat','مسقط','Salalah','صلالة','Nizwa','نزوى','Sur','صور','Sohar','صحار'],
+    QA: ['Doha','الدوحة','Al Wakrah','الوكرة','Al Khor','الخور'],
+    BH: ['Manama','المنامة','Muharraq','المحرق','Riffa','الرفاع'],
+    KW: ['Kuwait City','مدينة الكويت','Salmiya','السالمية','Hawally','حولي'],
+    IQ: ['Baghdad','بغداد','Erbil','أربيل','Basra','البصرة','Najaf','النجف','Karbala','كربلاء','Mosul','الموصل'],
+    IR: ['Tehran','طهران','Isfahan','أصفهان','Shiraz','شيراز','Mashhad','مشهد','Tabriz','تبريز','Yazd','يزد'],
+    IN: ['Mumbai','مومباي','Delhi','دلهي','New Delhi','نيودلهي','Agra','أغرا','Jaipur','جايبور','Bengaluru','بنغالور','Varanasi','فاراناسي','Kolkata','كولكاتا'],
+    JP: ['Tokyo','طوكيو','Kyoto','كيوتو','Osaka','أوساكا','Hiroshima','هيروشيما','Nara','نارا','Sapporo','سابورو'],
+    TH: ['Bangkok','بانكوك','Phuket','بوكيت','Chiang Mai','شيانغ ماي','Pattaya','باتايا','Krabi','كرابي'],
+    MY: ['Kuala Lumpur','كوالالمبور','George Town','جورج تاون','Malacca','ملاكا','Langkawi','لنكاوي','Johor Bahru','جوهور باهرو'],
+    ID: ['Jakarta','جاكرتا','Bali','بالي','Denpasar','دينباسار','Bandung','باندونغ','Yogyakarta','يوغياكارتا','Surabaya','سورابايا'],
+    AU: ['Sydney','سيدني','Melbourne','ملبورن','Brisbane','بريزبن','Perth','بيرث','Gold Coast','غولد كوست','Canberra','كانبيرا'],
+    CA: ['Toronto','تورونتو','Vancouver','فانكوفر','Montreal','مونتريال','Quebec City','مدينة كيبيك','Calgary','كالغاري','Ottawa','أوتاوا'],
+    BR: ['Rio de Janeiro','ريو دي جانيرو','São Paulo','Sao Paulo','ساو باولو','Brasília','برازيليا','Salvador','سلفادور','Fortaleza','فورتاليزا'],
+    MX: ['Mexico City','مكسيكو سيتي','Cancun','كانكون','Guadalajara','غوادالاخارا','Playa del Carmen','بلايا ديل كارمن','Tulum','تولوم'],
+    ZA: ['Cape Town','كيب تاون','Johannesburg','جوهانسبرغ','Durban','ديربان','Pretoria','بريتوريا'],
+    RU: ['Moscow','موسكو','Saint Petersburg','سانت بطرسبورغ','Kazan','قازان','Sochi','سوتشي','Novosibirsk','نوفوسيبيرسك'],
+    PL: ['Warsaw','وارسو','Krakow','كراكوف','Gdansk','غدانسك','Wroclaw','فروتسواف','Poznan','بوزنان'],
+    CZ: ['Prague','براغ','Brno','برنو','Karlovy Vary','كارلوفي فاري','Cesky Krumlov','تشيسكي كروملوف']
+    ,IS: ['Reykjavik','Reykjavík','ريكيافيك','Kopavogur','Kópavogur','كوبافوغور','Hafnarfjordur','Hafnarfjörður','هافنارفيوردور','Akureyri','أكوريري','Keflavik','Keflavík','كيفلافيك','Reykjanesbaer','Reykjanesbær','Selfoss','Vestmannaeyjar']
+};
+
+// جميع رموز الدول مفعّلة: الدول ذات القائمة المخصصة تستخدمها،
+// وبقية الدول تختار تلقائياً أكبر 5 مدن حسب عدد السكان.
+const ALL_COUNTRY_CODES = new Set(["AD","AE","AF","AG","AI","AL","AM","AO","AQ","AR","AS","AT","AU","AW","AX","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BL","BM","BN","BO","BQ","BR","BS","BT","BV","BW","BY","BZ","CA","CC","CD","CF","CG","CH","CI","CK","CL","CM","CN","CO","CR","CU","CV","CW","CX","CY","CZ","DE","DJ","DK","DM","DO","DZ","EC","EE","EG","EH","ER","ES","ET","FI","FJ","FK","FM","FO","FR","GA","GB","GD","GE","GF","GG","GH","GI","GL","GM","GN","GP","GQ","GR","GS","GT","GU","GW","GY","HK","HM","HN","HR","HT","HU","ID","IE","IL","IM","IN","IO","IQ","IR","IS","IT","JE","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","XK","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MF","MG","MH","MK","ML","MM","MN","MO","MP","MQ","MR","MS","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NF","NG","NI","NL","NO","NP","NR","NU","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PM","PN","PR","PS","PT","PW","PY","QA","RE","RO","RS","RU","RW","SA","SB","SC","SD","SS","SE","SG","SH","SI","SJ","SK","SL","SM","SN","SO","SR","ST","SV","SX","SY","SZ","TC","TD","TF","TG","TH","TJ","TK","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","UM","US","UY","UZ","VA","VC","VE","VG","VI","VN","VU","WF","WS","YE","YT","ZA","ZM","ZW","CS","AN"]);
+Object.keys(FEATURED_CITIES_BY_COUNTRY).forEach(code => ALL_COUNTRY_CODES.add(code));
+ALL_COUNTRY_CODES.forEach(code => {
+    if (!Object.prototype.hasOwnProperty.call(FEATURED_CITIES_BY_COUNTRY, code)) {
+        FEATURED_CITIES_BY_COUNTRY[code] = [];
+    }
+});
+
+function normalizeCityNameForMatch(value) {
+    return String(value || '').toLowerCase()
+        .normalize('NFD')
+        .replace(/[\\u0300-\\u036f]/g, '')
+        .replace(/[أإآٱ]/g, 'ا')
+        .replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+        .replace(/[ًٌٍَُِّْـ]/g, '')
+        .replace(/[’'\`,.-]/g, ' ')
+        .replace(/\\s+/g, ' ')
+        .trim();
+}
+
 function sortCitiesForCountry(cities, countryCode) {
-    const source = [...(cities || [])];
+    const source = Array.isArray(cities) ? [...cities] : [];
     const code = String(countryCode || '').toUpperCase();
 
-    const country = (Array.isArray(countries) ? countries : []).find(c => String(c.code || '').toUpperCase() === code) || {};
-    const capital = normalizeText(country.capital || country.capital_en || country.capital_ar || '');
-    const featured = (typeof FEATURED_CITIES_BY_COUNTRY !== 'undefined' ? (FEATURED_CITIES_BY_COUNTRY[code] || []) : []).map(normalizeText);
+    const cityNames = city => [
+        city?.city, city?.name, city?.city_name,
+        city?.city_ar, city?.name_ar, city?.city_name_ar
+    ].filter(Boolean).map(normalizeCityNameForMatch);
 
-    const getName = city => normalizeText(city?.city || city?.name || '');
-    const isCapital = city => capital && getName(city) === capital;
-    const featuredRank = city => {
-        const name = getName(city);
-        const index = featured.indexOf(name);
-        return index >= 0 ? index : Infinity;
-    };
+    const featuredNames = (FEATURED_CITIES_BY_COUNTRY[code] || [])
+        .map(normalizeCityNameForMatch)
+        .filter(Boolean);
 
     const used = new Set();
+    const keyOf = city => cityNames(city)[0] || String(city?.id ?? city?.city_id ?? '');
     const take = predicate => source.filter(city => {
-        const key = city?.id ?? city?.city_id ?? getName(city);
+        const key = keyOf(city);
         if (used.has(key) || !predicate(city)) return false;
         used.add(key);
         return true;
     });
 
-    const capitalCities = take(isCapital);
-    const featuredCities = take(city => !isCapital(city) && featuredRank(city) !== Infinity)
-        .sort((a, b) => featuredRank(a) - featuredRank(b));
+    // 1) العاصمة أولاً.
+    const capitalName = normalizeCityNameForMatch(getCountryCapital(code));
+    const capitalCities = take(city => capitalName && cityNames(city).some(name =>
+        name === capitalName || name.includes(capitalName) || capitalName.includes(name)
+    ));
 
-    const largestCities = take(city => !isCapital(city) && featuredRank(city) === Infinity)
-        .sort((a, b) => Number(b.population || 0) - Number(a.population || 0));
-
-    const remaining = source.filter(city => {
-        const key = city?.id ?? city?.city_id ?? getName(city);
-        return !used.has(key);
+    // 2) المدن الأشهر حسب القائمة المعتمدة للدولة.
+    const featuredRank = new Map();
+    featuredNames.forEach((name, index) => {
+        if (!featuredRank.has(name)) featuredRank.set(name, index);
+    });
+    const featuredCities = take(city =>
+        !capitalCities.includes(city) && cityNames(city).some(name => featuredRank.has(name))
+    ).sort((a, b) => {
+        const ar = Math.min(...cityNames(a).map(name => featuredRank.has(name) ? featuredRank.get(name) : Infinity));
+        const br = Math.min(...cityNames(b).map(name => featuredRank.has(name) ? featuredRank.get(name) : Infinity));
+        return ar - br;
     });
 
+    // 3) أكبر المدن سكاناً، بعد استبعاد العاصمة والمدن الأشهر.
+    const largestCities = take(city => Number(city?.population) > 0)
+        .sort((a, b) =>
+            Number(b.population || 0) - Number(a.population || 0) ||
+            String(a.city || '').localeCompare(String(b.city || ''), 'en', { sensitivity: 'base', numeric: true })
+        )
+        .slice(0, 5);
+
+    // 4) بقية المدن A-Z.
+    const remaining = source.filter(city => !used.has(keyOf(city)));
     return [...capitalCities, ...featuredCities, ...largestCities, ...sortCitiesAlphabetically(remaining)];
 }
-
 function escapeRegex(str) {
     return String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
