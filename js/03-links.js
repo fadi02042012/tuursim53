@@ -55,7 +55,21 @@ const searches = [
 function generateAdvancedLink(query, index = 0) {
     const safeIndex = Math.max(0, Math.min(searches.length - 1, Number(index) || 0));
     const search = searches[safeIndex];
-    const value = String(query || '').trim();
+
+    // روابط YouTube تستخدم اسم المدينة + الدولة فقط.
+    // لا نضيف الاسم العربي والإنجليزي معاً إذا كان query القادم
+    // يحتوي على تكرار لنفس المدينة/الدولة.
+    let value = String(query || '').trim();
+    if (search.base.includes('youtube.com/')) {
+        const parts = value.split(/\s+/).filter(Boolean);
+        const seen = new Set();
+        value = parts.filter(part => {
+            const key = part.toLocaleLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        }).join(' ');
+    }
     const url = search.base + encodeURIComponent(value) + search.suffix;
     try {
         const parsed = new URL(url);
