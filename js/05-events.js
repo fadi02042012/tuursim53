@@ -112,9 +112,30 @@ function sortCitiesForCountry(cities, countryCode) {
         city?.city_ar, city?.name_ar, city?.city_name_ar
     ].filter(Boolean).map(normalizeCityNameForMatch);
 
-    const featuredNames = (FEATURED_CITIES_BY_COUNTRY[code] || [])
+    // لكل دولة لا تملك قائمة مشهورة مخصصة، نبني قائمة "الأشهر"
+    // تلقائياً من المدن الأعلى سكاناً في ملف الدولة، حتى تحصل جميع الدول
+    // على نفس نظام التصنيف: العاصمة ← الأشهر ← الأكبر ← A-Z.
+    let featuredNames = (FEATURED_CITIES_BY_COUNTRY[code] || [])
         .map(normalizeCityNameForMatch)
         .filter(Boolean);
+
+    if (!featuredNames.length) {
+        const autoFeatured = [...source]
+            .filter(city => Number(city?.population) > 0)
+            .sort((a, b) =>
+                Number(b?.population || 0) - Number(a?.population || 0) ||
+                String(a?.city || '').localeCompare(String(b?.city || ''), 'en', { sensitivity: 'base', numeric: true })
+            )
+            .slice(0, 7);
+
+        featuredNames = autoFeatured
+            .flatMap(city => [
+                city?.city, city?.name, city?.city_name,
+                city?.city_ar, city?.name_ar, city?.city_name_ar
+            ])
+            .filter(Boolean)
+            .map(normalizeCityNameForMatch);
+    }
 
     const used = new Set();
     const keyOf = city => cityNames(city)[0] || String(city?.id ?? city?.city_id ?? '');
