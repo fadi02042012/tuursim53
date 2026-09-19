@@ -160,7 +160,7 @@ function sortCitiesForCountry(cities, countryCode) {
     const remaining = source.filter(city => !used.has(keyOf(city)));
     return [...capitalCities, ...featuredCities, ...largestCities, ...sortCitiesAlphabetically(remaining)];
 }
-async function sortCitiesFromWeb(countryCode) {
+window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
     const code = String(countryCode || '').toUpperCase();
     if (!code || !currentCountryCities.length) {
         showToast('⚠️ اختر دولة أولاً');
@@ -170,7 +170,7 @@ async function sortCitiesFromWeb(countryCode) {
     try {
         const query = '\nSELECT ?city ?cityLabel ?population ?sitelinks ?capitalLabel WHERE {\n  ?country wdt:P297 "' + code + '".\n  OPTIONAL {\n    ?country wdt:P36 ?capital.\n    ?capital rdfs:label ?capitalLabel.\n    FILTER(LANG(?capitalLabel) = "en")\n  }\n  ?city wdt:P17 ?country;\n        wdt:P1082 ?population.\n  OPTIONAL { ?city wikibase:sitelinks ?sitelinks. }\n  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }\n}\nLIMIT 500';
         const url = 'https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query);
-        const response = await fetch(url, { headers: { 'Accept': 'application/sparql-results+json' } });
+        const response = await fetch(url, { mode: 'cors', headers: { 'Accept': 'application/sparql-results+json' } });
         if (!response.ok) throw new Error('web_ranking_http_' + response.status);
         const data = await response.json();
         const rows = data?.results?.bindings || [];
@@ -471,7 +471,7 @@ document.getElementById('clearResults')?.addEventListener('click', () => {
 // ============================================================
 // تغيير الدولة: إلغاء الطلب السابق ومنع سباق الطلبات
 // ============================================================
-document.getElementById('webCitySortBtn')?.addEventListener('click', () => sortCitiesFromWeb(countrySelect?.value || ''));
+document.getElementById('webCitySortBtn')?.addEventListener('click', () => window.sortCitiesFromWeb(countrySelect?.value || ''));
 
 countrySelect.addEventListener('change', async function () {
     const code = this.value;
