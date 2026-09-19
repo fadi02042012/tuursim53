@@ -81,6 +81,7 @@ const FEATURED_CITIES_BY_COUNTRY = {
     CN: ["Beijing","Shanghai","Guangzhou","Shenzhen","Chengdu","Chongqing","Xi'an","Hangzhou","Wuhan","Tianjin"],
     IN: ["New Delhi","Mumbai","Kolkata","Bangalore","Chennai","Hyderabad","Ahmedabad","Pune","Surat","Jaipur"],
     KR: ["Seoul","Busan","Incheon","Daegu","Daejeon","Gwangju","Suwon","Ulsan","Jeju City","Changwon"],
+    KP: ["Pyongyang","Hamhung","Chongjin","Wonsan","Sariwon","Kaesong","Pyongsong","Kanggye","Sinuiju","Nampo"],
     TH: ["Bangkok","Chiang Mai","Phuket","Pattaya","Hat Yai","Nakhon Ratchasima","Udon Thani","Khon Kaen","Surat Thani","Ubon Ratchathani"],
     ID: ["Jakarta","Denpasar","Surabaya","Bandung","Medan","Semarang","Makassar","Palembang","Yogyakarta","Batam"],
     MY: ["Kuala Lumpur","George Town","Johor Bahru","Ipoh","Kota Kinabalu","Kuching","Malacca City","Shah Alam","Petaling Jaya"],
