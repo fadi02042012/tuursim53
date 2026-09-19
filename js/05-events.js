@@ -362,6 +362,12 @@ function renderLocalCityResults(sortedCities) {
     currentDisplayLimit = Math.min(RESULTS_PAGE_SIZE, currentFullResults.length || RESULTS_PAGE_SIZE);
     renderResults({ cities: currentFullResults.slice(0, currentDisplayLimit), countries: [] });
     updateShowMoreButton();
+
+    // مزامنة زر الدفعة التالية في الشريط الجانبي مع القائمة الجديدة.
+    // مهم خصوصاً بعد اختيار دولة أو تحميل مدنها من الملف المحلي.
+    if (typeof window.refreshResultsPagination === 'function') {
+        window.refreshResultsPagination();
+    }
 }
 
 function showMoreLocalResults() {
