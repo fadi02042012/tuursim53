@@ -34,7 +34,7 @@ function sortCitiesForCountry(cities, countryCode) {
 
     const country = countries.find(c => String(c.code || '').toUpperCase() === code) || {};
     const capital = normalizeText(country.capital || country.capital_en || country.capital_ar || '');
-    const featured = (FEATURED_CITIES_BY_COUNTRY?.[code] || []).map(normalizeText);
+    const featured = (typeof FEATURED_CITIES_BY_COUNTRY !== 'undefined' ? (FEATURED_CITIES_BY_COUNTRY[code] || []) : []).map(normalizeText);
 
     const getName = city => normalizeText(city?.city || city?.name || '');
     const isCapital = city => capital && getName(city) === capital;
