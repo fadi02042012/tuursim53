@@ -565,7 +565,6 @@ document.getElementById('clearResults')?.addEventListener('click', () => {
 // ============================================================
 // تغيير الدولة: إلغاء الطلب السابق ومنع سباق الطلبات
 // ============================================================
-document.getElementById('webCitySortBtn')?.addEventListener('click', () => window.sortCitiesFromWeb(countrySelect?.value || ''));
 
 countrySelect.addEventListener('change', async function () {
     const code = this.value;
