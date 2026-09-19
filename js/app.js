@@ -53,6 +53,13 @@ document.head.appendChild(compactResultCardStyle);
 
  function collectAllMatches(query){
   const text=String(query||'').trim();
+
+  // عند عرض مدن دولة بدون بحث نصي، استخدم القائمة المعروضة فعلياً
+  // حتى يحافظ زر الشريط الجانبي على ترتيب العاصمة/الأشهر/الأكبر/A-Z.
+  if(!text && Array.isArray(currentFullResults) && currentFullResults.length){
+    return {countries:[],cities:currentFullResults.slice()};
+  }
+
   const source=currentCountryCities.length?currentCountryCities:allCities;
   if(!text)return {countries:[],cities:source.slice()};
   const variants=[...new Set([text,typeof normalizeText==='function'?normalizeText(text):text.toLowerCase()])];
