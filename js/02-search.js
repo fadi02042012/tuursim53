@@ -176,7 +176,7 @@ function prependTextQueryCard(query) {
     const key = favoriteKey(item);
     favoriteItemsCache[key] = item;
     const active = getFavorites().some(x => x.key === key);
-    const favorite = '<button type="button" class="btn btn-favorite favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
+    const favorite = '<button type="button" class="btn btn-favorite favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'" style="padding:7px 11px;border:1px solid #fbbf24;border-radius:8px;background:'+(active?'#fef3c7':'#fff')+';color:#92400e;cursor:pointer;font-weight:600;">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
     const card = `
         <div class="card text-query-card" style="background:white;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
