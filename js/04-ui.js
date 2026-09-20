@@ -14,6 +14,13 @@ function getFavorites(){
     catch(_) { return []; }
 }
 function saveFavorites(items){ localStorage.setItem('tuursim53_favorites', JSON.stringify(items.slice(0,500))); }
+document.addEventListener('click', function(event){
+    const button = event.target.closest('.favorite-toggle');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    window.toggleFavorite(button.dataset.favoriteKey);
+});
 window.toggleFavorite = function(key){
     const item = favoriteItemsCache[key];
     if(!item) return;
@@ -41,7 +48,7 @@ function favoriteButton(item){
     const key = favoriteKey(item);
     favoriteItemsCache[key] = item;
     const active = getFavorites().some(x => x.key === key);
-    return '<button type="button" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'" onclick="window.toggleFavorite(this.dataset.favoriteKey)" style="padding:7px 11px;border:1px solid #fbbf24;border-radius:8px;background:'+(active?'#fef3c7':'#fff')+';color:#92400e;cursor:pointer;">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
+    return '<button type="button" class="favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'" style="padding:7px 11px;border:1px solid #fbbf24;border-radius:8px;background:'+(active?'#fef3c7':'#fff')+';color:#92400e;cursor:pointer;">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
 }
 window.showFavorites = function(){
     const items = getFavorites();
