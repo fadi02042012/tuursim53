@@ -174,34 +174,34 @@ input, select, textarea, button { max-width: 100%; box-sizing: border-box; }
 }
 
 
-/* ===== Modern Tourism Theme ===== */
+/* ===== Harmonized Tourism Theme ===== */
 :root {
   --brand: #0f766e;
   --brand-2: #14b8a6;
   --brand-dark: #115e59;
   --accent: #f59e0b;
-  --ink: #0f172a;
+  --ink: #172033;
   --muted: #64748b;
   --surface: #ffffff;
-  --surface-soft: #f0fdfa;
-  --line: #dbe7e5;
-  --shadow: 0 10px 30px rgba(15, 118, 110, .10);
+  --surface-soft: #f4fbfa;
+  --line: #d9e8e5;
+  --shadow: 0 8px 24px rgba(15, 118, 110, .08);
 }
 
 body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at 10% 0%, rgba(20,184,166,.10), transparent 28%),
-    radial-gradient(circle at 90% 8%, rgba(245,158,11,.08), transparent 25%),
+    radial-gradient(circle at 8% 0%, rgba(20,184,166,.08), transparent 26%),
+    radial-gradient(circle at 92% 8%, rgba(245,158,11,.06), transparent 22%),
     #f7faf9;
   font-family: "Tajawal", "Cairo", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.65;
 }
 
 header, .header, .site-header {
-  background: linear-gradient(135deg, #0f766e, #115e59) !important;
-  box-shadow: 0 6px 24px rgba(15,118,110,.18);
+  background: linear-gradient(135deg, #115e59 0%, #0f766e 100%) !important;
+  box-shadow: 0 5px 20px rgba(15,118,110,.14);
 }
 
 button, .btn {
@@ -214,15 +214,15 @@ button:hover, .btn:hover {
 }
 
 .btn-favorite {
-  border: 1px solid #f5c451 !important;
+  border: 1px solid #e8c56a !important;
   background: #fffaf0 !important;
-  color: #9a6700 !important;
+  color: #8a6100 !important;
   font-weight: 700 !important;
 }
 .btn-favorite[aria-pressed="true"] {
-  background: #fff3c4 !important;
-  border-color: #eab308 !important;
-  color: #854d0e !important;
+  background: #fff1bf !important;
+  border-color: #d6a514 !important;
+  color: #704f00 !important;
 }
 
 .card {
@@ -233,12 +233,8 @@ button:hover, .btn:hover {
 }
 
 .text-query-card {
-  border: 1px solid rgba(20,184,166,.28) !important;
-  background: linear-gradient(135deg,#ffffff,#f0fdfa) !important;
-}
-
-.card-header {
-  color: var(--ink);
+  border: 1px solid rgba(20,184,166,.24) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f3fbfa 100%) !important;
 }
 
 .city-name {
@@ -255,7 +251,7 @@ button:hover, .btn:hover {
 
 .btn-maps, .btn-google, .btn-yt, .btn-secondary {
   border: 1px solid rgba(15,118,110,.12) !important;
-  box-shadow: 0 3px 10px rgba(15,23,42,.06);
+  box-shadow: 0 2px 8px rgba(15,23,42,.05);
 }
 
 .seo-tags {
@@ -267,21 +263,22 @@ button:hover, .btn:hover {
 }
 
 input[type="text"], input[type="search"], select, textarea {
-  border: 1px solid #cbd5e1 !important;
+  border: 1px solid #cbdad7 !important;
   border-radius: 12px !important;
   background: #fff !important;
-  box-shadow: 0 3px 12px rgba(15,23,42,.04);
+  color: var(--ink) !important;
+  box-shadow: 0 2px 10px rgba(15,23,42,.035);
   outline: none;
 }
 
 input[type="text"]:focus, input[type="search"]:focus, select:focus, textarea:focus {
   border-color: var(--brand-2) !important;
-  box-shadow: 0 0 0 4px rgba(20,184,166,.12) !important;
+  box-shadow: 0 0 0 4px rgba(20,184,166,.11) !important;
 }
 
 .advanced-category-panel {
-  border-color: rgba(20,184,166,.22);
-  box-shadow: 0 10px 28px rgba(15,118,110,.08);
+  border-color: rgba(20,184,166,.20);
+  box-shadow: 0 8px 24px rgba(15,118,110,.07);
 }
 
 @media (max-width: 600px) {
