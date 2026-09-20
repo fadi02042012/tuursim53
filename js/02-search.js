@@ -158,9 +158,10 @@ async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, off
     groups.flat().forEach(item => unique.set(`${item.language}:${item.title}`, item));
 
     // ويكيبيديا قد تعيد نتائج تقريبية أو غير مرتبطة بالاستعلام.
-    // لا نعتبرها نتيجة إلا إذا ظهر الاستعلام فعلياً في العنوان أو الملخص.
+    // لا نعرض نتيجة ويكيبيديا إلا إذا ظهر الاستعلام نفسه في عنوان الصفحة.
+    // هذا يمنع تحويل نتائج تقريبية مثل "كالب بن يفنة" إلى نتيجة لـ "كراسيدا".
     const relevant = [...unique.values()].filter(item =>
-        matchesAnyVariant(`${item.title} ${item.snippet}`, variants)
+        matchesAnyVariant(item.title, variants)
     );
 
     return relevant.slice(0, limit);
