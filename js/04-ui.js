@@ -41,7 +41,7 @@ function favoriteButton(item){
     const key = favoriteKey(item);
     favoriteItemsCache[key] = item;
     const active = getFavorites().some(x => x.key === key);
-    return '<button type="button" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'" onclick="toggleFavorite(\''+key+'\')" style="padding:7px 11px;border:1px solid #fbbf24;border-radius:8px;background:'+(active?'#fef3c7':'#fff')+';color:#92400e;cursor:pointer;">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
+    return '<button type="button" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'" onclick="window.toggleFavorite(this.dataset.favoriteKey)" style="padding:7px 11px;border:1px solid #fbbf24;border-radius:8px;background:'+(active?'#fef3c7':'#fff')+';color:#92400e;cursor:pointer;">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
 }
 window.showFavorites = function(){
     const items = getFavorites();
