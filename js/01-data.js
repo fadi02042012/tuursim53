@@ -93,6 +93,7 @@ async function loadGlobalCities() {
             });
             globalCitiesLoaded = true;
             updateStatus(`✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`, '#10b981');
+            renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
             return allCities;
         } catch (error) {
             console.error('خطأ في تحميل قاعدة المدن العالمية:', error);
