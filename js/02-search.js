@@ -226,30 +226,45 @@ async function handleSearch() {
     }
 
     allLinksData = [];
+    // أظهر بطاقة البحث فوراً. إذا كانت الكلمة غير موجودة محلياً، لا تجعل
+    // الضغط الأول ينتظر تحميل قاعدة المدن العالمية الكبيرة.
     prependTextQueryCard(query);
     countSpan.textContent = '1';
-    updateStatus('🔎 جاري تجهيز البيانات المحلية...', '#f59e0b');
+    updateStatus('🔎 تم استقبال البحث — جاري فحص النتائج...', '#f59e0b');
 
-    try {
-        // البحث العالمي يحتاج قاعدة المدن. لا نحمّلها عند فتح الصفحة حتى لا تتجمد الواجهة.
-        if (!currentCountryCities.length && !allCities.length) {
-            await loadGlobalCities();
-        }
-        const results = performSearch(query);
+    const renderLocal = (results) => {
         if (results.cities.length || results.countries.length) {
             renderResults(results);
             prependTextQueryCard(query);
             countSpan.textContent = String(results.cities.length + results.countries.length + 1);
-            updateStatus('✅ النتائج المحلية ظهرت؛ ويكيبيديا تعمل في الخلفية.', '#10b981');
+            updateStatus('✅ ظهرت النتائج المحلية؛ ويكيبيديا تعمل في الخلفية.', '#10b981');
+        } else {
+            updateStatus('ℹ️ لم توجد مطابقة في البيانات المحلية؛ يتم البحث في ويكيبيديا.', '#64748b');
+        }
+    };
+
+    try {
+        // لا تنتظر تحميل cities.json في مسار Enter. هذا يمنع ظهور الحاجة
+        // للضغط مرتين عندما تكون الكلمة غير موجودة في JSON.
+        if (!currentCountryCities.length && !allCities.length) {
+            loadGlobalCities()
+                .then(results => {
+                    const localResults = performSearch(query);
+                    renderLocal(localResults);
+                })
+                .catch(error => console.warn('تحميل قاعدة المدن في الخلفية:', error));
+        } else {
+            renderLocal(performSearch(query));
         }
 
+        // ابدأ بحث ويكيبيديا مباشرة، بدون انتظار قاعدة المدن.
         if (typeof loadWikipediaForCurrentSearch === 'function') {
             loadWikipediaForCurrentSearch(query, lastSearchRequestId)
                 .catch(error => console.warn('Wikipedia background search:', error));
         }
     } catch (error) {
         console.error('خطأ في البحث المحلي:', error);
-        updateStatus('⚠️ ظهرت بطاقة البحث، وتعذر إكمال النتائج المحلية.', '#ef4444');
+        updateStatus('⚠️ تم استقبال البحث، وتعذر إكمال بعض النتائج المحلية.', '#ef4444');
     }
 }
 
