@@ -60,15 +60,42 @@ async function handleSearch() {
                 }
             }
         } else if (!currentCountryCities.length && !allCities.length) {
-            // البحث العالمي يحتاج قاعدة المدن عند عدم اختيار دولة.
-            // اعرض بطاقة الاستعلام قبل انتظار ملف المدن الكبير حتى يرى المستخدم
-            // نتيجة الضغط الأولى فوراً، ثم حدّثها بعد اكتمال التحميل.
-            await loadGlobalCities();
+            // لا نحجب استجابة Enter أثناء تحميل قاعدة المدن الكبيرة.
+            // بطاقة البحث النصي تظهر فوراً، ثم نتحقق من المدن في الخلفية.
+            if (!resultsDiv.querySelector('.text-query-card')) {
+                prependTextQueryCard(query);
+            }
+            updateStatus('🔎 تم تنفيذ البحث — جاري التحقق من المدن...', '#f59e0b');
+
+            loadGlobalCities()
+                .then(() => {
+                    if (String(searchInput?.value || '').trim() !== query) return;
+                    const latest = performSearch(query);
+                    if (latest.cities.length || latest.countries.length) {
+                        renderResults(latest);
+                        prependTextQueryCard(query);
+                        countSpan.textContent = String(latest.cities.length + latest.countries.length + 1);
+                        updateStatus('✅ ظهرت النتائج المحلية.', '#10b981');
+                    } else {
+                        if (!resultsDiv.querySelector('.text-query-card')) prependTextQueryCard(query);
+                        countSpan.textContent = '1';
+                        updateStatus('ℹ️ لا توجد نتائج محلية لهذه الكلمة.', '#64748b');
+                    }
+                })
+                .catch(error => {
+                    console.warn('تعذر تحميل قاعدة المدن:', error);
+                    if (!resultsDiv.querySelector('.text-query-card')) prependTextQueryCard(query);
+                    countSpan.textContent = '1';
+                    updateStatus('ℹ️ بطاقة البحث النصي جاهزة؛ تعذر تحميل المدن.', '#64748b');
+                });
+
+            if (typeof loadWikipediaForCurrentSearch === 'function') {
+                loadWikipediaForCurrentSearch(query, lastSearchRequestId)
+                    .catch(error => console.warn('Wikipedia background search:', error));
+            }
+            return;
         }
 
-        // loadGlobalCities/loadCountryCities قد يعيدان رسم النتائج أثناء التحميل
-        // ويمسحان بطاقة البحث التي أُنشئت في بداية Enter. أعدها هنا قبل
-        // حساب النتائج حتى لا يبدو للمستخدم أن أول Enter لم يعمل.
         if (!resultsDiv.querySelector('.text-query-card')) {
             prependTextQueryCard(query);
         }
