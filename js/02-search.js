@@ -156,7 +156,14 @@ async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, off
 
     const unique = new Map();
     groups.flat().forEach(item => unique.set(`${item.language}:${item.title}`, item));
-    return [...unique.values()].slice(0, limit);
+
+    // ويكيبيديا قد تعيد نتائج تقريبية أو غير مرتبطة بالاستعلام.
+    // لا نعتبرها نتيجة إلا إذا ظهر الاستعلام فعلياً في العنوان أو الملخص.
+    const relevant = [...unique.values()].filter(item =>
+        matchesAnyVariant(`${item.title} ${item.snippet}`, variants)
+    );
+
+    return relevant.slice(0, limit);
 }
 
 function prependTextQueryCard(query) {
@@ -216,7 +223,6 @@ async function handleSearch() {
         return;
     }
 
-    // المسار المطلوب: JSON المحلي أولاً، ثم ويكيبيديا، ثم بطاقة البحث النصي.
     updateStatus('🔎 جاري البحث في ملفات JSON...', '#f59e0b');
     allLinksData = [];
     resultsDiv.innerHTML = '';
