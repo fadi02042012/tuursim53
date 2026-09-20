@@ -172,9 +172,11 @@ async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, off
 function prependTextQueryCard(query) {
     const text = String(query || '').trim();
     if (!text) return;
-    const index = allLinksData.length;
-    allLinksData.push({ query: text, links: null, type: 'بحث نصي', name: text });
-
+    const item = { type: 'بحث نصي', name: text, query: text };
+    const key = favoriteKey(item);
+    favoriteItemsCache[key] = item;
+    const active = getFavorites().some(x => x.key === key);
+    const favorite = '<button type="button" class="btn btn-favorite favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
     const card = `
         <div class="card text-query-card" style="background:white;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
@@ -186,7 +188,7 @@ function prependTextQueryCard(query) {
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}">🔍 Google</a>
                 <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}">▶ YouTube</a>
                 <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" href="${escapeHtml(getCategoryUrl(text))}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
-                <button class="btn btn-favorite favorite-toggle" data-favorite-index="${index}" onclick="toggleFavorite(${index})" type="button">⭐ المفضلة</button>
+                ${favorite}
             </div>
             <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;padding:0;">
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}">🌍 السياحة</a>
