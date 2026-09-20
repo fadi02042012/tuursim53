@@ -199,7 +199,22 @@ function prependTextQueryCard(query) {
     resultsDiv.insertAdjacentHTML('afterbegin', card);
 }
 
-async function handleSearch() {
+async async function saveSearchHistoryForUser(query) {
+    const user = String(localStorage.getItem('tuursim53_user_name') || '').trim();
+    const text = String(query || '').trim();
+    if (!user || !text) return;
+    try {
+        await fetch('/.netlify/functions/search-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, query: text })
+        });
+    } catch (error) {
+        console.warn('تعذر حفظ سجل البحث:', error);
+    }
+}
+
+function handleSearch() {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
 
@@ -243,6 +258,7 @@ async function handleSearch() {
         renderResults(localResults);
         countSpan.textContent = String(localResults.cities.length + localResults.countries.length);
         updateStatus('✅ ظهرت النتائج من ملفات JSON.', '#10b981');
+        saveSearchHistoryForUser(query);
         return;
     }
 
@@ -256,6 +272,7 @@ async function handleSearch() {
             renderWikipediaResults(wikiResults, query);
             countSpan.textContent = String(wikiResults.length);
             updateStatus('📖 ظهرت النتائج من ويكيبيديا.', '#10b981');
+            saveSearchHistoryForUser(query);
             return;
         }
     } catch (error) {
@@ -267,6 +284,7 @@ async function handleSearch() {
     prependTextQueryCard(query);
     countSpan.textContent = '1';
     updateStatus('🔎 لا توجد نتائج في JSON أو ويكيبيديا — ظهرت بطاقة البحث النصي.', '#64748b');
+    saveSearchHistoryForUser(query);
 }
 
 console.log('✅ 02-search.js تم تحميله بنجاح — ترتيب البحث: JSON ثم Wikipedia ثم بحث نصي');
