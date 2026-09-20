@@ -2,6 +2,66 @@
 // 04-ui.js - واجهة البحث المتقدم السريعة
 // ============================================================
 let selectedAdvancedCategory = 0;
+let favoriteItemsCache = {};
+function favoriteKey(item){
+    const raw = [item.type || '', item.name || '', item.query || '', item.url || ''].join('|');
+    let hash = 0;
+    for(let i=0;i<raw.length;i++) hash = ((hash << 5) - hash) + raw.charCodeAt(i) | 0;
+    return 'fav_' + Math.abs(hash);
+}
+function getFavorites(){
+    try { const data = JSON.parse(localStorage.getItem('tuursim53_favorites') || '[]'); return Array.isArray(data) ? data : []; }
+    catch(_) { return []; }
+}
+function saveFavorites(items){ localStorage.setItem('tuursim53_favorites', JSON.stringify(items.slice(0,500))); }
+window.toggleFavorite = function(key){
+    const item = favoriteItemsCache[key];
+    if(!item) return;
+    const items = getFavorites();
+    const index = items.findIndex(x => x.key === key);
+    if(index >= 0){
+        items.splice(index,1);
+        showToast('🗑️ تمت إزالة النتيجة من المفضلة');
+    } else {
+        items.unshift({...item, key, savedAt:new Date().toISOString()});
+        showToast('⭐ تمت إضافة النتيجة إلى المفضلة');
+    }
+    saveFavorites(items);
+    updateFavoriteButtons();
+};
+window.updateFavoriteButtons = function(){
+    const keys = new Set(getFavorites().map(x => x.key));
+    document.querySelectorAll('[data-favorite-key]').forEach(btn => {
+        const active = keys.has(btn.dataset.favoriteKey);
+        btn.textContent = active ? '⭐ في المفضلة' : '☆ أضف للمفضلة';
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+};
+function favoriteButton(item){
+    const key = favoriteKey(item);
+    favoriteItemsCache[key] = item;
+    const active = getFavorites().some(x => x.key === key);
+    return '<button type="button" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'" onclick="toggleFavorite(\''+key+'\')" style="padding:7px 11px;border:1px solid #fbbf24;border-radius:8px;background:'+(active?'#fef3c7':'#fff')+';color:#92400e;cursor:pointer;">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
+}
+window.showFavorites = function(){
+    const items = getFavorites();
+    if(!items.length){ resultsDiv.innerHTML='<div class="card"><div style="text-align:center;padding:35px;">⭐<h3>لا توجد نتائج في المفضلة</h3><p style="color:#94a3b8;">يمكنك إضافة أي نتيجة للمفضلة والعودة إليها لاحقًا.</p></div></div>'; countSpan.textContent='0'; return; }
+    resultsDiv.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="margin:0;">⭐ المفضلة ('+items.length+')</h3><button type="button" onclick="clearFavorites()" style="padding:7px 11px;border:1px solid #ef4444;border-radius:8px;background:#fff;color:#b91c1c;cursor:pointer;">🗑️ مسح المفضلة</button></div>' +
+        items.map(item => {
+            const safeName = escapeHtml(item.name || item.query || 'نتيجة');
+            const q = String(item.query || item.name || '').trim();
+            const url = item.url ? '<a class="btn btn-wiki" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(item.url)+'">📖 فتح الصفحة</a>' : '';
+            favoriteItemsCache[item.key] = item;
+            return '<div class="card" style="'+cardStyle()+'"><div style="font-size:17px;font-weight:bold;color:#1e293b;">'+safeName+'</div><div style="color:#64748b;font-size:13px;margin:5px 0 9px;">'+escapeHtml(item.type || 'نتيجة')+'</div><div style="display:flex;gap:7px;flex-wrap:wrap;">'+favoriteButton(item)+'<a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent(q)+'">🔍 Google</a><a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)+'">📍 خرائط</a><a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+'">▶ YouTube</a>'+url+'</div></div>';
+        }).join('');
+    countSpan.textContent=String(items.length);
+};
+window.clearFavorites = function(){
+    if(!confirm('هل تريد مسح جميع النتائج المحفوظة في المفضلة؟')) return;
+    localStorage.removeItem('tuursim53_favorites');
+    showFavorites();
+};
+
 
 function ensureAdvancedCategoryStyles() {
     if (document.getElementById('advanced-category-styles')) return;
@@ -56,7 +116,7 @@ function buttonsHtml(query,index,mapsQuery=query,wikiUrl=''){
         <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" href="${escapeHtml(advancedUrl)}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
     </div>`;
 }
-function renderResults({cities=[],countries=[]}){resultsDiv.innerHTML='';allLinksData=[];if(!cities.length&&!countries.length)return renderEmptySearch();const parts=[buildAdvancedCategoryPanel()];parts.push(`<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;"><button type="button" onclick="searchOnlyWikipedia()" style="padding:10px 20px;background:#3b82f6;color:white;border:0;border-radius:9px;cursor:pointer;">📖 بحث في ويكيبيديا</button><button type="button" onclick="searchAllWikipedia()" style="padding:10px 20px;background:#8b5cf6;color:white;border:0;border-radius:9px;cursor:pointer;">🔍 بحث موسع</button></div>`);let total=0;if(countries.length){parts.push(`<div style="margin:10px 0 7px;padding:7px 14px;background:#f1f5f9;border-radius:10px;"><h3 style="font-size:15px;color:#1e293b;margin:0;">🌍 دول (${countries.length})</h3></div>`);total+=countries.length;countries.forEach(c=>{const name=c.name||'',nameAr=c.name_ar||'',capital=c.capital||'';const query=[name,nameAr].filter(Boolean).join(' ');const index=allLinksData.length;allLinksData.push({query,links:null,type:'دولة',name});parts.push(`<div class="card" style="${cardStyle()}"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(name)}</span><span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(nameAr||name)}</span></div></div>${capital?`<div style="font-size:13px;color:#475569;margin-bottom:7px;">🏛️ العاصمة: ${escapeHtml(capital)}</div>`:''}${buttonsHtml(query,index,name)}</div>`);});}if(cities.length){parts.push(`<div style="margin:10px 0 7px;padding:7px 14px;background:#f1f5f9;border-radius:10px;"><h3 style="font-size:15px;color:#1e293b;margin:0;">🏙️ مدن (${cities.length})</h3></div>`);total+=cities.length;cities.forEach(c=>{const city=c.city||'',cityAr=c.city_ar||'',country=c.country||'',countryAr=c.country_ar||'';const population=c.population||'';const query=[city,cityAr,country,countryAr].filter(Boolean).join(' ');const index=allLinksData.length;allLinksData.push({query,links:null,type:'مدينة',name:city});parts.push(`<div class="card" style="${cardStyle()}"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(city)}</span>${cityAr?`<span style="color:#64748b;font-size:15px;margin-right:4px;">(${escapeHtml(cityAr)})</span>`:''}<span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(country)}</span>${countryAr?`<span style="color:#64748b;">(${escapeHtml(countryAr)})</span>`:''}</div></div>${population?`<div style="font-size:12px;color:#94a3b8;margin-bottom:7px;">👥 ${Number(population).toLocaleString()}</div>`:''}${buttonsHtml(query,index,city)}<div class="seo-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في '+city+' '+country)}">🌍 السياحة</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق '+city+' '+country)}">🏨 فنادق</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم '+city+' '+country)}">🍽️ مطاعم</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('معالم سياحية '+city+' '+country)}">🏛️ معالم</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السفر إلى '+city+' '+country)}">✈️ السفر</a></div></div>`);});}resultsDiv.innerHTML=parts.join('');countSpan.textContent=total;}
+function renderResults({cities=[],countries=[]}){resultsDiv.innerHTML='';allLinksData=[];if(!cities.length&&!countries.length)return renderEmptySearch();const parts=[buildAdvancedCategoryPanel()];parts.push(`<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;"><button type="button" onclick="searchOnlyWikipedia()" style="padding:10px 20px;background:#3b82f6;color:white;border:0;border-radius:9px;cursor:pointer;">📖 بحث في ويكيبيديا</button><button type="button" onclick="searchAllWikipedia()" style="padding:10px 20px;background:#8b5cf6;color:white;border:0;border-radius:9px;cursor:pointer;">🔍 بحث موسع</button></div>`);let total=0;if(countries.length){parts.push(`<div style="margin:10px 0 7px;padding:7px 14px;background:#f1f5f9;border-radius:10px;"><h3 style="font-size:15px;color:#1e293b;margin:0;">🌍 دول (${countries.length})</h3></div>`);total+=countries.length;countries.forEach(c=>{const name=c.name||'',nameAr=c.name_ar||'',capital=c.capital||'';const query=[name,nameAr].filter(Boolean).join(' ');const index=allLinksData.length;allLinksData.push({query,links:null,type:'دولة',name});parts.push(`<div class="card" style="${cardStyle()}"><div style="text-align:left;margin-bottom:7px;">${favoriteButton({type:'دولة',name,query})}</div><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(name)}</span><span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(nameAr||name)}</span></div></div>${capital?`<div style="font-size:13px;color:#475569;margin-bottom:7px;">🏛️ العاصمة: ${escapeHtml(capital)}</div>`:''}${buttonsHtml(query,index,name)}</div>`);});}if(cities.length){parts.push(`<div style="margin:10px 0 7px;padding:7px 14px;background:#f1f5f9;border-radius:10px;"><h3 style="font-size:15px;color:#1e293b;margin:0;">🏙️ مدن (${cities.length})</h3></div>`);total+=cities.length;cities.forEach(c=>{const city=c.city||'',cityAr=c.city_ar||'',country=c.country||'',countryAr=c.country_ar||'';const population=c.population||'';const query=[city,cityAr,country,countryAr].filter(Boolean).join(' ');const index=allLinksData.length;allLinksData.push({query,links:null,type:'مدينة',name:city});parts.push(`<div class="card" style="${cardStyle()}"><div style="text-align:left;margin-bottom:7px;">${favoriteButton({type:'مدينة',name:city,query})}</div><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(city)}</span>${cityAr?`<span style="color:#64748b;font-size:15px;margin-right:4px;">(${escapeHtml(cityAr)})</span>`:''}<span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(country)}</span>${countryAr?`<span style="color:#64748b;">(${escapeHtml(countryAr)})</span>`:''}</div></div>${population?`<div style="font-size:12px;color:#94a3b8;margin-bottom:7px;">👥 ${Number(population).toLocaleString()}</div>`:''}${buttonsHtml(query,index,city)}<div class="seo-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في '+city+' '+country)}">🌍 السياحة</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق '+city+' '+country)}">🏨 فنادق</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم '+city+' '+country)}">🍽️ مطاعم</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('معالم سياحية '+city+' '+country)}">🏛️ معالم</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السفر إلى '+city+' '+country)}">✈️ السفر</a></div></div>`);});}resultsDiv.innerHTML=parts.join('');countSpan.textContent=total;}
 function renderEmptySearch(){
     const query=searchInput.value.trim();
     if(!query){
@@ -88,7 +148,7 @@ function renderEmptySearch(){
     }
     updateStatus('ℹ️ لم توجد مطابقة؛ تم إبقاء بطاقة البحث النصي للكلمة المطلوبة.','#64748b');
 }
-function renderWikipediaResults(results,query,isMore=false){if(!results?.length)return;let html='';if(!isMore)html+=buildAdvancedCategoryPanel();results.forEach(item=>{const index=allLinksData.length;allLinksData.push({query:item.title,links:null,type:'ويكيبيديا',name:item.title});const wc=item.wordcount?`📝 ${Number(item.wordcount).toLocaleString()} كلمة`:'';html+=`<div class="card" style="${cardStyle()}"><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:17px;font-weight:bold;color:#1e293b;">${escapeHtml(item.title)}</span><span style="color:#64748b;margin-right:7px;font-size:13px;">📖 ويكيبيديا</span>${wc?`<span style="color:#94a3b8;font-size:11px;margin-right:5px;">${wc}</span>`:''}</div></div><p style="margin:0 0 9px;color:#64748b;font-size:13px;line-height:1.5;">${escapeHtml(item.snippet||'')}</p>${buttonsHtml(item.title,index,item.title,item.url)}</div>`;});if(!isMore)html+=`<div style="text-align:center;margin:14px 0;"><button type="button" onclick="loadMoreWikipedia()" style="padding:10px 24px;background:#3b82f6;color:white;border:0;border-radius:8px;cursor:pointer;">📚 تحميل 10 نتائج إضافية</button></div>`;resultsDiv.insertAdjacentHTML('beforeend',html);}
+function renderWikipediaResults(results,query,isMore=false){if(!results?.length)return;let html='';if(!isMore)html+=buildAdvancedCategoryPanel();results.forEach(item=>{const index=allLinksData.length;allLinksData.push({query:item.title,links:null,type:'ويكيبيديا',name:item.title});const wc=item.wordcount?`📝 ${Number(item.wordcount).toLocaleString()} كلمة`:'';html+=`<div class="card" style="${cardStyle()}"><div style="text-align:left;margin-bottom:7px;">${favoriteButton({type:'ويكيبيديا',name:item.title,query:item.title,url:item.url})}</div><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:17px;font-weight:bold;color:#1e293b;">${escapeHtml(item.title)}</span><span style="color:#64748b;margin-right:7px;font-size:13px;">📖 ويكيبيديا</span>${wc?`<span style="color:#94a3b8;font-size:11px;margin-right:5px;">${wc}</span>`:''}</div></div><p style="margin:0 0 9px;color:#64748b;font-size:13px;line-height:1.5;">${escapeHtml(item.snippet||'')}</p>${buttonsHtml(item.title,index,item.title,item.url)}</div>`;});if(!isMore)html+=`<div style="text-align:center;margin:14px 0;"><button type="button" onclick="loadMoreWikipedia()" style="padding:10px 24px;background:#3b82f6;color:white;border:0;border-radius:8px;cursor:pointer;">📚 تحميل 10 نتائج إضافية</button></div>`;resultsDiv.insertAdjacentHTML('beforeend',html);}
 window.toggleLinks=function(index){
     const data=allLinksData[Number(index)];
     const container=document.getElementById('links-'+Number(index));
