@@ -198,9 +198,6 @@ async function handleSearch() {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
     if (!query) {
-        // الضغط على زر "بحث" بدون نص يجب ألا يعيد ترتيب مدن الدولة
-        // إلى ترتيب الملف الخام. حافظ على الترتيب المطلوب: العاصمة،
-        // المدن الأشهر، الأكبر سكاناً، ثم A-Z.
         const source = currentCountryCities.length
             ? (typeof sortCitiesForCountry === 'function'
                 ? sortCitiesForCountry(currentCountryCities, countrySelect?.value || '')
@@ -214,9 +211,7 @@ async function handleSearch() {
             currentDisplayLimit = Math.min(RESULTS_PER_BATCH, source.length);
             renderResults({ cities: source.slice(0, currentDisplayLimit), countries: [] });
             if (typeof updateShowMoreButton === 'function') updateShowMoreButton();
-            if (typeof window.refreshResultsPagination === 'function') {
-                window.refreshResultsPagination();
-            }
+            if (typeof window.refreshResultsPagination === 'function') window.refreshResultsPagination();
         } else if (source.length) {
             renderResults({ cities: source.slice(0, RESULTS_PER_BATCH), countries: [] });
         } else {
@@ -226,46 +221,56 @@ async function handleSearch() {
     }
 
     allLinksData = [];
-    // أظهر بطاقة البحث فوراً. إذا كانت الكلمة غير موجودة محلياً، لا تجعل
-    // الضغط الأول ينتظر تحميل قاعدة المدن العالمية الكبيرة.
     prependTextQueryCard(query);
     countSpan.textContent = '1';
-    updateStatus('🔎 تم استقبال البحث — جاري فحص النتائج...', '#f59e0b');
+    updateStatus('🔎 جاري البحث...', '#f59e0b');
 
-    const renderLocal = (results) => {
+    // ابدأ ويكيبيديا فوراً عند الضغطة الأولى، ولا تنتظر JSON.
+    const wikiPromise = searchWikipediaMultilingual(query, RESULTS_PER_BATCH)
+        .then(results => {
+            if (results.length) {
+                resultsDiv.innerHTML = '';
+                allLinksData = [];
+                renderWikipediaResults(results, query);
+                countSpan.textContent = String(results.length);
+                updateStatus('📖 ظهرت نتائج ويكيبيديا.', '#10b981');
+                return true;
+            }
+            return false;
+        })
+        .catch(error => {
+            console.warn('Wikipedia search:', error);
+            return false;
+        });
+
+    // حمّل قاعدة المدن في الخلفية فقط؛ لا تعرض أول 20 مدينة عشوائية.
+    let globalPromise = Promise.resolve();
+    if (!currentCountryCities.length && !allCities.length) {
+        globalPromise = loadGlobalCities().catch(error => {
+            console.warn('تحميل قاعدة المدن:', error);
+            return null;
+        });
+    }
+
+    globalPromise.then(() => {
+        const results = performSearch(query);
         if (results.cities.length || results.countries.length) {
+            resultsDiv.innerHTML = '';
+            allLinksData = [];
             renderResults(results);
             prependTextQueryCard(query);
             countSpan.textContent = String(results.cities.length + results.countries.length + 1);
-            updateStatus('✅ ظهرت النتائج المحلية؛ ويكيبيديا تعمل في الخلفية.', '#10b981');
+            updateStatus('✅ ظهرت النتائج المحلية.', '#10b981');
         } else {
-            updateStatus('ℹ️ لم توجد مطابقة في البيانات المحلية؛ يتم البحث في ويكيبيديا.', '#64748b');
+            // إذا لم يوجد تطابق محلي، اترك نتيجة ويكيبيديا كما هي.
+            wikiPromise.then(hasWiki => {
+                if (!hasWiki) {
+                    renderEmptySearch();
+                    updateStatus('ℹ️ لم توجد مطابقة في البيانات المحلية أو ويكيبيديا.', '#64748b');
+                }
+            });
         }
-    };
-
-    try {
-        // لا تنتظر تحميل cities.json في مسار Enter. هذا يمنع ظهور الحاجة
-        // للضغط مرتين عندما تكون الكلمة غير موجودة في JSON.
-        if (!currentCountryCities.length && !allCities.length) {
-            loadGlobalCities()
-                .then(results => {
-                    const localResults = performSearch(query);
-                    renderLocal(localResults);
-                })
-                .catch(error => console.warn('تحميل قاعدة المدن في الخلفية:', error));
-        } else {
-            renderLocal(performSearch(query));
-        }
-
-        // ابدأ بحث ويكيبيديا مباشرة، بدون انتظار قاعدة المدن.
-        if (typeof loadWikipediaForCurrentSearch === 'function') {
-            loadWikipediaForCurrentSearch(query, lastSearchRequestId)
-                .catch(error => console.warn('Wikipedia background search:', error));
-        }
-    } catch (error) {
-        console.error('خطأ في البحث المحلي:', error);
-        updateStatus('⚠️ تم استقبال البحث، وتعذر إكمال بعض النتائج المحلية.', '#ef4444');
-    }
+    });
 }
 
 console.log('✅ 02-search.js تم تحميله بنجاح — البحث المحلي فوري وبدون انتظار خارجي');
