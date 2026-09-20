@@ -54,10 +54,24 @@ function buildQueryVariants(query) {
 function matchesAnyVariant(text, variants) {
     const raw = String(text || '');
     const lower = raw.toLowerCase();
-    const normalized = normalizeText(raw);
+    const normalized = normalizeText(raw).replace(/\s+/g, ' ').trim();
+    const tokens = normalized.split(' ').filter(Boolean);
+
     return variants.some(variant => {
-        const value = String(variant || '');
-        return lower.includes(value.toLowerCase()) || normalized.includes(normalizeText(value));
+        const value = String(variant || '').trim();
+        if (!value) return false;
+
+        const valueNormalized = normalizeText(value).replace(/\s+/g, ' ').trim();
+        if (!valueNormalized) return false;
+
+        // المطابقة للكلمة المفردة تكون كلمة كاملة، حتى لا تتحول
+        // كلمة مثل "مصري" إلى نتيجة لاسم يحتويها ضمن كلمة أطول مثل "مصرين".
+        if (!valueNormalized.includes(' ')) {
+            return tokens.includes(valueNormalized) || lower === value.toLowerCase();
+        }
+
+        // العبارات متعددة الكلمات تبقى مطابقة كعبارة كاملة.
+        return normalized.includes(valueNormalized);
     });
 }
 
