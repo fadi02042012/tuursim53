@@ -68,8 +68,23 @@ function renderEmptySearch(){
     countSpan.textContent='1';
     // إذا لم توجد الكلمة في JSON ولا في ويكيبيديا، أظهر بطاقة البحث النصي
     // بنفس الكلمة التي كتبها المستخدم، ولا تجعلها تختفي.
-    if (typeof prependTextQueryCard === 'function') {
-        prependTextQueryCard(query);
+    try {
+        if (typeof prependTextQueryCard === 'function') {
+            prependTextQueryCard(query);
+        } else {
+            resultsDiv.insertAdjacentHTML('afterbegin', `
+                <div class="card text-query-card" style="background:white;border-radius:12px;padding:16px;margin-bottom:10px;">
+                    <div style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(query)}</div>
+                    <div style="color:#64748b;margin-top:5px;">📝 بحث نصي</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                        <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(query)}">🔍 Google</a>
+                        <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}">📍 خرائط</a>
+                        <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}">▶ YouTube</a>
+                    </div>
+                </div>`);
+        }
+    } catch (error) {
+        console.warn('تعذر إنشاء بطاقة البحث النصي:', error);
     }
     updateStatus('ℹ️ لم توجد مطابقة؛ تم إبقاء بطاقة البحث النصي للكلمة المطلوبة.','#64748b');
 }
