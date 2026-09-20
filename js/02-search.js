@@ -257,8 +257,10 @@ async function handleSearch() {
     const localResults = performSearch(query);
     if (localResults.cities.length || localResults.countries.length) {
         renderResults(localResults);
-        countSpan.textContent = String(localResults.cities.length + localResults.countries.length);
-        updateStatus('✅ ظهرت النتائج من ملفات JSON.', '#10b981');
+        // بطاقة البحث النصي تظهر أولاً دائمًا، حتى مع وجود نتائج مطابقة.
+        prependTextQueryCard(query);
+        countSpan.textContent = String(localResults.cities.length + localResults.countries.length + 1);
+        updateStatus('✅ ظهرت النتائج من ملفات JSON مع بطاقة البحث النصي.', '#10b981');
         return;
     }
 
