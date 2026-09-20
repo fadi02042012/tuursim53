@@ -257,7 +257,7 @@ async function handleSearch() {
     const localResults = performSearch(query);
     if (localResults.cities.length || localResults.countries.length) {
         renderResults(localResults);
-        // بطاقة البحث النصي تظهر أولاً دائمًا، حتى مع وجود نتائج مطابقة.
+        // بطاقة البحث النصي تظهر أولاً دائمًا.
         prependTextQueryCard(query);
         countSpan.textContent = String(localResults.cities.length + localResults.countries.length + 1);
         updateStatus('✅ ظهرت النتائج من ملفات JSON مع بطاقة البحث النصي.', '#10b981');
@@ -272,8 +272,10 @@ async function handleSearch() {
             resultsDiv.innerHTML = '';
             allLinksData = [];
             renderWikipediaResults(wikiResults, query);
-            countSpan.textContent = String(wikiResults.length);
-            updateStatus('📖 ظهرت النتائج من ويكيبيديا.', '#10b981');
+            // بطاقة البحث النصي تظهر أولاً دائمًا حتى مع نتائج ويكيبيديا.
+            prependTextQueryCard(query);
+            countSpan.textContent = String(wikiResults.length + 1);
+            updateStatus('📖 ظهرت النتائج من ويكيبيديا مع بطاقة البحث النصي.', '#10b981');
             return;
         }
     } catch (error) {
