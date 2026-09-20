@@ -238,8 +238,15 @@ async function handleSearch() {
             : '';
 
         if (selectedCountryCode) {
-            if (!currentCountryCities.length) {
-                await loadCountryCities(selectedCountryCode);
+            // إذا ضغط المستخدم Enter أثناء تحميل الدولة، يجب حفظ نتيجة التحميل
+            // في currentCountryCities فوراً. عدم فعل ذلك كان يجعل أول Enter
+            // ينتهي قبل أن يرى البحث مدن الدولة، ثم يعمل فقط عند Enter ثانٍ.
+            if (!currentCountryCities.length || String(countrySelect?.value || '').trim() !== selectedCountryCode) {
+                const loadedCities = await loadCountryCities(selectedCountryCode);
+                currentCountryCities = Array.isArray(loadedCities) ? loadedCities : [];
+                if (typeof countryCitiesCache !== 'undefined' && countryCitiesCache instanceof Map) {
+                    countryCitiesCache.set(selectedCountryCode, currentCountryCities);
+                }
             }
         } else if (!currentCountryCities.length && !allCities.length) {
             // البحث العالمي يحتاج قاعدة المدن عند عدم اختيار دولة.
