@@ -714,12 +714,13 @@ searchInput.addEventListener('input', function () {
 
 let searchInProgress = false;
 let pendingSearchAfterCurrent = false;
+let lastEnterHandledAt = 0;
 
 async function runSearchNow() {
     clearTimeout(suggestionsTimeout);
     showSuggestions([]);
 
-    // منع تكرار الطلبات المتزامنة، مع حفظ آخر طلب بدلاً من تجاهله.
+    // تنفيذ البحث فورًا حتى لو كانت اقتراحات البحث أو طلب سابق ما زال يعمل.
     if (searchInProgress) {
         pendingSearchAfterCurrent = true;
         return;
@@ -728,20 +729,36 @@ async function runSearchNow() {
     searchInProgress = true;
     try {
         await handleSearch();
+    } catch (error) {
+        console.error('خطأ في تنفيذ البحث:', error);
     } finally {
         searchInProgress = false;
         if (pendingSearchAfterCurrent) {
             pendingSearchAfterCurrent = false;
-            queueMicrotask(() => runSearchNow());
+            // تشغيل آخر طلب بعد انتهاء الطلب الحالي، بدون انتظار ضغطة Enter ثانية.
+            setTimeout(() => runSearchNow(), 0);
         }
     }
 }
 
+function handleEnterSearch(event) {
+    if (event.key !== 'Enter') return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    // بعض المتصفحات/لوحات المفاتيح قد لا ترسل keydown بشكل موثوق.
+    // نستخدم keydown + keyup كمسار احتياطي مع منع التنفيذ المزدوج.
+    const now = Date.now();
+    if (now - lastEnterHandledAt < 250) return;
+    lastEnterHandledAt = now;
+
+    void runSearchNow();
+}
+
 searchInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
-        event.preventDefault();
-        event.stopPropagation();
-        runSearchNow();
+        handleEnterSearch(event);
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
@@ -750,8 +767,19 @@ searchInput.addEventListener('keydown', function (event) {
     }
 });
 
+searchInput.addEventListener('keyup', function (event) {
+    if (event.key === 'Enter') {
+        // احتياطي: إذا لم يصل keydown، يبدأ البحث من keyup.
+        const now = Date.now();
+        if (now - lastEnterHandledAt >= 250) {
+            lastEnterHandledAt = now;
+            void runSearchNow();
+        }
+    }
+});
+
 document.getElementById('searchBtn')?.addEventListener('click', () => {
-    runSearchNow();
+    void runSearchNow();
 });
 
 // ============================================================
