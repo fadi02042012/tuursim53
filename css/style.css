@@ -172,3 +172,119 @@ input, select, textarea, button { max-width: 100%; box-sizing: border-box; }
   .advanced-category-count { background: rgba(59,130,246,.18); color: #93c5fd; }
   #advanced-category-select { background: #111827; color: #f8fafc; border-color: #475569; }
 }
+
+
+/* ===== Modern Tourism Theme ===== */
+:root {
+  --brand: #0f766e;
+  --brand-2: #14b8a6;
+  --brand-dark: #115e59;
+  --accent: #f59e0b;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --surface: #ffffff;
+  --surface-soft: #f0fdfa;
+  --line: #dbe7e5;
+  --shadow: 0 10px 30px rgba(15, 118, 110, .10);
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(20,184,166,.10), transparent 28%),
+    radial-gradient(circle at 90% 8%, rgba(245,158,11,.08), transparent 25%),
+    #f7faf9;
+  font-family: "Tajawal", "Cairo", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+
+header, .header, .site-header {
+  background: linear-gradient(135deg, #0f766e, #115e59) !important;
+  box-shadow: 0 6px 24px rgba(15,118,110,.18);
+}
+
+button, .btn {
+  border-radius: 10px !important;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease !important;
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-favorite {
+  border: 1px solid #f5c451 !important;
+  background: #fffaf0 !important;
+  color: #9a6700 !important;
+  font-weight: 700 !important;
+}
+.btn-favorite[aria-pressed="true"] {
+  background: #fff3c4 !important;
+  border-color: #eab308 !important;
+  color: #854d0e !important;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 16px !important;
+  box-shadow: var(--shadow) !important;
+  background: var(--surface) !important;
+}
+
+.text-query-card {
+  border: 1px solid rgba(20,184,166,.28) !important;
+  background: linear-gradient(135deg,#ffffff,#f0fdfa) !important;
+}
+
+.card-header {
+  color: var(--ink);
+}
+
+.city-name {
+  color: var(--brand-dark) !important;
+}
+
+.country-name {
+  color: var(--muted) !important;
+}
+
+.btn-group {
+  gap: 8px !important;
+}
+
+.btn-maps, .btn-google, .btn-yt, .btn-secondary {
+  border: 1px solid rgba(15,118,110,.12) !important;
+  box-shadow: 0 3px 10px rgba(15,23,42,.06);
+}
+
+.seo-tags {
+  margin-top: 10px;
+}
+
+.seo-tags .btn {
+  border-radius: 999px !important;
+}
+
+input[type="text"], input[type="search"], select, textarea {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: 0 3px 12px rgba(15,23,42,.04);
+  outline: none;
+}
+
+input[type="text"]:focus, input[type="search"]:focus, select:focus, textarea:focus {
+  border-color: var(--brand-2) !important;
+  box-shadow: 0 0 0 4px rgba(20,184,166,.12) !important;
+}
+
+.advanced-category-panel {
+  border-color: rgba(20,184,166,.22);
+  box-shadow: 0 10px 28px rgba(15,118,110,.08);
+}
+
+@media (max-width: 600px) {
+  body { font-size: 14px; }
+  .card { padding: 13px !important; }
+}
