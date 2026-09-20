@@ -20,7 +20,7 @@
 <main class="container">
 <header class="msn-header"><div class="header-left"><a href="./" class="logo-container"><img src="/assets/logo.svg" alt="شعار الموقع" class="logo-image"><div class="header-title"><h1>🔍 البحث <span>الذكي</span></h1><span class="subtitle">📺 YouTube — بحث متقدم مع 100 نتيجة</span></div></a></div><div class="header-right"><span class="header-badge">🚀 100 نتيجة</span><span class="header-badge green">📊 48 رابط</span></div></header>
 <nav class="msn-nav" aria-label="التنقل الرئيسي"><a class="is-active" href="./">🏠 اكتشاف</a><a href="#search">🔍 البحث الذكي</a><a href="#results">🏙️ المدن</a><a href="#results">🌍 الدول</a><button type="button" onclick="showFavorites()">⭐ المفضلة</button><button type="button" onclick="showStatistics()">📊 الإحصائيات</button></nav>
-<section class="msn-page-intro"><div class="msn-brand-lockup"><img src="/assets/logo.svg" alt="شعار البحث الذكي"><strong>البحث الذكي</strong></div><div class="msn-hero-copy"><span class="msn-kicker">دليل السفر الذكي</span><h2>اكتشف المدن والدول حول العالم</h2><p>ابحث بالعربية أو الإنجليزية أو باستخدام كود المدينة والدولة.</p></div><div class="msn-hero-side"><span class="msn-weather">☀️ 22°</span><button type="button" onclick="showStatistics()">⚙️</button><button type="button" onclick="showFavorites()" aria-label="تسجيل الدخول (اختياري)">تسجيل الدخول <small style="font-size:.72em;opacity:.75">(اختياري)</small></button></div></section>
+<section class="msn-page-intro"><div class="msn-brand-lockup"><img src="/assets/logo.svg" alt="شعار البحث الذكي"><strong>البحث الذكي</strong></div><div class="msn-hero-copy"><span class="msn-kicker">دليل السفر الذكي</span><h2>اكتشف المدن والدول حول العالم</h2><p>ابحث بالعربية أو الإنجليزية أو باستخدام كود المدينة والدولة.</p></div><div class="msn-hero-side"><span class="msn-weather">☀️ 22°</span><button type="button" onclick="showStatistics()">⚙️</button><button type="button" onclick="showLogin()" aria-label="تسجيل الدخول (اختياري)">تسجيل الدخول <small style="font-size:.72em;opacity:.75">(اختياري)</small></button></div></section>
 <div class="msn-shortcuts" aria-label="اختصارات سريعة"><a href="#results"><span>🌍</span><b>الوجهات</b></a><a href="#results"><span>🏨</span><b>الفنادق</b></a><a href="#results"><span>✈️</span><b>السفر</b></a><a href="#results"><span>🗺️</span><b>الخريطة</b></a><a href="#results"><span>▶️</span><b>يوتيوب</b></a></div>
 <div class="msn-section-nav" aria-label="أقسام المحتوى"><a class="is-active" href="#results">اكتشاف</a><a href="#results">الأخبار</a><a href="#results">رياضة</a><a href="#results">ألعاب تقليدية</a><a href="#results">المال</a><a href="#results">الطقس</a><a href="#results">مشاهدة</a></div>
 <div class="stats-bar"><div class="stats-item">📌 <span class="number" id="totalCities">0</span> مدينة</div><div class="stats-item">🌍 <span class="number" id="totalCountries">0</span> دولة</div><div class="stats-item">🔗 <span class="number" id="totalLinks">0</span> رابط</div><div class="stats-item">📊 <span class="number" id="totalResults">0</span> نتيجة</div></div>
@@ -47,6 +47,26 @@ if('serviceWorker' in navigator){
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister())).catch(() => {});
+}
+</script>
+<script>
+function showLogin(){
+  let modal=document.getElementById('optionalLoginModal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='optionalLoginModal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px';
+    modal.innerHTML='<div dir="rtl" style="background:#fff;max-width:420px;width:100%;padding:24px;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.25)"><button type="button" onclick="document.getElementById(\'optionalLoginModal\').remove()" style="float:left;border:0;background:transparent;font-size:22px;cursor:pointer">×</button><h2 style="margin-top:0">تسجيل الدخول</h2><p>تسجيل الدخول اختياري ولا يؤثر على استخدام الموقع.</p><label for="optionalLoginName">الاسم</label><input id="optionalLoginName" type="text" autocomplete="name" placeholder="اكتب اسمك" style="display:block;width:100%;box-sizing:border-box;padding:12px;margin:8px 0 14px;border:1px solid #ccc;border-radius:10px"><button type="button" onclick="completeOptionalLogin()" style="width:100%;padding:12px;border:0;border-radius:10px;cursor:pointer">متابعة</button><p id="optionalLoginNote" style="margin-bottom:0;font-size:.9em;color:#666"></p></div>';
+    document.body.appendChild(modal);
+  }
+}
+function completeOptionalLogin(){
+  const input=document.getElementById('optionalLoginName');
+  const name=(input?.value||'').trim();
+  if(!name){ document.getElementById('optionalLoginNote').textContent='اكتب اسمًا للمتابعة.'; return; }
+  localStorage.setItem('tuursim53_user_name',name);
+  document.getElementById('optionalLoginModal').remove();
+  alert('مرحبًا '+name+'! تم تسجيل دخولك على هذا الجهاز. ويمكنك استخدام الموقع بدون تسجيل دخول أيضًا.');
 }
 </script>
 </body>
