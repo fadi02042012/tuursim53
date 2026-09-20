@@ -21,10 +21,10 @@ window.toggleFavorite = function(key){
     const index = items.findIndex(x => x.key === key);
     if(index >= 0){
         items.splice(index,1);
-        showToast('🗑️ تمت إزالة النتيجة من المفضلة');
+        if (typeof showToast === 'function') showToast('🗑️ تمت إزالة النتيجة من المفضلة');
     } else {
         items.unshift({...item, key, savedAt:new Date().toISOString()});
-        showToast('⭐ تمت إضافة النتيجة إلى المفضلة');
+        if (typeof showToast === 'function') showToast('⭐ تمت إضافة النتيجة إلى المفضلة');
     }
     saveFavorites(items);
     updateFavoriteButtons();
