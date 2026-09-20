@@ -179,6 +179,7 @@ function prependTextQueryCard(query) {
     const favorite = '<button type="button" class="btn btn-favorite favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
     const card = `
         <div class="card text-query-card" style="background:white;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.08);">
+            <div style="text-align:left;margin-bottom:7px;">${favorite}</div>
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
                 <div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(text)}</span>
                 <span class="country-name" style="color:#64748b;margin-right:8px;">📝 بحث نصي</span></div>
@@ -188,7 +189,6 @@ function prependTextQueryCard(query) {
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}">🔍 Google</a>
                 <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}">▶ YouTube</a>
                 <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" href="${escapeHtml(getCategoryUrl(text))}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
-                ${favorite}
             </div>
             <div class="seo-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;padding:0;">
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في ' + text)}">🌍 السياحة</a>
