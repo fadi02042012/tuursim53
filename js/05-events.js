@@ -712,12 +712,36 @@ searchInput.addEventListener('input', function () {
     scheduleSuggestions(this.value);
 });
 
-searchInput.addEventListener('keydown', async function (event) {
+let searchInProgress = false;
+let pendingSearchAfterCurrent = false;
+
+async function runSearchNow() {
+    clearTimeout(suggestionsTimeout);
+    showSuggestions([]);
+
+    // منع تكرار الطلبات المتزامنة، مع حفظ آخر طلب بدلاً من تجاهله.
+    if (searchInProgress) {
+        pendingSearchAfterCurrent = true;
+        return;
+    }
+
+    searchInProgress = true;
+    try {
+        await handleSearch();
+    } finally {
+        searchInProgress = false;
+        if (pendingSearchAfterCurrent) {
+            pendingSearchAfterCurrent = false;
+            queueMicrotask(() => runSearchNow());
+        }
+    }
+}
+
+searchInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         event.preventDefault();
-        clearTimeout(suggestionsTimeout);
-        showSuggestions([]);
-        await handleSearch();
+        event.stopPropagation();
+        runSearchNow();
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
@@ -726,10 +750,8 @@ searchInput.addEventListener('keydown', async function (event) {
     }
 });
 
-document.getElementById('searchBtn')?.addEventListener('click', async () => {
-    clearTimeout(suggestionsTimeout);
-    showSuggestions([]);
-    await handleSearch();
+document.getElementById('searchBtn')?.addEventListener('click', () => {
+    runSearchNow();
 });
 
 // ============================================================
