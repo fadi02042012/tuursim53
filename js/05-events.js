@@ -470,12 +470,15 @@ searchInput.addEventListener('input', function () {
 searchInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
         clearTimeout(suggestionsTimeout);
         showSuggestions([]);
-        // شغّل البحث مرة واحدة فقط فوراً؛ لا تربطه بانتظار async.
+        if (this.dataset.searching === '1') return;
+        this.dataset.searching = '1';
         Promise.resolve(handleSearch()).catch(error => {
             console.error('Enter search error:', error);
+        }).finally(() => {
+            this.dataset.searching = '0';
         });
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
@@ -648,7 +651,18 @@ window.loadMoreWikipedia = async function () {
     }
 };
 
-window.addEventListener('load', sortCountryDropdown);
+window.addEventListener('load', () => {
+    sortCountryDropdown();
+    // اجعل المؤشر في مربع البحث تلقائياً بعد اكتمال تحميل الصفحة.
+    setTimeout(() => {
+        try {
+            searchInput.focus({ preventScroll: true });
+            searchInput.select();
+        } catch (_) {
+            searchInput.focus();
+        }
+    }, 0);
+});
 countrySelect.addEventListener('focus', sortCountryDropdown);
 
 console.log('✅ 05-events.js تم تحميله بنجاح — 10 نتائج لكل دفعة');
