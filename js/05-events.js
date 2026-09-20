@@ -756,27 +756,43 @@ function handleEnterSearch(event) {
     void runSearchNow();
 }
 
+// البحث بالـ Enter يعمل من أي حالة تركيز، وبمرحلة capture حتى لا يعطله
+// أي listener آخر أو زر اقتراحات. يتم توحيد keydown/keypress/keyup ومنع التكرار.
+function isEnterKey(event) {
+    return event?.key === 'Enter' || event?.code === 'Enter' || event?.keyCode === 13;
+}
+
+function triggerSearchFromKeyboard(event) {
+    if (!isEnterKey(event)) return;
+    if (event.isComposing) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const now = Date.now();
+    if (now - lastEnterHandledAt < 400) return;
+    lastEnterHandledAt = now;
+    void runSearchNow();
+}
+
 searchInput.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-        handleEnterSearch(event);
+    if (isEnterKey(event)) {
+        triggerSearchFromKeyboard(event);
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
         showSuggestions([]);
         this.blur();
     }
-});
+}, true);
 
-searchInput.addEventListener('keyup', function (event) {
-    if (event.key === 'Enter') {
-        // احتياطي: إذا لم يصل keydown، يبدأ البحث من keyup.
-        const now = Date.now();
-        if (now - lastEnterHandledAt >= 250) {
-            lastEnterHandledAt = now;
-            void runSearchNow();
-        }
+searchInput.addEventListener('keypress', triggerSearchFromKeyboard, true);
+searchInput.addEventListener('keyup', triggerSearchFromKeyboard, true);
+
+// مسار احتياطي على مستوى المستند: إذا لم يصل الحدث إلى input لأي سبب.
+document.addEventListener('keydown', function (event) {
+    if (document.activeElement === searchInput && isEnterKey(event)) {
+        triggerSearchFromKeyboard(event);
     }
-});
+}, true);
 
 document.getElementById('searchBtn')?.addEventListener('click', () => {
     void runSearchNow();
