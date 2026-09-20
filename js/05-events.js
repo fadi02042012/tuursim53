@@ -467,12 +467,16 @@ searchInput.addEventListener('input', function () {
     scheduleSuggestions(this.value);
 });
 
-searchInput.addEventListener('keydown', async function (event) {
+searchInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         event.preventDefault();
+        event.stopPropagation();
         clearTimeout(suggestionsTimeout);
         showSuggestions([]);
-        await handleSearch();
+        // شغّل البحث مرة واحدة فقط فوراً؛ لا تربطه بانتظار async.
+        Promise.resolve(handleSearch()).catch(error => {
+            console.error('Enter search error:', error);
+        });
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
