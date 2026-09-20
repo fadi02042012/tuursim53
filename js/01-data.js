@@ -30,7 +30,7 @@ async function loadData() {
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
         const rawCountries = await countriesRes.text();
         try {
-            countries = JSON.parse(rawCountries);
+            countries = JSON.parse(rawCountries.replace(/^\uFEFF/, ''));
         } catch (parseError) {
             throw new Error('countries_invalid_json');
         }
