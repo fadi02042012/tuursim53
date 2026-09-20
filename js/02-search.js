@@ -45,7 +45,6 @@ async function translateArabicToEnglish(text) {
     } finally { clearTimeout(timeout); }
 }
 
-// مهم: هذه الدالة أصبحت فورية. لا تنتظر الترجمة أو أي خدمة خارجية.
 function buildQueryVariants(query) {
     const original = String(query || '').trim();
     if (!original) return [];
@@ -78,26 +77,25 @@ function removeDuplicates(items) {
     });
 }
 
-// البحث المحلي يجب أن يكون متزامنًا وفوريًا.
-// أي خدمة خارجية ممنوعة من حجب بطاقة البحث أو النتائج المحلية.
 function performSearch(query) {
     const source = currentCountryCities.length ? currentCountryCities : allCities;
     const text = String(query || '').trim();
-    if (!text) {
-        return { cities: source.slice(0, RESULTS_PER_BATCH), countries: [] };
-    }
+    if (!text) return { cities: source.slice(0, RESULTS_PER_BATCH), countries: [] };
 
     const variants = buildQueryVariants(text);
     const cities = removeDuplicates(source.filter(city => matchesAnyVariant([
         city.city, city.city_ar, city.country, city.country_ar, city.region,
         city.code, city.id, city.iso2, city.iso3, city.name
     ].filter(v => v !== undefined && v !== null).join(' '), variants)));
+
     const rankedCities = typeof sortCitiesByRelevance === 'function'
         ? sortCitiesByRelevance(cities, text) : cities;
+
     const countryResults = countries.filter(country => matchesAnyVariant([
         country.name, country.name_ar, country.capital, country.capital_ar,
         country.code, country.iso2, country.iso3, country.id
     ].filter(v => v !== undefined && v !== null).join(' '), variants));
+
     const q = normalizeText(text);
     countryResults.sort((a, b) => {
         const score = country => {
@@ -107,6 +105,7 @@ function performSearch(query) {
         };
         return score(b) - score(a);
     });
+
     return {
         cities: rankedCities.slice(0, RESULTS_PER_BATCH),
         countries: countryResults.slice(0, RESULTS_PER_BATCH)
@@ -146,11 +145,12 @@ async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, off
     const requestId = ++lastSearchRequestId;
     const original = String(query || '').trim();
     const variants = buildQueryVariants(original);
-    // الترجمة اختيارية في الخلفية، وليست جزءًا من المسار الحرج.
+
     const requests = [
         ...variants.filter(looksLikeArabic).map(q => searchWikipediaLanguage(q, 'ar', limit, offset)),
         ...variants.filter(q => !looksLikeArabic(q)).map(q => searchWikipediaLanguage(q, 'en', limit, offset))
     ];
+
     const groups = await Promise.all(requests);
     if (requestId !== lastSearchRequestId) return [];
 
@@ -186,17 +186,13 @@ function prependTextQueryCard(query) {
                 <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فيديو ' + text)}">🎬 فيديو</a>
             </div>
         </div>`;
-    const advancedPanel = resultsDiv.querySelector('.advanced-category-panel');
-    if (advancedPanel) {
-        advancedPanel.insertAdjacentHTML('afterend', card);
-    } else {
-        resultsDiv.insertAdjacentHTML('afterbegin', card);
-    }
+    resultsDiv.insertAdjacentHTML('afterbegin', card);
 }
-// مسار احتياطي إذا استُخدمت هذه الدالة مباشرة من ملفات أخرى.
+
 async function handleSearch() {
     clearTimeout(searchTimeout);
     const query = searchInput.value.trim();
+
     if (!query) {
         const source = currentCountryCities.length
             ? (typeof sortCitiesForCountry === 'function'
@@ -220,57 +216,48 @@ async function handleSearch() {
         return;
     }
 
+    // المسار المطلوب: JSON المحلي أولاً، ثم ويكيبيديا، ثم بطاقة البحث النصي.
+    updateStatus('🔎 جاري البحث في ملفات JSON...', '#f59e0b');
+    allLinksData = [];
+    resultsDiv.innerHTML = '';
+
+    if (!currentCountryCities.length && !allCities.length) {
+        try {
+            await loadGlobalCities();
+        } catch (error) {
+            console.warn('تحميل قاعدة المدن:', error);
+        }
+    }
+
+    const localResults = performSearch(query);
+    if (localResults.cities.length || localResults.countries.length) {
+        renderResults(localResults);
+        countSpan.textContent = String(localResults.cities.length + localResults.countries.length);
+        updateStatus('✅ ظهرت النتائج من ملفات JSON.', '#10b981');
+        return;
+    }
+
+    updateStatus('📖 لا توجد مطابقة في JSON — جاري البحث في ويكيبيديا...', '#f59e0b');
+
+    try {
+        const wikiResults = await searchWikipediaMultilingual(query, RESULTS_PER_BATCH);
+        if (wikiResults.length) {
+            resultsDiv.innerHTML = '';
+            allLinksData = [];
+            renderWikipediaResults(wikiResults, query);
+            countSpan.textContent = String(wikiResults.length);
+            updateStatus('📖 ظهرت النتائج من ويكيبيديا.', '#10b981');
+            return;
+        }
+    } catch (error) {
+        console.warn('Wikipedia search:', error);
+    }
+
+    resultsDiv.innerHTML = '';
     allLinksData = [];
     prependTextQueryCard(query);
     countSpan.textContent = '1';
-    updateStatus('🔎 جاري البحث...', '#f59e0b');
-
-    // ابدأ ويكيبيديا فوراً عند الضغطة الأولى، ولا تنتظر JSON.
-    const wikiPromise = searchWikipediaMultilingual(query, RESULTS_PER_BATCH)
-        .then(results => {
-            if (results.length) {
-                resultsDiv.innerHTML = '';
-                allLinksData = [];
-                renderWikipediaResults(results, query);
-                countSpan.textContent = String(results.length);
-                updateStatus('📖 ظهرت نتائج ويكيبيديا.', '#10b981');
-                return true;
-            }
-            return false;
-        })
-        .catch(error => {
-            console.warn('Wikipedia search:', error);
-            return false;
-        });
-
-    // حمّل قاعدة المدن في الخلفية فقط؛ لا تعرض أول 20 مدينة عشوائية.
-    let globalPromise = Promise.resolve();
-    if (!currentCountryCities.length && !allCities.length) {
-        globalPromise = loadGlobalCities().catch(error => {
-            console.warn('تحميل قاعدة المدن:', error);
-            return null;
-        });
-    }
-
-    globalPromise.then(() => {
-        const results = performSearch(query);
-        if (results.cities.length || results.countries.length) {
-            resultsDiv.innerHTML = '';
-            allLinksData = [];
-            renderResults(results);
-            prependTextQueryCard(query);
-            countSpan.textContent = String(results.cities.length + results.countries.length + 1);
-            updateStatus('✅ ظهرت النتائج المحلية.', '#10b981');
-        } else {
-            // إذا لم يوجد تطابق محلي، اترك نتيجة ويكيبيديا كما هي.
-            wikiPromise.then(hasWiki => {
-                if (!hasWiki) {
-                    renderEmptySearch();
-                    updateStatus('ℹ️ لم توجد مطابقة في البيانات المحلية أو ويكيبيديا.', '#64748b');
-                }
-            });
-        }
-    });
+    updateStatus('🔎 لا توجد نتائج في JSON أو ويكيبيديا — ظهرت بطاقة البحث النصي.', '#64748b');
 }
 
-console.log('✅ 02-search.js تم تحميله بنجاح — البحث المحلي فوري وبدون انتظار خارجي');
+console.log('✅ 02-search.js تم تحميله بنجاح — ترتيب البحث: JSON ثم Wikipedia ثم بحث نصي');
