@@ -199,7 +199,7 @@ function prependTextQueryCard(query) {
     resultsDiv.insertAdjacentHTML('afterbegin', card);
 }
 
-async async function saveSearchHistoryForUser(query) {
+async function saveSearchHistoryForUser(query) {
     const user = String(localStorage.getItem('tuursim53_user_name') || '').trim();
     const text = String(query || '').trim();
     if (!user || !text) return;
