@@ -148,7 +148,9 @@ async function searchWikipediaMultilingual(query, limit = RESULTS_PER_BATCH, off
 
     const requests = [
         ...variants.filter(looksLikeArabic).map(q => searchWikipediaLanguage(q, 'ar', limit, offset)),
-        ...variants.filter(q => !looksLikeArabic(q)).map(q => searchWikipediaLanguage(q, 'en', limit, offset))
+        ...variants.filter(q => !looksLikeArabic(q)).map(q => searchWikipediaLanguage(q, 'en', limit, offset)),
+        // طلب مباشر إضافي للاستعلام الأصلي، حتى لا تضيع صفحة صحيحة مثل "موسى"
+        searchWikipediaLanguage(original, looksLikeArabic(original) ? 'ar' : 'en', limit, offset)
     ];
 
     const groups = await Promise.all(requests);
