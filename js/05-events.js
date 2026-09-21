@@ -475,7 +475,7 @@ searchInput.addEventListener('keydown', function (event) {
         showSuggestions([]);
         if (this.dataset.searching === '1') return;
         this.dataset.searching = '1';
-        const run=(fromCity=false)=>{if(fromCity&&typeof window.getSavedAdvancedSearchUrl==='function'){window.location.href=window.getSavedAdvancedSearchUrl(this.value.trim());return;}return Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});};
+        const run=(fromCity=false)=>{if(fromCity&&typeof window.getSavedAdvancedSearchUrl==='function'){window.location.assign(window.getSavedAdvancedSearchUrl(this.value.trim()));return;}return Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});};
         if(typeof window.showCountryCityPrompt==='function')window.showCountryCityPrompt(this.value,run);else run();
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
