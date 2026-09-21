@@ -35,6 +35,7 @@ const searches = [
     { name: "📈 ترند YouTube", group: "منصات", base: "https://www.google.com/search?q=", suffix: "+site:https://www.youtube.com/feed/trending" },
     { name: "📂 قوائم تشغيل YouTube", group: "منصات", base: "https://www.google.com/search?q=", suffix: "+site:https://www.youtube.com/user/*/playlists" },
     { name: "📺 البحث داخل قناة TEDx", group: "قنوات محددة", base: "https://www.youtube.com/@TEDx/search?query=", suffix: "" },
+    { name: "📷 البحث في Instagram (آخر 24 ساعة)", group: "منصات", base: "https://www.google.com/search?q=site:https://www.instagram.com+", suffix: "&num=10&tbs=qdr:d" },
     { name: "📺 البحث داخل قناة ArabicMOD", group: "قنوات محددة", base: "https://www.youtube.com/@ArabicMOD/search?query=", suffix: "" },
     { name: "📺 البحث داخل قناة Fortinet", group: "قنوات محددة", base: "https://www.youtube.com/@fortinet/search?query=", suffix: "" },
     { name: "😂 البحث داخل قناة Gags", group: "قنوات محددة", base: "https://www.youtube.com/@gags/search?query=", suffix: "" },
