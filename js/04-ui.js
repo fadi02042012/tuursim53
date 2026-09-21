@@ -188,7 +188,8 @@ window.showSearchAdvancedPrompt=function(onContinue){
 
     filterNext?.addEventListener('click',()=>{
         selectedAdvancedCategory=Number(filterSelect?.value)||0;
-        localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));
+        try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));localStorage.setItem('tuursim53.advancedCategory',String(selectedAdvancedCategory));}catch(_){}
+        if(typeof window.applyAdvancedCategoryToResults==='function')window.applyAdvancedCategoryToResults();
         host.style.display='none';
         onContinue?.('advanced');
     });
@@ -293,7 +294,8 @@ window.showCountryCityPrompt=async function(query,onContinue){
     });
 };
 function buildAdvancedCategoryPanel(){ensureAdvancedCategoryStyles();const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];const groups={};categories.forEach(item=>{const group=item.group||'تصنيفات أخرى';if(!groups[group])groups[group]=[];groups[group].push(item);});const groupLabels={'أساسي':'📺 البحث الأساسي','الترتيب':'🔥 الترتيب والفرز','التاريخ':'📅 حسب التاريخ','المدة':'⏱ حسب مدة الفيديو','الجودة':'🎥 الجودة والمشاهدة','مركب':'🧩 تصنيفات مركبة','نوع المحتوى':'🎬 نوع المحتوى','منصات':'🌐 المنصات والبحث الخارجي','قنوات محددة':'📺 القنوات المحددة'};const options=Object.entries(groups).map(([group,items])=>`<optgroup label="${escapeHtml(groupLabels[group]||group)}">${items.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}</optgroup>`).join('');return `<section class="advanced-category-panel" aria-label="اختيار تصنيف البحث المتقدم"><div class="advanced-category-heading"><div class="advanced-category-icon">⚡</div><div class="advanced-category-title-wrap"><h3>البحث المتقدم</h3><p>اختر نوع البحث الذي تريد استخدامه مع المدينة أو الدولة.</p></div><span class="advanced-category-count">48 تصنيف</span></div><label class="advanced-category-label" for="advanced-category-select">اختر التصنيف</label><div class="advanced-category-select-wrap"><select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" aria-describedby="advanced-category-help">${options}</select><span class="advanced-category-chevron" aria-hidden="true">⌄</span></div><div id="advanced-category-help" class="advanced-category-help"><span>✓ التصنيف المختار:</span><strong>${escapeHtml(getCategoryName())}</strong></div></section>`;}
-window.changeAdvancedCategory=function(value){selectedAdvancedCategory=Number(value)||0;const label=document.querySelector('#advanced-category-help strong');if(label)label.textContent=getCategoryName();document.querySelectorAll('.advanced-category-link').forEach(link=>{const query=link.dataset.query||'';link.href=getCategoryUrl(query,selectedAdvancedCategory);const text=link.querySelector('.advanced-category-link-text');if(text)text.textContent=`⚡ ${getCategoryName()}`;});};
+window.applyAdvancedCategoryToResults=function(){const category=getCategoryName();document.querySelectorAll('.advanced-category-link').forEach(link=>{const query=link.dataset.query||'';link.href=getCategoryUrl(query,selectedAdvancedCategory);const text=link.querySelector('.advanced-category-link-text');if(text)text.textContent='⚡ '+category;});const help=document.querySelector('#advanced-category-help strong');if(help)help.textContent=category;};
+window.changeAdvancedCategory=function(value){selectedAdvancedCategory=Number(value)||0;try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));localStorage.setItem('tuursim53.advancedCategory',String(selectedAdvancedCategory));}catch(_){}if(typeof window.applyAdvancedCategoryToResults==='function')window.applyAdvancedCategoryToResults();};
 function buttonsHtml(query,index,mapsQuery=query,wikiUrl=''){
     const text=String(query||'').trim();
     const mapsText=String(mapsQuery||text).trim();
