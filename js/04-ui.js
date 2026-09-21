@@ -138,25 +138,14 @@ window.showSearchAdvancedPrompt=function(onContinue){
         <div class="search-advanced-prompt-title">
           <span>🔍</span>
           <div>
-            <strong>اختر طريقة البحث</strong>
-            <small>خطوة واحدة الآن، والباقي يظهر فقط عند الحاجة</small>
+            <strong>⚡ تخصيص البحث</strong>
+            <small>اختر الفلتر فقط إذا كنت تحتاج نتائج أدق</small>
           </div>
         </div>
 
-        <div class="ux-search-choice-grid">
-          <button type="button" id="wizard-normal-btn" class="ux-search-choice ux-search-choice-primary">
-            <span>🔎</span>
-            <span><strong>بحث عادي</strong><small>ابحث مباشرة عن «${escapeHtml(String(searchInput?.value||'').trim()||'الكلمة')}»</small></span>
-          </button>
-          <button type="button" id="wizard-advanced-btn" class="ux-search-choice">
-            <span>⚡</span>
-            <span><strong>فلترة متقدمة</strong><small>اختر نوع النتائج ثم المدينة</small></span>
-          </button>
-        </div>
-
-        <div id="wizard-filter-box" class="ux-step" hidden>
+        <div id="wizard-filter-box" class="ux-step">
           <div class="ux-step-head">
-            <button type="button" id="wizard-filter-back" class="ux-back-btn">← رجوع</button>
+            <button type="button" id="wizard-filter-back" class="ux-back-btn">✕ إغلاق</button>
             <div><strong>1. اختر الفلترة</strong><small>المختارة سابقًا: ${escapeHtml(savedName)}</small></div>
           </div>
 
@@ -173,32 +162,14 @@ window.showSearchAdvancedPrompt=function(onContinue){
 
     host.style.display='block';
 
-    const normalBtn=host.querySelector('#wizard-normal-btn');
-    const advancedBtn=host.querySelector('#wizard-advanced-btn');
     const filterBox=host.querySelector('#wizard-filter-box');
     const backBtn=host.querySelector('#wizard-filter-back');
     const filterSearch=host.querySelector('#wizard-filter-search');
     const filterSelect=host.querySelector('#wizard-filter-select');
     const filterNext=host.querySelector('#wizard-filter-next');
 
-    normalBtn.onclick=()=>{
-        host.style.display='none';
-        onContinue?.('normal');
-    };
-
-    advancedBtn.onclick=()=>{
-        normalBtn.disabled=true;
-        advancedBtn.disabled=true;
-        host.querySelector('.ux-search-choice-grid')?.setAttribute('hidden','');
-        filterBox.hidden=false;
-        setTimeout(()=>filterSearch?.focus({preventScroll:true}),0);
-    };
-
     backBtn.onclick=()=>{
-        filterBox.hidden=true;
-        host.querySelector('.ux-search-choice-grid')?.removeAttribute('hidden');
-        normalBtn.disabled=false;
-        advancedBtn.disabled=false;
+        host.style.display='none';
     };
 
     filterSearch?.addEventListener('input',()=>{
