@@ -162,6 +162,8 @@ window.showSearchAdvancedPrompt=function(onContinue){
 
     host.style.display='block';
 
+    let pendingAdvancedCategory=selectedAdvancedCategory;
+
     const filterBox=host.querySelector('#wizard-filter-box');
     const backBtn=host.querySelector('#wizard-filter-back');
     const filterSearch=host.querySelector('#wizard-filter-search');
@@ -183,30 +185,36 @@ window.showSearchAdvancedPrompt=function(onContinue){
     });
 
     filterSelect?.addEventListener('change',()=>{
-        selectedAdvancedCategory=Number(filterSelect.value)||0;
+        pendingAdvancedCategory=Number(filterSelect.value)||0;
     });
 
     const closeWizardWithoutApplying = () => {
         host.style.display='none';
+        pendingAdvancedCategory=selectedAdvancedCategory;
     };
 
-    host.onkeydown = event => {
-        if(event.key === 'Escape'){
+    if(!window.__advancedWizardCloseHandlers){
+        window.__advancedWizardCloseHandlers=true;
+        document.addEventListener('keydown',event=>{
+            const activeHost=document.getElementById('search-advanced-prompt');
+            if(event.key!=='Escape' || !activeHost || activeHost.style.display==='none') return;
             event.preventDefault();
             event.stopPropagation();
-            closeWizardWithoutApplying();
-        }
-    };
-
-    host.onmousedown = event => {
-        if(event.target === host){
-            event.preventDefault();
-            closeWizardWithoutApplying();
-        }
-    };
+            activeHost.style.display='none';
+        },true);
+        document.addEventListener('mousedown',event=>{
+            const activeHost=document.getElementById('search-advanced-prompt');
+            if(!activeHost || activeHost.style.display==='none') return;
+            const inner=activeHost.querySelector('.search-advanced-prompt-inner');
+            if(inner && !inner.contains(event.target)){
+                event.preventDefault();
+                activeHost.style.display='none';
+            }
+        },true);
+    }
 
     filterNext?.addEventListener('click',()=>{
-        selectedAdvancedCategory=Number(filterSelect?.value)||0;
+        selectedAdvancedCategory=pendingAdvancedCategory;
         try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));localStorage.setItem('tuursim53.advancedCategory',String(selectedAdvancedCategory));}catch(_){}
         if(typeof window.applyAdvancedCategoryToResults==='function')window.applyAdvancedCategoryToResults();
         host.style.display='none';
