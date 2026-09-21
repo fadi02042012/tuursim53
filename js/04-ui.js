@@ -162,11 +162,11 @@ window.showSearchAdvancedPrompt=function(onContinue){
 
           <label class="ux-filter-search-label" for="wizard-filter-search">ابحث عن أي جزء من اسم الفلتر</label>
           <input id="wizard-filter-search" class="ux-filter-search" type="search" placeholder="مثلاً: مشاهدات، 4K، اليوم..." autocomplete="off">
+          <button type="button" id="wizard-filter-next" class="ux-continue-btn">التالي ← اختيار المدينة</button>
 
           <select id="wizard-filter-select" class="ux-filter-select" size="8" aria-label="اختيار فلتر البحث">
             ${normalizedCategories.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}
           </select>
-          <button type="button" id="wizard-filter-next" class="ux-continue-btn">التالي ← اختيار المدينة</button>
           <small class="ux-filter-hint">اختر الفلتر ثم اضغط «التالي» للانتقال إلى اختيار المدينة.</small>
         </div>
       </div>`;
