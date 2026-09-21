@@ -331,8 +331,8 @@ window.applyAdvancedCategoryToResults=function(){
     });
     // حدّث بيانات البطاقات الداخلية أيضًا حتى تبقى عملية «نسخ الكل»
     // متزامنة مع الفلتر المختار، وليس فقط الروابط الظاهرة على الشاشة.
-    if(Array.isArray(window.allLinksData)){
-        window.allLinksData.forEach(item=>{
+    if(Array.isArray(allLinksData)){
+        allLinksData.forEach(item=>{
             if(!item || !Array.isArray(item.links)) return;
             item.links.forEach(link=>{
                 if(!link) return;
