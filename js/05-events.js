@@ -19,11 +19,20 @@ async function trySearchExactCountry(query) {
     const q = String(query || '').trim();
     if (!q || !Array.isArray(countries) || !countries.length) return false;
 
-    const norm = value => String(value || '').trim().toLowerCase();
+    const norm = value => normalizeText(String(value || '').trim())
+        .replace(/\\s+/g, ' ')
+        .trim();
     const nq = norm(q);
     const country = countries.find(c => [c.name, c.name_ar, c.code, c.iso2, c.iso3]
         .filter(Boolean)
-        .some(v => norm(v) === nq));
+        .some(v => norm(v) === nq))
+        || countries.find(c => {
+            const code = String(c?.code || c?.iso2 || c?.iso3 || '').toUpperCase();
+            return code && (
+                norm(countryMap?.[code] || '') === nq ||
+                norm(countryNames?.[code] || '') === nq
+            );
+        });
 
     if (!country) return false;
 
@@ -227,7 +236,7 @@ function sortCitiesForCountry(cities, countryCode) {
     // 1) العاصمة أولاً.
     const capitalName = normalizeCityNameForMatch(getCountryCapital(code));
     const capitalCities = take(city => capitalName && cityNames(city).some(name =>
-        name === capitalName || name.includes(capitalName) || capitalName.includes(name)
+        name === capitalName
     ));
 
     // 2) المدن الأشهر حسب القائمة المعتمدة للدولة.
@@ -270,7 +279,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode, options
 
     const button = document.getElementById('webCitySortBtn');
     if (button) button.disabled = true;
-    updateStatus('🌐 جاري جلب ترتيب المدن من الويب...', '#f59e0b');
+    if (!options.silent) updateStatus('🌐 جاري جلب ترتيب المدن من الويب...', '#f59e0b');
 
     try {
         // WDQS يدعم JSON عبر GET، ويُستخدم هنا فقط عند ضغط الزر.
@@ -351,11 +360,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode, options
 
         // 1) العاصمة.
         const capital = takeFirst(city =>
-            webCapital && cityNames(city).some(name =>
-                name === webCapital ||
-                name.includes(webCapital) ||
-                webCapital.includes(name)
-            )
+            webCapital && cityNames(city).some(name => name === webCapital)
         );
 
         // 2) المدن الأشهر: القائمة المحلية الموثوقة للدولة، مع مطابقة أسماء الويب.
@@ -764,7 +769,12 @@ countrySelect.addEventListener('change', async function () {
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
         updateStatus('جاهز للبحث', '#64748b');
-        renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
+        const ordered = sortCitiesForCountry(currentCountryCities, code);
+        currentCountryCities = ordered;
+        renderLocalCityResults(ordered);
+        if (typeof window.sortCitiesFromWeb === 'function') {
+            void window.sortCitiesFromWeb(code, { silent: true });
+        }
         return;
     }
 
@@ -773,9 +783,12 @@ countrySelect.addEventListener('change', async function () {
         const cities = await loadCountryCities(code);
         if (requestId !== countryLoadRequestId || countrySelect.value !== code) return;
         countryCitiesCache.set(code, cities);
-        currentCountryCities = cities;
+        currentCountryCities = sortCitiesForCountry(cities, code);
         updateStatus('جاهز للبحث', '#64748b');
-        renderLocalCityResults(sortCitiesForCountry(cities, code));
+        renderLocalCityResults(currentCountryCities);
+        if (typeof window.sortCitiesFromWeb === 'function') {
+            void window.sortCitiesFromWeb(code, { silent: true });
+        }
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
