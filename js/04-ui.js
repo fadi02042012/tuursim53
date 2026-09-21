@@ -116,25 +116,11 @@ function getSavedAdvancedCategory(){try{const v=Number(localStorage.getItem('tuu
 selectedAdvancedCategory=getSavedAdvancedCategory();
 function ensureSearchAdvancedPrompt(){let h=document.getElementById('search-advanced-prompt');if(h)return h;const bar=document.querySelector('.google-search-bar');if(!bar)return null;ensureAdvancedCategoryStyles();h=document.createElement('div');h.id='search-advanced-prompt';h.className='search-advanced-prompt';bar.appendChild(h);return h;}
 window.showSearchAdvancedPrompt=function(onContinue){
-    const host=ensureSearchAdvancedPrompt();
-    if(!host)return onContinue?.();
-    const cats=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];
-    const groups={};
-    cats.forEach(x=>{const g=x.group||'أخرى';(groups[g]||(groups[g]=[])).push(x);});
-    const labels={'أساسي':'📺 الأساسي','الترتيب':'🔥 الترتيب','التاريخ':'📅 التاريخ','المدة':'⏱ المدة','الجودة':'🎥 الجودة','مركب':'🧩 مركب','نوع المحتوى':'🎬 النوع','منصات':'🌐 المنصات','قنوات محددة':'📺 القنوات'};
-    const options=Object.entries(groups).map(([g,items])=>'<optgroup label="'+escapeHtml(labels[g]||g)+'">'+items.map(x=>'<option value="'+x.index+'" '+(x.index===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name)+'</option>').join('')+'</optgroup>').join('');
-    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر فلترة البحث للمدينة</small></div></div><select id="search-advanced-select">'+options+'</select><div class="search-advanced-prompt-actions"><button type="button" class="search-advanced-skip" id="search-advanced-skip">▶️ البحث العادي في YouTube</button><button type="button" class="search-advanced-apply" id="search-advanced-apply">🚀 تطبيق الفلترة والبحث</button></div></div>';
-    host.style.display='block';
-    const select=host.querySelector('#search-advanced-select');
-    const finish=applyFilter=>{
-        selectedAdvancedCategory=applyFilter ? (Number(select?.value)||0) : 0;
-        try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));}catch(_){}
-        host.style.display='none';
-        onContinue?.();
-    };
-    host.querySelector('#search-advanced-apply').onclick=()=>finish(true);
-    host.querySelector('#search-advanced-skip').onclick=()=>finish(false);
-    select?.focus({preventScroll:true});
+    try{
+        selectedAdvancedCategory=getSavedAdvancedCategory();
+        localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));
+    }catch(_){}
+    onContinue?.();
 };
 window.showCountryCityPrompt=async function(query,onContinue){
     const text=String(query||'').trim(), host=ensureSearchAdvancedPrompt();
