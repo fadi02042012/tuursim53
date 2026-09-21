@@ -541,12 +541,28 @@ document.getElementById('searchAdvancedBtn')?.addEventListener('click', () => {
     clearTimeout(suggestionsTimeout);
     showSuggestions([]);
     const query=String(searchInput.value||'').trim();
+    const selectedCountryCode=String(countrySelect?.value||'').trim().toUpperCase();
+
+    // عند اختيار دولة من القائمة، افتح الفلترة مباشرة حتى لو كان مربع البحث فارغًا.
+    // التغيير ينعكس فورًا على أزرار بطاقات المدن الحالية.
+    if(selectedCountryCode){
+        if(typeof window.showSearchAdvancedPrompt==='function'){
+            window.showSearchAdvancedPrompt((mode)=>{
+                if(mode==='advanced' && typeof window.applyAdvancedCategoryToResults==='function'){
+                    window.applyAdvancedCategoryToResults();
+                }
+            });
+        }
+        return;
+    }
+
     if(!query) return searchInput.focus();
     if(typeof window.showSearchAdvancedPrompt==='function'){
         window.showSearchAdvancedPrompt((mode)=>{
             if(mode==='advanced' && typeof window.showCountryCityPrompt==='function'){
                 window.showCountryCityPrompt(query,(fromCity)=>{
                     if(fromCity&&typeof window.getSavedAdvancedSearchUrl==='function') window.location.assign(window.getSavedAdvancedSearchUrl(searchInput.value.trim()));
+                    else if(typeof window.applyAdvancedCategoryToResults==='function') window.applyAdvancedCategoryToResults();
                 });
             }
         });
