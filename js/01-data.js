@@ -28,7 +28,7 @@ async function loadData() {
         const dataUrl = new URL('output/countries.json', document.baseURI).href;
         const countriesRes = await fetch(dataUrl + '?v=20260918-data2', { cache: 'no-store' });
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
-        const rawCountries = await countriesRes.text();
+        const rawCountries = (await countriesRes.text()).replace(/^\uFEFF/, '');
         try {
             countries = JSON.parse(rawCountries);
         } catch (parseError) {
