@@ -28,7 +28,7 @@ async function loadData() {
         const dataUrl = new URL('output/countries.json', document.baseURI).href;
         const countriesRes = await fetch(dataUrl + '?v=20260918-data2', { cache: 'no-store' });
         if (!countriesRes.ok) throw new Error(`countries_http_${countriesRes.status}`);
-        const rawCountries = await countriesRes.text();
+        const rawCountries = (await countriesRes.text()).replace(/^\uFEFF/, '');
         try {
             countries = JSON.parse(rawCountries);
         } catch (parseError) {
@@ -85,7 +85,7 @@ async function loadGlobalCities() {
             const citiesUrl = new URL('output/cities.json', document.baseURI).href;
             const citiesRes = await fetch(citiesUrl + '?v=20260918-data2', { cache: 'no-store' });
             if (!citiesRes.ok) throw new Error(`cities_http_${citiesRes.status}`);
-            const rawCities = await citiesRes.json();
+            const rawCities = JSON.parse((await citiesRes.text()).replace(/^\uFEFF/, ''));
 
             allCities = rawCities.map(city => {
                 city._searchKey = buildSearchableText(city);
@@ -115,7 +115,7 @@ async function loadAllCountryCities() {
             const countryUrl = new URL(`output/by_country/${country.code}.json`, document.baseURI).href;
             const res = await fetch(countryUrl + '?v=20260918-data2', { cache: 'no-store' });
             if (!res.ok) continue;
-            const data = await res.json();
+            const data = JSON.parse((await res.text()).replace(/^\uFEFF/, ''));
             const countryName = countryNames[country.code] || country.code;
             data.forEach(city => {
                 city.country = countryName;
