@@ -81,7 +81,7 @@ async function loadGlobalCities(options = {}) {
 
     globalCitiesLoading = (async () => {
         try {
-            updateStatus('⏳ جاري تحميل قاعدة المدن العالمية... قد يستغرق ذلك وقتاً على الأجهزة الضعيفة.', '#f59e0b');
+            if (!options.silent) updateStatus('⏳ جاري تحميل قاعدة المدن العالمية... قد يستغرق ذلك وقتاً على الأجهزة الضعيفة.', '#f59e0b');
             const citiesUrl = new URL('output/cities.json', document.baseURI).href;
             const citiesRes = await fetch(citiesUrl + '?v=20260918-data2', { cache: 'no-store' });
             if (!citiesRes.ok) throw new Error(`cities_http_${citiesRes.status}`);
@@ -92,12 +92,12 @@ async function loadGlobalCities(options = {}) {
                 return city;
             });
             globalCitiesLoaded = true;
-            updateStatus(`✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`, '#10b981');
+            if (!options.silent) updateStatus(`✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`, '#10b981');
             if (!options.silent) renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
             return allCities;
         } catch (error) {
             console.error('خطأ في تحميل قاعدة المدن العالمية:', error);
-            updateStatus('❌ تعذر تحميل قاعدة المدن العالمية', '#ef4444');
+            if (!options.silent) updateStatus('❌ تعذر تحميل قاعدة المدن العالمية', '#ef4444');
             throw error;
         } finally {
             globalCitiesLoading = null;
