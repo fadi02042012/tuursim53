@@ -166,7 +166,8 @@ window.showSearchAdvancedPrompt=function(onContinue){
           <select id="wizard-filter-select" class="ux-filter-select" size="8" aria-label="اختيار فلتر البحث">
             ${normalizedCategories.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}
           </select>
-          <small class="ux-filter-hint">اختر الفلتر، وسيتم الانتقال للخطوة التالية مباشرة.</small>
+          <button type="button" id="wizard-filter-next" class="ux-continue-btn">التالي ← اختيار المدينة</button>
+          <small class="ux-filter-hint">اختر الفلتر ثم اضغط «التالي» للانتقال إلى اختيار المدينة.</small>
         </div>
       </div>`;
 
@@ -178,6 +179,7 @@ window.showSearchAdvancedPrompt=function(onContinue){
     const backBtn=host.querySelector('#wizard-filter-back');
     const filterSearch=host.querySelector('#wizard-filter-search');
     const filterSelect=host.querySelector('#wizard-filter-select');
+    const filterNext=host.querySelector('#wizard-filter-next');
 
     normalBtn.onclick=()=>{
         host.style.display='none';
@@ -211,6 +213,10 @@ window.showSearchAdvancedPrompt=function(onContinue){
 
     filterSelect?.addEventListener('change',()=>{
         selectedAdvancedCategory=Number(filterSelect.value)||0;
+    });
+
+    filterNext?.addEventListener('click',()=>{
+        selectedAdvancedCategory=Number(filterSelect?.value)||0;
         localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));
         host.style.display='none';
         onContinue?.('advanced');
