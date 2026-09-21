@@ -146,7 +146,7 @@ window.showSearchAdvancedPrompt=function(onContinue){
         <div class="ux-search-choice-grid">
           <button type="button" id="wizard-normal-btn" class="ux-search-choice ux-search-choice-primary">
             <span>🔎</span>
-            <span><strong>بحث عادي</strong><small>ابحث مباشرة عن «${escapeHtml(String(searchInput?.value||'').trim()||'الكلمة') }»</small></span>
+            <span><strong>بحث عادي</strong><small>ابحث مباشرة عن «${escapeHtml(String(searchInput?.value||'').trim()||'الكلمة')}»</small></span>
           </button>
           <button type="button" id="wizard-advanced-btn" class="ux-search-choice">
             <span>⚡</span>
@@ -159,10 +159,14 @@ window.showSearchAdvancedPrompt=function(onContinue){
             <button type="button" id="wizard-filter-back" class="ux-back-btn">← رجوع</button>
             <div><strong>1. اختر الفلترة</strong><small>المختارة سابقًا: ${escapeHtml(savedName)}</small></div>
           </div>
-          <label class="ux-filter-search-label" for="wizard-filter-search">ابحث عن الفلتر</label>
-          <input id="wizard-filter-search" class="ux-filter-search" type="search" placeholder="مثلاً: المشاهدات، التاريخ، المدة..." autocomplete="off">
-          <div id="wizard-filter-list" class="ux-filter-list" role="listbox" aria-label="فلاتر البحث"></div>
-          <button type="button" id="advanced-apply-btn" class="ux-continue-btn">متابعة ← اختيار المدينة</button>
+
+          <label class="ux-filter-search-label" for="wizard-filter-search">ابحث عن أي جزء من اسم الفلتر</label>
+          <input id="wizard-filter-search" class="ux-filter-search" type="search" placeholder="مثلاً: مشاهدات، 4K، اليوم..." autocomplete="off">
+
+          <select id="wizard-filter-select" class="ux-filter-select" size="8" aria-label="اختيار فلتر البحث">
+            ${normalizedCategories.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}
+          </select>
+          <small class="ux-filter-hint">اختر الفلتر، وسيتم الانتقال للخطوة التالية مباشرة.</small>
         </div>
       </div>`;
 
@@ -173,22 +177,7 @@ window.showSearchAdvancedPrompt=function(onContinue){
     const filterBox=host.querySelector('#wizard-filter-box');
     const backBtn=host.querySelector('#wizard-filter-back');
     const filterSearch=host.querySelector('#wizard-filter-search');
-    const filterList=host.querySelector('#wizard-filter-list');
-    const applyBtn=host.querySelector('#advanced-apply-btn');
-
-    let workingCategory=selectedAdvancedCategory;
-
-    const renderFilters=(term='')=>{
-        const q=String(term||'').trim().toLowerCase();
-        const filtered=normalizedCategories.filter(item=>!q||item.name.toLowerCase().includes(q)||item.group.toLowerCase().includes(q));
-        const visible=filtered.slice(0,18);
-        filterList.innerHTML=visible.length
-          ?visible.map(item=>`<button type="button" class="ux-filter-chip ${item.index===workingCategory?'is-selected':''}" data-category="${item.index}" role="option" aria-selected="${item.index===workingCategory?'true':'false'}"><span>${item.index===workingCategory?'✓':'⚡'}</span><span>${escapeHtml(item.name)}</span></button>`).join('')
-          :'<div class="ux-filter-empty">لا توجد فلترة مطابقة. جرّب كلمة أقصر.</div>';
-        if(filtered.length>18){
-            filterList.insertAdjacentHTML('beforeend','<div class="ux-filter-more">يتم عرض أول 18 نتيجة مطابقة. اكتب كلمة أدق للوصول للفلتر المطلوب.</div>');
-        }
-    };
+    const filterSelect=host.querySelector('#wizard-filter-select');
 
     normalBtn.onclick=()=>{
         host.style.display='none';
@@ -198,34 +187,34 @@ window.showSearchAdvancedPrompt=function(onContinue){
     advancedBtn.onclick=()=>{
         normalBtn.disabled=true;
         advancedBtn.disabled=true;
-        document.querySelector('.ux-search-choice-grid')?.setAttribute('hidden','');
+        host.querySelector('.ux-search-choice-grid')?.setAttribute('hidden','');
         filterBox.hidden=false;
-        renderFilters('');
         setTimeout(()=>filterSearch?.focus({preventScroll:true}),0);
     };
 
     backBtn.onclick=()=>{
         filterBox.hidden=true;
-        document.querySelector('.ux-search-choice-grid')?.removeAttribute('hidden');
+        host.querySelector('.ux-search-choice-grid')?.removeAttribute('hidden');
         normalBtn.disabled=false;
         advancedBtn.disabled=false;
     };
 
-    filterSearch?.addEventListener('input',()=>renderFilters(filterSearch.value));
-
-    filterList?.addEventListener('click',event=>{
-        const button=event.target.closest('[data-category]');
-        if(!button)return;
-        workingCategory=Number(button.dataset.category);
-        renderFilters(filterSearch?.value||'');
+    filterSearch?.addEventListener('input',()=>{
+        const q=String(filterSearch.value||'').trim().toLowerCase();
+        Array.from(filterSelect.options).forEach(option=>{
+            const match=!q||option.textContent.toLowerCase().includes(q);
+            option.hidden=!match;
+        });
+        const firstVisible=Array.from(filterSelect.options).find(o=>!o.hidden);
+        if(firstVisible) filterSelect.value=firstVisible.value;
     });
 
-    applyBtn.onclick=()=>{
-        selectedAdvancedCategory=workingCategory;
+    filterSelect?.addEventListener('change',()=>{
+        selectedAdvancedCategory=Number(filterSelect.value)||0;
         localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));
         host.style.display='none';
         onContinue?.('advanced');
-    };
+    });
 };
 window.getSavedAdvancedSearchUrl=function(query){
     const q=String(query||'').trim();
