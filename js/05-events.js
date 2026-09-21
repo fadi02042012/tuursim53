@@ -54,6 +54,12 @@ async function trySearchExactCountry(query) {
         updateShowMoreButton();
         updateStatus(`🌍 ${country.name_ar || country.name || q} — العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z`, '#10b981');
 
+        // بيانات المدن المحلية لا تحتوي دائماً على السكان، لذلك نحاول تحديث
+        // الترتيب من Wikidata بعد العرض الأول. إذا تعذر المصدر تبقى القائمة المحلية.
+        if (typeof window.sortCitiesFromWeb === 'function') {
+            void window.sortCitiesFromWeb(code, { silent: true });
+        }
+
         if (typeof window.refreshResultsPagination === 'function') window.refreshResultsPagination();
         return true;
     } catch (error) {
@@ -71,11 +77,53 @@ function updateStatus(message, color = '#64748b') {
     }
 }
 
+// عواصم احتياطية: بعض نسخ بيانات الدول لا تحتوي على حقل capital،
+// لذلك لا يجوز أن يسقط ترتيب الدولة إلى A-Z لمجرد غياب هذا الحقل.
+const CAPITAL_BY_COUNTRY = {
+    AF:'Kabul', AL:'Tirana', DZ:'Algiers', AD:'Andorra la Vella', AO:'Luanda',
+    AR:'Buenos Aires', AM:'Yerevan', AU:'Canberra', AT:'Vienna', AZ:'Baku',
+    BH:'Manama', BD:'Dhaka', BY:'Minsk', BE:'Brussels', BZ:'Belmopan', BJ:'Porto-Novo',
+    BT:'Thimphu', BO:'Sucre', BA:'Sarajevo', BW:'Gaborone', BR:'Brasilia',
+    BN:'Bandar Seri Begawan', BG:'Sofia', BF:'Ouagadougou', BI:'Gitega', KH:'Phnom Penh',
+    CM:'Yaounde', CA:'Ottawa', CV:'Praia', CF:'Bangui', TD:'N\'Djamena', CL:'Santiago',
+    CN:'Beijing', CO:'Bogota', KM:'Moroni', CG:'Brazzaville', CD:'Kinshasa',
+    CR:'San Jose', CI:'Yamoussoukro', HR:'Zagreb', CU:'Havana', CY:'Nicosia',
+    CZ:'Prague', DK:'Copenhagen', DJ:'Djibouti', DM:'Roseau', DO:'Santo Domingo',
+    EC:'Quito', EG:'Cairo', SV:'San Salvador', GQ:'Malabo', ER:'Asmara', EE:'Tallinn',
+    SZ:'Mbabane', ET:'Addis Ababa', FJ:'Suva', FI:'Helsinki', FR:'Paris',
+    GA:'Libreville', GM:'Banjul', GE:'Tbilisi', DE:'Berlin', GH:'Accra', GR:'Athens',
+    GD:'Saint George\'s', GT:'Guatemala City', GN:'Conakry', GW:'Bissau', GY:'Georgetown',
+    HT:'Port-au-Prince', HN:'Tegucigalpa', HU:'Budapest', IS:'Reykjavik', IN:'New Delhi',
+    ID:'Jakarta', IR:'Tehran', IQ:'Baghdad', IE:'Dublin', IL:'Jerusalem', IT:'Rome',
+    JM:'Kingston', JP:'Tokyo', JO:'Amman', KZ:'Astana', KE:'Nairobi', KI:'South Tarawa',
+    KP:'Pyongyang', KR:'Seoul', KW:'Kuwait City', KG:'Bishkek', LA:'Vientiane',
+    LV:'Riga', LB:'Beirut', LS:'Maseru', LR:'Monrovia', LY:'Tripoli', LI:'Vaduz',
+    LT:'Vilnius', LU:'Luxembourg', MG:'Antananarivo', MW:'Lilongwe', MY:'Kuala Lumpur',
+    MV:'Male', ML:'Bamako', MT:'Valletta', MH:'Majuro', MR:'Nouakchott', MU:'Port Louis',
+    MX:'Mexico City', FM:'Palikir', MD:'Chisinau', MC:'Monaco', MN:'Ulaanbaatar',
+    ME:'Podgorica', MA:'Rabat', MZ:'Maputo', MM:'Naypyidaw', NA:'Windhoek', NR:'Yaren',
+    NP:'Kathmandu', NL:'Amsterdam', NZ:'Wellington', NI:'Managua', NE:'Niamey',
+    NG:'Abuja', MK:'Skopje', NO:'Oslo', OM:'Muscat', PK:'Islamabad', PW:'Ngerulmud',
+    PA:'Panama City', PG:'Port Moresby', PY:'Asuncion', PE:'Lima', PH:'Manila',
+    PL:'Warsaw', PT:'Lisbon', QA:'Doha', RO:'Bucharest', RU:'Moscow', RW:'Kigali',
+    KN:'Basseterre', LC:'Castries', VC:'Kingstown', WS:'Apia', SM:'San Marino',
+    ST:'Sao Tome', SA:'Riyadh', SN:'Dakar', RS:'Belgrade', SC:'Victoria', SL:'Freetown',
+    SG:'Singapore', SK:'Bratislava', SI:'Ljubljana', SB:'Honiara', SO:'Mogadishu',
+    ZA:'Pretoria', SS:'Juba', ES:'Madrid', LK:'Sri Jayawardenepura Kotte', SD:'Khartoum',
+    SR:'Paramaribo', SE:'Stockholm', CH:'Bern', SY:'Damascus', TJ:'Dushanbe',
+    TZ:'Dodoma', TH:'Bangkok', TL:'Dili', TG:'Lome', TO:'Nuku\'alofa', TT:'Port of Spain',
+    TN:'Tunis', TR:'Ankara', TM:'Ashgabat', TV:'Funafuti', UG:'Kampala', UA:'Kyiv',
+    AE:'Abu Dhabi', GB:'London', US:'Washington', UY:'Montevideo', UZ:'Tashkent',
+    VU:'Port Vila', VA:'Vatican City', VE:'Caracas', VN:'Hanoi', YE:'Sanaa',
+    ZM:'Lusaka', ZW:'Harare'
+};
+
 function getCountryCapital(countryCode) {
     const code = String(countryCode || '').toUpperCase();
     const list = Array.isArray(countries) ? countries : [];
-    const country = list.find(item => String(item?.code || '').toUpperCase() === code);
-    return String(country?.capital || country?.capital_en || country?.capital_ar || '').trim();
+    const country = list.find(item => String(item?.code || item?.iso2 || '').toUpperCase() === code);
+    const fromData = String(country?.capital || country?.capital_en || country?.capital_ar || '').trim();
+    return fromData || String(CAPITAL_BY_COUNTRY[code] || '').trim();
 }
 
 
@@ -127,7 +175,8 @@ const FEATURED_CITIES_BY_COUNTRY = {
     ZA: ['Cape Town','كيب تاون','Johannesburg','جوهانسبرغ','Durban','ديربان','Pretoria','بريتوريا'],
     RU: ['Moscow','موسكو','Saint Petersburg','سانت بطرسبورغ','Kazan','قازان','Sochi','سوتشي','Novosibirsk','نوفوسيبيرسك'],
     PL: ['Warsaw','وارسو','Krakow','كراكوف','Gdansk','غدانسك','Wroclaw','فروتسواف','Poznan','بوزنان'],
-    CZ: ['Prague','براغ','Brno','برنو','Karlovy Vary','كارلوفي فاري','Cesky Krumlov','تشيسكي كروملوف']
+    CZ: ['Prague','براغ','Brno','برنو','Karlovy Vary','كارلوفي فاري','Cesky Krumlov','تشيسكي كروملوف'],
+    ML: ['Bamako','باماكو','Timbuktu','تمبكتو','Sikasso','سيكاسو','Mopti','موبتي','Ségou','سيغو','Gao','جاو','Kayes','كايس','Koulikoro','كوليكورو']
     ,IS: ['Reykjavik','Reykjavík','ريكيافيك','Kopavogur','Kópavogur','كوبافوغور','Hafnarfjordur','Hafnarfjörður','هافنارفيوردور','Akureyri','أكوريري','Keflavik','Keflavík','كيفلافيك','Reykjanesbaer','Reykjanesbær','Selfoss','Vestmannaeyjar']
 };
 
@@ -212,7 +261,7 @@ function sortCitiesForCountry(cities, countryCode) {
     const remaining = source.filter(city => !used.has(keyOf(city)));
     return [...capitalCities, ...featuredCities, ...largestCities, ...sortCitiesAlphabetically(remaining)];
 }
-window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
+window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode, options = {}) {
     const code = String(countryCode || '').trim().toUpperCase();
     if (!code || !Array.isArray(currentCountryCities) || !currentCountryCities.length) {
         showToast('⚠️ اختر دولة أولاً');
@@ -331,7 +380,7 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
         famous.forEach(city => used.add(keyOf(city)));
 
         // 3) أكبر المدن حسب عدد السكان.
-        const largest = candidates
+        const largest = currentCountryCities
             .filter(city => !used.has(keyOf(city)) && populationOf(city) > 0)
             .sort((a, b) =>
                 populationOf(b) - populationOf(a) ||
@@ -344,19 +393,34 @@ window.sortCitiesFromWeb = async function sortCitiesFromWeb(countryCode) {
         // 4) كل ما تبقى أبجديًا A-Z، بدون فقدان أو تكرار أي مدينة.
         const remaining = currentCountryCities.filter(city => !used.has(keyOf(city)));
 
-        renderLocalCityResults([
+        const ordered = [
             ...capital,
             ...famous,
             ...largest,
             ...sortCitiesAlphabetically(remaining)
-        ]);
+        ];
+        currentCountryCities = ordered;
+        currentFullResults = ordered;
+        currentDisplayLimit = Math.min(RESULTS_PAGE_SIZE, ordered.length);
+        currentCountrySearchResult = Array.isArray(countries)
+            ? countries.find(item => String(item?.code || '').toUpperCase() === code) || currentCountrySearchResult
+            : currentCountrySearchResult;
+        renderResults({
+            countries: currentCountrySearchResult ? [currentCountrySearchResult] : [],
+            cities: ordered.slice(0, currentDisplayLimit)
+        });
+        updateShowMoreButton();
 
-        updateStatus('✅ تم ترتيب المدن: العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z', '#10b981');
+        if (!options.silent) {
+            updateStatus('✅ تم ترتيب المدن: العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z', '#10b981');
+        }
     } catch (error) {
         console.error('خطأ في ترتيب المدن من الويب:', error);
         renderLocalCityResults(currentCountryCities);
-        updateStatus('❌ تعذر جلب بيانات الويب، عُرضت المدن كما هي', '#ef4444');
-        showToast('❌ تعذر الاتصال بمصدر الويب');
+        if (!options.silent) {
+            updateStatus('❌ تعذر جلب بيانات الويب، عُرضت المدن كما هي', '#ef4444');
+            showToast('❌ تعذر الاتصال بمصدر الويب');
+        }
     } finally {
         if (button) button.disabled = false;
     }
