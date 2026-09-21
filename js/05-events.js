@@ -476,7 +476,8 @@ searchInput.addEventListener('keydown', function (event) {
         if (this.dataset.searching === '1') return;
         this.dataset.searching = '1';
         const run=()=>Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});
-        if (typeof window.showCountryCityPrompt==='function') window.showCountryCityPrompt(this.value,()=>{ if(typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(run); else run(); }); else if (typeof window.showCountryCityPrompt==='function') window.showCountryCityPrompt(searchInput.value.trim(),()=>{ if(typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(run); else run(); }); else if (typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(run); else run();
+        const afterFilter=()=>{ if(typeof window.showCountryCityPrompt==='function') window.showCountryCityPrompt(searchInput.value,run); else run(); };
+if(typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(afterFilter); else afterFilter();
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
@@ -491,7 +492,8 @@ document.getElementById('searchBtn')?.addEventListener('click', async () => {
     if (searchInput.dataset.searching === '1') return;
     searchInput.dataset.searching = '1';
     const run=()=>Promise.resolve(handleSearch()).catch(error=>console.error('Button search error:',error)).finally(()=>{searchInput.dataset.searching='0';});
-    if (typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(run); else run();
+    const afterFilter=()=>{ if(typeof window.showCountryCityPrompt==='function') window.showCountryCityPrompt(searchInput.value,run); else run(); };
+if(typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(afterFilter); else afterFilter();
 });
 
 // ============================================================
