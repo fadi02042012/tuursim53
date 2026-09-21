@@ -306,7 +306,11 @@ window.showCountryCityPrompt=async function(query,onContinue){
 
     back?.addEventListener('click',()=>{
         host.style.display='none';
-        onContinue?.('back-to-filter');
+        // العودة للفلترة بدون تحويلها بالخطأ إلى بحث عادي.
+        window.showSearchAdvancedPrompt((mode)=>{
+            if(mode==='advanced') onContinue?.('advanced');
+            else onContinue?.(mode);
+        });
     });
 
     cityList?.addEventListener('click',event=>{
