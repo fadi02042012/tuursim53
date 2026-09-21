@@ -137,6 +137,54 @@ window.getSavedAdvancedSearchUrl=function(query){
     const url=getCategoryUrl(q,getSavedAdvancedCategory());
     return url&&url.includes('youtube.com/results')?url:'https://www.youtube.com/results?search_query='+encodeURIComponent(q);
 };
+window.showCountryCityPrompt=async function(query,onContinue){
+    const text=String(query||'').trim();
+    const host=ensureSearchAdvancedPrompt();
+    if(!host){onContinue?.();return;}
+    const list=typeof countries!=='undefined'&&Array.isArray(countries)?countries:[];
+    const norm=v=>String(v||'').trim().toLowerCase();
+    const selectedCode=String(document.getElementById('country')?.value||document.getElementById('countrySelect')?.value||'').toUpperCase();
+    const country=list.find(c=>[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(text)))
+        || list.find(c=>[c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(selectedCode)));
+    if(!country){onContinue?.();return;}
+    const code=String(country.code||country.iso2||country.iso3||'').toUpperCase();
+    let cities=[];
+    try{
+        if(typeof countryCitiesCache!=='undefined'&&countryCitiesCache.has(code)){
+            cities=countryCitiesCache.get(code)||[];
+        }else if(typeof loadCountryCities==='function'){
+            cities=await loadCountryCities(code);
+            if(typeof countryCitiesCache!=='undefined')countryCitiesCache.set(code,cities);
+        }
+        if(typeof sortCitiesForCountry==='function')cities=sortCitiesForCountry(cities,code);
+    }catch(error){
+        console.warn('تعذر تحميل مدن الدولة:',error);
+        cities=[];
+    }
+    if(!cities.length){onContinue?.();return;}
+    const cityOptions=cities.slice(0,100).map((city,i)=>{
+        const name=String(city.city||city.name||city.city_ar||'مدينة').trim();
+        const ar=String(city.city_ar||city.name_ar||'').trim();
+        return '<option value="'+i+'">'+escapeHtml(name+(ar&&ar!==name?' ('+ar+')':''))+'</option>';
+    }).join('');
+    host.innerHTML='<div class="search-advanced-prompt-inner city-wizard"><div class="search-advanced-prompt-title"><span>2️⃣</span><div><strong>الخطوة 2: اختيار المدينة</strong><small>اختر المدينة، وسيبدأ البحث فورًا بالفلترة المحددة</small></div></div><select id="wizard-city-select" class="wizard-city-select"><option value="" selected disabled>🏙️ اختر المدينة</option>'+cityOptions+'</select></div>';
+    host.style.display='block';
+    const select=host.querySelector('#wizard-city-select');
+    select?.focus({preventScroll:true});
+    select?.addEventListener('change',()=>{
+        const city=cities[Number(select.value)];
+        if(!city)return;
+        const parts=[
+            city.city||city.name,
+            city.city_ar||city.name_ar,
+            country.name,
+            country.name_ar
+        ].map(v=>String(v||'').trim()).filter((v,i,a)=>v&&a.indexOf(v)===i);
+        searchInput.value=parts.join(' ');
+        host.style.display='none';
+        onContinue?.(true);
+    });
+};
 function populateCountrySelect(){countrySelect.innerHTML='<option value="">🌐 كل الدول</option>';countries.forEach(c=>{const displayName=c.name_ar||c.name||c.code;countryMap[c.code]=displayName;countryNames[c.code]=c.name||c.code;const option=document.createElement('option');option.value=c.code;option.textContent=displayName;countrySelect.appendChild(option);});}
 console.log('✅ 04-ui.js تم تحميله بنجاح — واجهة تصنيفات احترافية ومتجاوبة');
 
