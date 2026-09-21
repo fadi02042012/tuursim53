@@ -75,7 +75,7 @@ function ensureAdvancedCategoryStyles() {
     const style = document.createElement('style');
     style.id = 'advanced-category-styles';
     style.textContent = `
-        .search-advanced-prompt{display:none;position:absolute;top:calc(100% + 8px);right:0;left:0;z-index:1200;direction:rtl}.search-advanced-prompt-inner{padding:14px;background:#fff;border:1px solid #e5e2f5;border-radius:16px;box-shadow:0 18px 45px rgba(55,48,90,.18)}.search-advanced-prompt-title{display:flex;align-items:center;gap:10px;margin-bottom:10px}.search-advanced-prompt-title>span{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#9b8df7,#7ea8ff);color:#fff}.search-advanced-prompt-title strong{display:block;font-size:15px}.search-advanced-prompt-title small{display:block;color:#777989;font-size:11px;margin-top:2px}.search-advanced-prompt select{width:100%;min-height:44px;border:2px solid #dedaf2;border-radius:11px;padding:7px 10px;background:#fff;color:#292943;font:600 13px inherit}.search-advanced-prompt-actions{display:flex;gap:7px;margin-top:10px}.search-advanced-prompt-actions button{flex:1;border:0;border-radius:10px;padding:10px 12px;font:700 12px inherit;cursor:pointer}.search-advanced-apply{background:linear-gradient(135deg,#9b8df7,#7ea8ff);color:#fff}.search-advanced-skip{background:#f1efff;color:#5d51ad}body.dark-mode .search-advanced-prompt-inner{background:#172033;border-color:#334155}body.dark-mode .search-advanced-prompt select{background:#0f172a;color:#f1f5f9;border-color:#475569}@media(max-width:560px){.search-advanced-prompt{right:-8px;left:-8px}.search-advanced-prompt-actions{flex-direction:column}}
+        .search-advanced-prompt{display:none;position:absolute;top:calc(100% + 8px);right:0;left:0;z-index:1200;direction:rtl}.search-advanced-prompt-inner{padding:14px;background:#fff;border:1px solid #e5e2f5;border-radius:16px;box-shadow:0 18px 45px rgba(55,48,90,.18)}.search-advanced-prompt-title{display:flex;align-items:center;gap:10px;margin-bottom:10px}.search-advanced-prompt-title>span{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:linear-gradient(135deg,#9b8df7,#7ea8ff);color:#fff}.search-advanced-prompt-title strong{display:block;font-size:15px}.search-advanced-prompt-title small{display:block;color:#777989;font-size:11px;margin-top:2px}.search-advanced-prompt select{width:100%;min-height:44px;border:2px solid #dedaf2;border-radius:11px;padding:7px 10px;background:#fff;color:#292943;font:600 13px inherit}.search-advanced-prompt-actions{display:flex;gap:7px;margin-top:10px}.city-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.city-choice-btn{border:1px solid #dedaf2;border-radius:11px;background:#f8f7ff;color:#292943;padding:11px 9px;font:700 13px inherit;cursor:pointer;text-align:right}.city-choice-btn:hover{border-color:#9b8df7;background:#eeeaff}body.dark-mode .city-choice-btn{background:#0f172a;color:#f1f5f9;border-color:#475569}@media(max-width:560px){.city-choice-grid{grid-template-columns:1fr}}.search-advanced-prompt-actions button{flex:1;border:0;border-radius:10px;padding:10px 12px;font:700 12px inherit;cursor:pointer}.search-advanced-apply{background:linear-gradient(135deg,#9b8df7,#7ea8ff);color:#fff}.search-advanced-skip{background:#f1efff;color:#5d51ad}body.dark-mode .search-advanced-prompt-inner{background:#172033;border-color:#334155}body.dark-mode .search-advanced-prompt select{background:#0f172a;color:#f1f5f9;border-color:#475569}@media(max-width:560px){.search-advanced-prompt{right:-8px;left:-8px}.search-advanced-prompt-actions{flex-direction:column}}
 
         .advanced-category-panel{margin:0 0 16px;padding:16px 18px;background:linear-gradient(135deg,#ffffff 0%,#f8f7ff 100%);border:1px solid #e5e2f5;border-radius:18px;box-shadow:0 8px 28px rgba(79,70,120,.08);direction:rtl;}
         .advanced-category-heading{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
@@ -115,7 +115,27 @@ function getCategoryUrl(query,index=selectedAdvancedCategory){return typeof gene
 function getSavedAdvancedCategory(){try{const v=Number(localStorage.getItem('tuursim53_advanced_category'));return Number.isFinite(v)&&v>=0?v:0;}catch(_){return 0;}}
 selectedAdvancedCategory=getSavedAdvancedCategory();
 function ensureSearchAdvancedPrompt(){let h=document.getElementById('search-advanced-prompt');if(h)return h;const bar=document.querySelector('.google-search-bar');if(!bar)return null;ensureAdvancedCategoryStyles();h=document.createElement('div');h.id='search-advanced-prompt';h.className='search-advanced-prompt';bar.appendChild(h);return h;}
-window.showSearchAdvancedPrompt=function(onContinue){const host=ensureSearchAdvancedPrompt();if(!host)return onContinue?.();const cats=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];const groups={};cats.forEach(x=>{const g=x.group||'أخرى';(groups[g]||(groups[g]=[])).push(x);});const labels={'أساسي':'📺 الأساسي','الترتيب':'🔥 الترتيب','التاريخ':'📅 التاريخ','المدة':'⏱ المدة','الجودة':'🎥 الجودة','مركب':'🧩 مركب','نوع المحتوى':'🎬 النوع','منصات':'🌐 المنصات','قنوات محددة':'📺 القنوات'};const options=Object.entries(groups).map(([g,items])=>'<optgroup label="'+escapeHtml(labels[g]||g)+'">'+items.map(x=>'<option value="'+x.index+'" '+(x.index===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name)+'</option>').join('')+'</optgroup>').join('');host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر طريقة البحث قبل عرض النتائج</small></div></div><select id="search-advanced-select">'+options+'</select><div class="search-advanced-prompt-actions"><button type="button" class="search-advanced-skip" id="search-advanced-skip">⏭️ تخطي واستخدام المحفوظ</button><button type="button" class="search-advanced-apply" id="search-advanced-apply">🚀 تطبيق والبحث</button></div></div>';host.style.display='block';const select=host.querySelector('#search-advanced-select');const finish=useSaved=>{if(!useSaved)selectedAdvancedCategory=Number(select?.value)||0;try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));}catch(_){}host.style.display='none';onContinue?.();};host.querySelector('#search-advanced-apply').onclick=()=>finish(false);host.querySelector('#search-advanced-skip').onclick=()=>{selectedAdvancedCategory=getSavedAdvancedCategory();finish(true);};select?.focus({preventScroll:true});};
+window.showSearchAdvancedPrompt=function(onContinue){
+    const host=ensureSearchAdvancedPrompt();
+    if(!host)return onContinue?.();
+    const cats=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];
+    const groups={};
+    cats.forEach(x=>{const g=x.group||'أخرى';(groups[g]||(groups[g]=[])).push(x);});
+    const labels={'أساسي':'📺 الأساسي','الترتيب':'🔥 الترتيب','التاريخ':'📅 التاريخ','المدة':'⏱ المدة','الجودة':'🎥 الجودة','مركب':'🧩 مركب','نوع المحتوى':'🎬 النوع','منصات':'🌐 المنصات','قنوات محددة':'📺 القنوات'};
+    const options=Object.entries(groups).map(([g,items])=>'<optgroup label="'+escapeHtml(labels[g]||g)+'">'+items.map(x=>'<option value="'+x.index+'">'+escapeHtml(x.name)+'</option>').join('')+'</optgroup>').join('');
+    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر فلترة البحث للمدينة</small></div></div><select id="search-advanced-select">'+options+'</select><div class="search-advanced-prompt-actions"><button type="button" class="search-advanced-skip" id="search-advanced-skip">▶️ البحث العادي في YouTube</button><button type="button" class="search-advanced-apply" id="search-advanced-apply">🚀 تطبيق الفلترة والبحث</button></div></div>';
+    host.style.display='block';
+    const select=host.querySelector('#search-advanced-select');
+    const finish=applyFilter=>{
+        selectedAdvancedCategory=applyFilter ? (Number(select?.value)||0) : 0;
+        try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));}catch(_){}
+        host.style.display='none';
+        onContinue?.();
+    };
+    host.querySelector('#search-advanced-apply').onclick=()=>finish(true);
+    host.querySelector('#search-advanced-skip').onclick=()=>finish(false);
+    select?.focus({preventScroll:true});
+};
 function buildAdvancedCategoryPanel(){ensureAdvancedCategoryStyles();const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];const groups={};categories.forEach(item=>{const group=item.group||'تصنيفات أخرى';if(!groups[group])groups[group]=[];groups[group].push(item);});const groupLabels={'أساسي':'📺 البحث الأساسي','الترتيب':'🔥 الترتيب والفرز','التاريخ':'📅 حسب التاريخ','المدة':'⏱ حسب مدة الفيديو','الجودة':'🎥 الجودة والمشاهدة','مركب':'🧩 تصنيفات مركبة','نوع المحتوى':'🎬 نوع المحتوى','منصات':'🌐 المنصات والبحث الخارجي','قنوات محددة':'📺 القنوات المحددة'};const options=Object.entries(groups).map(([group,items])=>`<optgroup label="${escapeHtml(groupLabels[group]||group)}">${items.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}</optgroup>`).join('');return `<section class="advanced-category-panel" aria-label="اختيار تصنيف البحث المتقدم"><div class="advanced-category-heading"><div class="advanced-category-icon">⚡</div><div class="advanced-category-title-wrap"><h3>البحث المتقدم</h3><p>اختر نوع البحث الذي تريد استخدامه مع المدينة أو الدولة.</p></div><span class="advanced-category-count">48 تصنيف</span></div><label class="advanced-category-label" for="advanced-category-select">اختر التصنيف</label><div class="advanced-category-select-wrap"><select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" aria-describedby="advanced-category-help">${options}</select><span class="advanced-category-chevron" aria-hidden="true">⌄</span></div><div id="advanced-category-help" class="advanced-category-help"><span>✓ التصنيف المختار:</span><strong>${escapeHtml(getCategoryName())}</strong></div></section>`;}
 window.changeAdvancedCategory=function(value){selectedAdvancedCategory=Number(value)||0;const label=document.querySelector('#advanced-category-help strong');if(label)label.textContent=getCategoryName();document.querySelectorAll('.advanced-category-link').forEach(link=>{const query=link.dataset.query||'';link.href=getCategoryUrl(query,selectedAdvancedCategory);const text=link.querySelector('.advanced-category-link-text');if(text)text.textContent=`⚡ ${getCategoryName()}`;});};
 function buttonsHtml(query,index,mapsQuery=query,wikiUrl=''){
@@ -184,6 +204,53 @@ window.selectCity=function(name){
     searchInput.value=String(name||'');
     if(suggestionsDiv)suggestionsDiv.style.display='none';
     if(typeof handleSearch==='function')handleSearch();
+};
+window.showCountryCityPrompt=async function(query,onContinue){
+    const text=String(query||'').trim();
+    if(!text){ onContinue?.(); return; }
+    const normalized=normalizeText(text);
+    const country=(Array.isArray(countries)?countries:[]).find(c=>{
+        const names=[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).map(normalizeText);
+        return names.includes(normalized);
+    });
+    if(!country){ onContinue?.(); return; }
+    const code=String(country.code||'').toUpperCase();
+    let cities=[];
+    try{
+        if(typeof countryCitiesCache!=='undefined' && countryCitiesCache.has(code)){
+            cities=countryCitiesCache.get(code)||[];
+        }else if(typeof loadCountryCities==='function'){
+            cities=await loadCountryCities(code);
+            if(typeof countryCitiesCache!=='undefined') countryCitiesCache.set(code,cities);
+        }
+        if(typeof sortCitiesForCountry==='function') cities=sortCitiesForCountry(cities,code);
+    }catch(error){ console.warn('تعذر تحميل مدن الدولة:',error); }
+    const featured=(cities||[]).slice(0,8);
+    if(!featured.length){ onContinue?.(); return; }
+    const host=ensureSearchAdvancedPrompt();
+    if(!host){ onContinue?.(); return; }
+    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>🏙️</span><div><strong>اختر مدينة من '+escapeHtml(country.name_ar||country.name||text)+'</strong><small>اختر المدينة أولاً، ثم ستظهر لك فلترة البحث المتقدم</small></div></div><div class="city-choice-grid">'+featured.map((city,i)=>{
+        const name=city.city||city.name||city.city_ar||'مدينة';
+        const ar=city.city_ar&&city.city_ar!==name?' ('+escapeHtml(city.city_ar)+')':'';
+        return '<button type="button" class="city-choice-btn" data-city-index="'+i+'">🏙️ '+escapeHtml(name)+ar+'</button>';
+    }).join('')+'</div><div class="search-advanced-prompt-actions"><button type="button" class="search-advanced-skip" id="country-city-skip">▶️ بحث الدولة في YouTube</button></div></div>';
+    host.style.display='block';
+    host.querySelectorAll('.city-choice-btn').forEach(button=>{
+        button.onclick=()=>{
+            const city=featured[Number(button.dataset.cityIndex)];
+            if(!city)return;
+            const cityQuery=[city.city,city.city_ar,country.name,country.name_ar].filter(Boolean).join(' ');
+            searchInput.value=cityQuery;
+            host.style.display='none';
+            window.showSearchAdvancedPrompt(onContinue);
+        };
+    });
+    host.querySelector('#country-city-skip').onclick=()=>{
+        selectedAdvancedCategory=0;
+        try{localStorage.setItem('tuursim53_advanced_category','0');}catch(_){}
+        host.style.display='none';
+        onContinue?.();
+    };
 };
 function populateCountrySelect(){countrySelect.innerHTML='<option value="">🌐 كل الدول</option>';countries.forEach(c=>{const displayName=c.name_ar||c.name||c.code;countryMap[c.code]=displayName;countryNames[c.code]=c.name||c.code;const option=document.createElement('option');option.value=c.code;option.textContent=displayName;countrySelect.appendChild(option);});}
 console.log('✅ 04-ui.js تم تحميله بنجاح — واجهة تصنيفات احترافية ومتجاوبة');
