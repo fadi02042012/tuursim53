@@ -187,6 +187,14 @@ window.showSearchAdvancedPrompt=function(onContinue){
     });
 
     filterNext?.addEventListener('click',()=>{
+    filterSelect?.addEventListener('keydown', event => {
+        if(event.key === 'Escape'){
+            event.preventDefault();
+            event.stopPropagation();
+            host.style.display='none';
+        }
+    });
+
         selectedAdvancedCategory=Number(filterSelect?.value)||0;
         try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));localStorage.setItem('tuursim53.advancedCategory',String(selectedAdvancedCategory));}catch(_){}
         if(typeof window.applyAdvancedCategoryToResults==='function')window.applyAdvancedCategoryToResults();
