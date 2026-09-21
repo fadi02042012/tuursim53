@@ -152,7 +152,12 @@ window.showCountryCityPrompt=async function(query,onContinue){
     select?.addEventListener('change',()=>{
         const c=cities[Number(select.value)];
         if(!c)return;
-        searchInput.value=String(c.city||c.name||c.city_ar||'').trim();
+        const cityEn=String(c.name||c.city||'').trim();
+        const cityAr=String(c.name_ar||c.city_ar||'').trim();
+        const countryEn=String(country?.name||'').trim();
+        const countryAr=String(country?.name_ar||'').trim();
+        const parts=[cityEn,cityAr,countryEn,countryAr].filter((v,i,a)=>v&&a.indexOf(v)===i);
+        searchInput.value=parts.join(' ').trim();
         host.style.display='none';
         onContinue?.(true);
     });
