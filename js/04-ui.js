@@ -186,21 +186,26 @@ window.showSearchAdvancedPrompt=function(onContinue){
         selectedAdvancedCategory=Number(filterSelect.value)||0;
     });
 
-    filterNext?.addEventListener('click',()=>{
-    filterSelect?.addEventListener('keydown', event => {
+    const closeWizardWithoutApplying = () => {
+        host.style.display='none';
+    };
+
+    host.onkeydown = event => {
         if(event.key === 'Escape'){
             event.preventDefault();
             event.stopPropagation();
-            host.style.display='none';
+            closeWizardWithoutApplying();
         }
-    });
-    host.addEventListener('mousedown', event => {
+    };
+
+    host.onmousedown = event => {
         if(event.target === host){
             event.preventDefault();
-            host.style.display='none';
+            closeWizardWithoutApplying();
         }
-    });
+    };
 
+    filterNext?.addEventListener('click',()=>{
         selectedAdvancedCategory=Number(filterSelect?.value)||0;
         try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));localStorage.setItem('tuursim53.advancedCategory',String(selectedAdvancedCategory));}catch(_){}
         if(typeof window.applyAdvancedCategoryToResults==='function')window.applyAdvancedCategoryToResults();
