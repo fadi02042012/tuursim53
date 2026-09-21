@@ -116,11 +116,21 @@ function getSavedAdvancedCategory(){try{const v=Number(localStorage.getItem('tuu
 selectedAdvancedCategory=getSavedAdvancedCategory();
 function ensureSearchAdvancedPrompt(){let h=document.getElementById('search-advanced-prompt');if(h)return h;const bar=document.querySelector('.google-search-bar');if(!bar)return null;ensureAdvancedCategoryStyles();h=document.createElement('div');h.id='search-advanced-prompt';h.className='search-advanced-prompt';bar.appendChild(h);return h;}
 window.showSearchAdvancedPrompt=function(onContinue){
-    try{
-        selectedAdvancedCategory=getSavedAdvancedCategory();
+    const host=ensureSearchAdvancedPrompt();
+    if(!host){onContinue?.();return;}
+    const hasSaved=localStorage.getItem('tuursim53_advanced_category')!==null;
+    selectedAdvancedCategory=hasSaved?getSavedAdvancedCategory():0;
+    const links=typeof getAdvancedLinks==='function'?getAdvancedLinks():[];
+    const options=links.map((x,i)=>'<option value="'+i+'" '+(i===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name||x.title||('بحث '+(i+1)))+'</option>').join('');
+    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر فلترة البحث للمدينة</small></div></div><select id="advanced-category-select" class="wizard-city-select">'+options+'</select><button type="button" id="advanced-apply-btn" class="advanced-apply-btn">🚀 تطبيق الفلترة والبحث</button></div>';
+    host.style.display='block';
+    const select=host.querySelector('#advanced-category-select'), btn=host.querySelector('#advanced-apply-btn');
+    btn.onclick=()=>{
+        selectedAdvancedCategory=Number(select.value)||0;
         localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));
-    }catch(_){}
-    onContinue?.();
+        host.style.display='none';
+        onContinue?.();
+    };
 };
 window.getSavedAdvancedSearchUrl=function(query){return getCategoryUrl(String(query||'').trim(),getSavedAdvancedCategory());};
 window.showCountryCityPrompt=async function(query,onContinue){
