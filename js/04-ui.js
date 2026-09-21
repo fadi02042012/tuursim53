@@ -122,7 +122,7 @@ window.showSearchAdvancedPrompt=function(onContinue){
     const groups={};
     cats.forEach(x=>{const g=x.group||'أخرى';(groups[g]||(groups[g]=[])).push(x);});
     const labels={'أساسي':'📺 الأساسي','الترتيب':'🔥 الترتيب','التاريخ':'📅 التاريخ','المدة':'⏱ المدة','الجودة':'🎥 الجودة','مركب':'🧩 مركب','نوع المحتوى':'🎬 النوع','منصات':'🌐 المنصات','قنوات محددة':'📺 القنوات'};
-    const options=Object.entries(groups).map(([g,items])=>'<optgroup label="'+escapeHtml(labels[g]||g)+'">'+items.map(x=>'<option value="'+x.index+'">'+escapeHtml(x.name)+'</option>').join('')+'</optgroup>').join('');
+    const options=Object.entries(groups).map(([g,items])=>'<optgroup label="'+escapeHtml(labels[g]||g)+'">'+items.map(x=>'<option value="'+x.index+'" '+(x.index===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name)+'</option>').join('')+'</optgroup>').join('');
     host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر فلترة البحث للمدينة</small></div></div><select id="search-advanced-select">'+options+'</select><div class="search-advanced-prompt-actions"><button type="button" class="search-advanced-skip" id="search-advanced-skip">▶️ البحث العادي في YouTube</button><button type="button" class="search-advanced-apply" id="search-advanced-apply">🚀 تطبيق الفلترة والبحث</button></div></div>';
     host.style.display='block';
     const select=host.querySelector('#search-advanced-select');
@@ -135,6 +135,32 @@ window.showSearchAdvancedPrompt=function(onContinue){
     host.querySelector('#search-advanced-apply').onclick=()=>finish(true);
     host.querySelector('#search-advanced-skip').onclick=()=>finish(false);
     select?.focus({preventScroll:true});
+};
+window.showCountryCityPrompt=async function(query,onContinue){
+    const text=String(query||'').trim(), host=ensureSearchAdvancedPrompt();
+    if(!host){onContinue?.();return;}
+    let code=String(document.getElementById('country')?.value||'').toUpperCase();
+    const list=typeof countries!=='undefined'&&Array.isArray(countries)?countries:[];
+    const norm=v=>String(v||'').trim().toLowerCase();
+    const country=list.find(c=>[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(text)));
+    if(!code&&country)code=String(country.code||country.iso2||'').toUpperCase();
+    if(!code){onContinue?.();return;}
+    let cities=[];
+    try{
+        if(typeof countryCitiesCache!=='undefined'&&countryCitiesCache.has(code))cities=countryCitiesCache.get(code)||[];
+        else if(typeof loadCountryCities==='function'){cities=await loadCountryCities(code);if(typeof countryCitiesCache!=='undefined')countryCitiesCache.set(code,cities);}
+        if(typeof sortCitiesForCountry==='function')cities=sortCitiesForCountry(cities,code);
+    }catch(_){}
+    cities=(cities||[]).slice(0,20);
+    if(!cities.length){onContinue?.();return;}
+    const countryName=(country&&(country.name_ar||country.name))||code;
+    host.innerHTML='<div class="search-advanced-prompt-inner city-wizard"><div class="search-advanced-prompt-title"><span>🏙️</span><div><strong>اختر المدينة</strong><small>اختر مدينة من '+escapeHtml(countryName)+' وسيبدأ البحث بالفلترة المحددة</small></div></div><div class="city-choice-grid">'+cities.map((c,i)=>{const n=c.city||c.name||c.city_ar||'مدينة';return '<button type="button" class="city-choice-btn" data-city-index="'+i+'">🏙️ '+escapeHtml(n)+'</button>';}).join('')+'</div></div>';
+    host.style.display='block';
+    host.querySelectorAll('.city-choice-btn').forEach(btn=>btn.onclick=()=>{
+        const c=cities[Number(btn.dataset.cityIndex)];if(!c)return;
+        searchInput.value=c.city||c.name||c.city_ar||'';
+        host.style.display='none';onContinue?.();
+    });
 };
 function buildAdvancedCategoryPanel(){ensureAdvancedCategoryStyles();const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];const groups={};categories.forEach(item=>{const group=item.group||'تصنيفات أخرى';if(!groups[group])groups[group]=[];groups[group].push(item);});const groupLabels={'أساسي':'📺 البحث الأساسي','الترتيب':'🔥 الترتيب والفرز','التاريخ':'📅 حسب التاريخ','المدة':'⏱ حسب مدة الفيديو','الجودة':'🎥 الجودة والمشاهدة','مركب':'🧩 تصنيفات مركبة','نوع المحتوى':'🎬 نوع المحتوى','منصات':'🌐 المنصات والبحث الخارجي','قنوات محددة':'📺 القنوات المحددة'};const options=Object.entries(groups).map(([group,items])=>`<optgroup label="${escapeHtml(groupLabels[group]||group)}">${items.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}</optgroup>`).join('');return `<section class="advanced-category-panel" aria-label="اختيار تصنيف البحث المتقدم"><div class="advanced-category-heading"><div class="advanced-category-icon">⚡</div><div class="advanced-category-title-wrap"><h3>البحث المتقدم</h3><p>اختر نوع البحث الذي تريد استخدامه مع المدينة أو الدولة.</p></div><span class="advanced-category-count">48 تصنيف</span></div><label class="advanced-category-label" for="advanced-category-select">اختر التصنيف</label><div class="advanced-category-select-wrap"><select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" aria-describedby="advanced-category-help">${options}</select><span class="advanced-category-chevron" aria-hidden="true">⌄</span></div><div id="advanced-category-help" class="advanced-category-help"><span>✓ التصنيف المختار:</span><strong>${escapeHtml(getCategoryName())}</strong></div></section>`;}
 window.changeAdvancedCategory=function(value){selectedAdvancedCategory=Number(value)||0;const label=document.querySelector('#advanced-category-help strong');if(label)label.textContent=getCategoryName();document.querySelectorAll('.advanced-category-link').forEach(link=>{const query=link.dataset.query||'';link.href=getCategoryUrl(query,selectedAdvancedCategory);const text=link.querySelector('.advanced-category-link-text');if(text)text.textContent=`⚡ ${getCategoryName()}`;});};
