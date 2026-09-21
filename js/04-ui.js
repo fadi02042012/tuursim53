@@ -139,11 +139,11 @@ window.showSearchAdvancedPrompt=function(onContinue){
 window.showCountryCityPrompt=async function(query,onContinue){
     const text=String(query||'').trim(), host=ensureSearchAdvancedPrompt();
     if(!host){onContinue?.();return;}
-    let code=String(document.getElementById('country')?.value||'').toUpperCase();
+    let code=String(document.getElementById('countrySelect')?.value||document.getElementById('country')?.value||'').toUpperCase();
     const list=typeof countries!=='undefined'&&Array.isArray(countries)?countries:[];
     const norm=v=>String(v||'').trim().toLowerCase();
-    const country=list.find(c=>[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(text)));
-    if(!code&&country)code=String(country.code||country.iso2||'').toUpperCase();
+    const country=list.find(c=>[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(text))) || list.find(c=>[c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(code)));
+    if(country)code=String(country.code||country.iso2||country.iso3||code||'').toUpperCase();
     if(!code){onContinue?.();return;}
     let cities=[];
     try{
@@ -154,7 +154,7 @@ window.showCountryCityPrompt=async function(query,onContinue){
     cities=(cities||[]).slice(0,20);
     if(!cities.length){onContinue?.();return;}
     const countryName=(country&&(country.name_ar||country.name))||code;
-    host.innerHTML='<div class="search-advanced-prompt-inner city-wizard"><div class="search-advanced-prompt-title"><span>🏙️</span><div><strong>اختر المدينة</strong><small>اختر مدينة من '+escapeHtml(countryName)+' وسيبدأ البحث بالفلترة المحددة</small></div></div><div class="city-choice-grid">'+cities.map((c,i)=>{const n=c.city||c.name||c.city_ar||'مدينة';return '<button type="button" class="city-choice-btn" data-city-index="'+i+'">🏙️ '+escapeHtml(n)+'</button>';}).join('')+'</div></div>';
+    host.innerHTML='<div class="search-advanced-prompt-inner city-wizard"><div class="search-advanced-prompt-title"><span>2️⃣</span><div><strong>الخطوة 2: اختيار المدينة</strong><small>اختر مدينة من '+escapeHtml(countryName)+' وسيبدأ البحث مباشرة بالفلترة التي اخترتها</small></div></div><div class="city-choice-grid">'+cities.map((c,i)=>{const n=c.city||c.name||c.city_ar||'مدينة';return '<button type="button" class="city-choice-btn" data-city-index="'+i+'">🏙️ '+escapeHtml(n)+'</button>';}).join('')+'</div></div>';
     host.style.display='block';
     host.querySelectorAll('.city-choice-btn').forEach(btn=>btn.onclick=()=>{
         const c=cities[Number(btn.dataset.cityIndex)];if(!c)return;
