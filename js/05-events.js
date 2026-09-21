@@ -608,7 +608,7 @@ countrySelect.addEventListener('change', async function () {
         return;
     }
 
-    updateStatus(`⏳ جاري تحميل مدن ${countryName}...`, '#f59e0b');
+    updateStatus('⏳ جاري تحميل المدن...', '#f59e0b');
     try {
         const cities = await loadCountryCities(code);
         if (requestId !== countryLoadRequestId || countrySelect.value !== code) return;
@@ -619,7 +619,7 @@ countrySelect.addEventListener('change', async function () {
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
         console.error('خطأ في تحميل مدن الدولة:', error);
-        updateStatus(`❌ فشل تحميل مدن ${countryName}`, '#ef4444');
+        updateStatus('❌ فشل تحميل المدن', '#ef4444');
         showToast('❌ حدث خطأ أثناء تحميل المدن');
     }
 });
