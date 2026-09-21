@@ -132,7 +132,11 @@ window.showSearchAdvancedPrompt=function(onContinue){
         onContinue?.();
     };
 };
-window.getSavedAdvancedSearchUrl=function(query){return getCategoryUrl(String(query||'').trim(),getSavedAdvancedCategory());};
+window.getSavedAdvancedSearchUrl=function(query){
+    const q=String(query||'').trim();
+    const url=getCategoryUrl(q,getSavedAdvancedCategory());
+    return url&&url.includes('youtube.com/results')?url:'https://www.youtube.com/results?search_query='+encodeURIComponent(q);
+};
 window.showCountryCityPrompt=async function(query,onContinue){
     const text=String(query||'').trim(), host=ensureSearchAdvancedPrompt();
     if(!host){onContinue?.();return;}
