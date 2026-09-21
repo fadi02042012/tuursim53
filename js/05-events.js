@@ -654,12 +654,9 @@ const searchAdvancedButton = document.getElementById('searchAdvancedBtn');
 
 
 
-searchAdvancedButton?.addEventListener('pointerdown', event => {
-    event.stopPropagation();
-}, true);
-
 searchAdvancedButton?.addEventListener('click', event => {
-    // زر «بحث متقدم» مستقل تمامًا عن زر «بحث».
+    // التقاط الحدث في مرحلة capture على نفس الزر يمنع أي مستمع لاحق
+    // من تنفيذ البحث العادي في نفس النقرة.
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
