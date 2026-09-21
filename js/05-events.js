@@ -650,7 +650,20 @@ searchInput.addEventListener('keydown', function (event) {
     }
 });
 
-document.getElementById('searchAdvancedBtn')?.addEventListener('click', () => {
+const searchAdvancedButton = document.getElementById('searchAdvancedBtn');
+
+searchAdvancedButton?.addEventListener('pointerdown', event => {
+    // امنع أي تفاعل متداخل مع زر البحث العادي، خصوصًا على اللمس والموبايل.
+    event.preventDefault();
+    event.stopPropagation();
+}, true);
+
+searchAdvancedButton?.addEventListener('click', event => {
+    // زر «بحث متقدم» مستقل تمامًا عن زر «بحث».
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
     clearTimeout(suggestionsTimeout);
     showSuggestions([]);
     const query=String(searchInput.value||'').trim();
