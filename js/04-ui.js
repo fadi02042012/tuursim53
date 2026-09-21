@@ -181,7 +181,12 @@ window.showSearchAdvancedPrompt=function(onContinue){
             option.hidden=!match;
         });
         const firstVisible=Array.from(filterSelect.options).find(o=>!o.hidden);
-        if(firstVisible) filterSelect.value=firstVisible.value;
+        if(firstVisible){
+            filterSelect.value=firstVisible.value;
+            // عند البحث داخل الفلاتر كان يتم تغيير قيمة القائمة برمجياً
+            // بدون إطلاق change، لذلك يبقى pendingAdvancedCategory على الفلتر القديم.
+            pendingAdvancedCategory=Number(firstVisible.value)||0;
+        }
     });
 
     filterSelect?.addEventListener('change',()=>{
