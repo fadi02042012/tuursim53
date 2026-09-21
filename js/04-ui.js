@@ -120,8 +120,8 @@ window.showSearchAdvancedPrompt=function(onContinue){
     if(!host){onContinue?.();return;}
     const hasSaved=localStorage.getItem('tuursim53_advanced_category')!==null;
     selectedAdvancedCategory=hasSaved?getSavedAdvancedCategory():0;
-    const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];
-    const options=categories.map(x=>'<option value="'+x.index+'" '+(Number(x.index)===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name||('بحث '+(Number(x.index)+1)))+'</option>').join('');
+    const links=typeof getAdvancedLinks==='function'?getAdvancedLinks():[];
+    const options=links.map((x,i)=>'<option value="'+i+'" '+(i===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name||x.title||('بحث '+(i+1)))+'</option>').join('');
     host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر فلترة البحث للمدينة</small></div></div><select id="advanced-category-select" class="wizard-city-select">'+options+'</select><button type="button" id="advanced-apply-btn" class="advanced-apply-btn">🚀 تطبيق الفلترة والبحث</button></div>';
     host.style.display='block';
     const select=host.querySelector('#advanced-category-select'), btn=host.querySelector('#advanced-apply-btn');
@@ -138,52 +138,159 @@ window.getSavedAdvancedSearchUrl=function(query){
     return url&&url.includes('youtube.com/results')?url:'https://www.youtube.com/results?search_query='+encodeURIComponent(q);
 };
 window.showCountryCityPrompt=async function(query,onContinue){
-    const text=String(query||'').trim();
-    const host=ensureSearchAdvancedPrompt();
+    const text=String(query||'').trim(), host=ensureSearchAdvancedPrompt();
     if(!host){onContinue?.();return;}
+    let code=String(document.getElementById('countrySelect')?.value||document.getElementById('country')?.value||'').toUpperCase();
     const list=typeof countries!=='undefined'&&Array.isArray(countries)?countries:[];
     const norm=v=>String(v||'').trim().toLowerCase();
-    const selectedCode=String(document.getElementById('country')?.value||document.getElementById('countrySelect')?.value||'').toUpperCase();
-    const country=list.find(c=>[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(text)))
-        || list.find(c=>[c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(selectedCode)));
-    if(!country){onContinue?.();return;}
-    const code=String(country.code||country.iso2||country.iso3||'').toUpperCase();
+    const country=list.find(c=>[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(text)))||list.find(c=>[c.code,c.iso2,c.iso3].filter(Boolean).some(v=>norm(v)===norm(code)));
+    if(country)code=String(country.code||country.iso2||country.iso3||code||'').toUpperCase();
+    if(!code){onContinue?.();return;}
     let cities=[];
     try{
-        if(typeof countryCitiesCache!=='undefined'&&countryCitiesCache.has(code)){
-            cities=countryCitiesCache.get(code)||[];
-        }else if(typeof loadCountryCities==='function'){
-            cities=await loadCountryCities(code);
-            if(typeof countryCitiesCache!=='undefined')countryCitiesCache.set(code,cities);
-        }
+        if(typeof countryCitiesCache!=='undefined'&&countryCitiesCache.has(code))cities=countryCitiesCache.get(code)||[];
+        else if(typeof loadCountryCities==='function'){cities=await loadCountryCities(code);if(typeof countryCitiesCache!=='undefined')countryCitiesCache.set(code,cities);}
         if(typeof sortCitiesForCountry==='function')cities=sortCitiesForCountry(cities,code);
-    }catch(error){
-        console.warn('تعذر تحميل مدن الدولة:',error);
-        cities=[];
-    }
+    }catch(_){cities=[];}
+    cities=(cities||[]).slice(0,50);
     if(!cities.length){onContinue?.();return;}
-    const cityOptions=cities.slice(0,100).map((city,i)=>{
-        const name=String(city.city||city.name||city.city_ar||'مدينة').trim();
-        const ar=String(city.city_ar||city.name_ar||'').trim();
-        return '<option value="'+i+'">'+escapeHtml(name+(ar&&ar!==name?' ('+ar+')':''))+'</option>';
+    const countryName=(country&&(country.name_ar||country.name))||code;
+    const cityOptions=cities.map((c,i)=>{
+        const name=String(c.city||c.name||c.city_ar||'مدينة').trim();
+        return '<option value="'+i+'">'+escapeHtml(name)+'</option>';
     }).join('');
-    host.innerHTML='<div class="search-advanced-prompt-inner city-wizard"><div class="search-advanced-prompt-title"><span>2️⃣</span><div><strong>الخطوة 2: اختيار المدينة</strong><small>اختر المدينة، وسيبدأ البحث فورًا بالفلترة المحددة</small></div></div><select id="wizard-city-select" class="wizard-city-select"><option value="" selected disabled>🏙️ اختر المدينة</option>'+cityOptions+'</select></div>';
+    host.innerHTML='<div class="search-advanced-prompt-inner city-wizard"><div class="search-advanced-prompt-title"><span>2️⃣</span><div><strong>الخطوة 2: اختيار المدينة</strong><small>اختر المدينة من القائمة، وسيبدأ البحث فورًا بالفلترة المحددة في الخطوة السابقة</small></div></div><select id="wizard-city-select" class="wizard-city-select"><option value="" selected disabled>🏙️ اختر المدينة</option>'+cityOptions+'</select></div>';
     host.style.display='block';
     const select=host.querySelector('#wizard-city-select');
     select?.focus({preventScroll:true});
     select?.addEventListener('change',()=>{
-        const city=cities[Number(select.value)];
-        if(!city)return;
-        const parts=[
-            city.city||city.name,
-            city.city_ar||city.name_ar,
-            country.name,
-            country.name_ar
-        ].map(v=>String(v||'').trim()).filter((v,i,a)=>v&&a.indexOf(v)===i);
-        searchInput.value=parts.join(' ');
+        const c=cities[Number(select.value)];
+        if(!c)return;
+        const cityEn=String(c.name||c.city||'').trim();
+        const cityAr=String(c.name_ar||c.city_ar||'').trim();
+        const countryEn=String(country?.name||'').trim();
+        const countryAr=String(country?.name_ar||'').trim();
+        const parts=[cityEn,cityAr,countryEn,countryAr].filter((v,i,a)=>v&&a.indexOf(v)===i);
+        searchInput.value=parts.join(' ').trim();
         host.style.display='none';
         onContinue?.(true);
     });
+};
+function buildAdvancedCategoryPanel(){ensureAdvancedCategoryStyles();const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():[];const groups={};categories.forEach(item=>{const group=item.group||'تصنيفات أخرى';if(!groups[group])groups[group]=[];groups[group].push(item);});const groupLabels={'أساسي':'📺 البحث الأساسي','الترتيب':'🔥 الترتيب والفرز','التاريخ':'📅 حسب التاريخ','المدة':'⏱ حسب مدة الفيديو','الجودة':'🎥 الجودة والمشاهدة','مركب':'🧩 تصنيفات مركبة','نوع المحتوى':'🎬 نوع المحتوى','منصات':'🌐 المنصات والبحث الخارجي','قنوات محددة':'📺 القنوات المحددة'};const options=Object.entries(groups).map(([group,items])=>`<optgroup label="${escapeHtml(groupLabels[group]||group)}">${items.map(item=>`<option value="${item.index}" ${item.index===selectedAdvancedCategory?'selected':''}>${escapeHtml(item.name)}</option>`).join('')}</optgroup>`).join('');return `<section class="advanced-category-panel" aria-label="اختيار تصنيف البحث المتقدم"><div class="advanced-category-heading"><div class="advanced-category-icon">⚡</div><div class="advanced-category-title-wrap"><h3>البحث المتقدم</h3><p>اختر نوع البحث الذي تريد استخدامه مع المدينة أو الدولة.</p></div><span class="advanced-category-count">48 تصنيف</span></div><label class="advanced-category-label" for="advanced-category-select">اختر التصنيف</label><div class="advanced-category-select-wrap"><select id="advanced-category-select" onchange="changeAdvancedCategory(this.value)" aria-describedby="advanced-category-help">${options}</select><span class="advanced-category-chevron" aria-hidden="true">⌄</span></div><div id="advanced-category-help" class="advanced-category-help"><span>✓ التصنيف المختار:</span><strong>${escapeHtml(getCategoryName())}</strong></div></section>`;}
+window.changeAdvancedCategory=function(value){selectedAdvancedCategory=Number(value)||0;const label=document.querySelector('#advanced-category-help strong');if(label)label.textContent=getCategoryName();document.querySelectorAll('.advanced-category-link').forEach(link=>{const query=link.dataset.query||'';link.href=getCategoryUrl(query,selectedAdvancedCategory);const text=link.querySelector('.advanced-category-link-text');if(text)text.textContent=`⚡ ${getCategoryName()}`;});};
+function buttonsHtml(query,index,mapsQuery=query,wikiUrl=''){
+    const text=String(query||'').trim();
+    const mapsText=String(mapsQuery||text).trim();
+    const advancedUrl=getCategoryUrl(text,selectedAdvancedCategory);
+    return `<div class="btn-group" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsText)}">📍 خرائط</a>
+        <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(text)}">🔍 Google</a>
+        <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(text)}">▶ YouTube</a>
+        ${wikiUrl ? `<a class="btn btn-wiki" target="_blank" rel="noopener noreferrer" href="${escapeHtml(String(wikiUrl))}">📖 Wiki</a>` : ''}
+        <a class="btn btn-secondary advanced-category-link" data-query="${escapeHtml(text)}" target="_blank" rel="noopener noreferrer" href="${escapeHtml(advancedUrl)}"><span class="advanced-category-link-text">⚡ ${escapeHtml(getCategoryName())}</span></a>
+    </div>`;
+}
+function renderResults({cities=[],countries=[]}){resultsDiv.innerHTML='';allLinksData=[];if(!cities.length&&!countries.length)return renderEmptySearch();const parts=[buildAdvancedCategoryPanel()];parts.push(`<div style="display:flex;justify-content:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;"><button type="button" onclick="searchOnlyWikipedia()" style="padding:10px 20px;background:#3b82f6;color:white;border:0;border-radius:9px;cursor:pointer;">📖 بحث في ويكيبيديا</button><button type="button" onclick="searchAllWikipedia()" style="padding:10px 20px;background:#8b5cf6;color:white;border:0;border-radius:9px;cursor:pointer;">🔍 بحث موسع</button></div>`);let total=0;if(countries.length){parts.push(`<div style="margin:10px 0 7px;padding:7px 14px;background:#f1f5f9;border-radius:10px;"><h3 style="font-size:15px;color:#1e293b;margin:0;">🌍 دول (${countries.length})</h3></div>`);total+=countries.length;countries.forEach(c=>{const name=c.name||'',nameAr=c.name_ar||'',capital=c.capital||'';const query=[name,nameAr].filter(Boolean).join(' ');const index=allLinksData.length;allLinksData.push({query,links:null,type:'دولة',name});parts.push(`<div class="card" style="${cardStyle()}"><div style="text-align:left;margin-bottom:7px;">${favoriteButton({type:'دولة',name,query})}</div><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(name)}</span><span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(nameAr||name)}</span></div></div>${capital?`<div style="font-size:13px;color:#475569;margin-bottom:7px;">🏛️ العاصمة: ${escapeHtml(capital)}</div>`:''}${buttonsHtml(query,index,name)}</div>`);});}if(cities.length){parts.push(`<div style="margin:10px 0 7px;padding:7px 14px;background:#f1f5f9;border-radius:10px;"><h3 style="font-size:15px;color:#1e293b;margin:0;">🏙️ مدن (${cities.length})</h3></div>`);total+=cities.length;cities.forEach(c=>{const city=c.city||'',cityAr=c.city_ar||'',country=c.country||'',countryAr=c.country_ar||'';const population=c.population||'';const query=[city,cityAr,country,countryAr].filter(Boolean).join(' ');const index=allLinksData.length;allLinksData.push({query,links:null,type:'مدينة',name:city});parts.push(`<div class="card" style="${cardStyle()}"><div style="text-align:left;margin-bottom:7px;">${favoriteButton({type:'مدينة',name:city,query})}</div><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(city)}</span>${cityAr?`<span style="color:#64748b;font-size:15px;margin-right:4px;">(${escapeHtml(cityAr)})</span>`:''}<span class="country-name" style="color:#64748b;margin-right:8px;">${escapeHtml(country)}</span>${countryAr?`<span style="color:#64748b;">(${escapeHtml(countryAr)})</span>`:''}</div></div>${population?`<div style="font-size:12px;color:#94a3b8;margin-bottom:7px;">👥 ${Number(population).toLocaleString()}</div>`:''}${buttonsHtml(query,index,city)}<div class="seo-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السياحة في '+city+' '+country)}">🌍 السياحة</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('فنادق '+city+' '+country)}">🏨 فنادق</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('مطاعم '+city+' '+country)}">🍽️ مطاعم</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('معالم سياحية '+city+' '+country)}">🏛️ معالم</a><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent('السفر إلى '+city+' '+country)}">✈️ السفر</a></div></div>`);});}resultsDiv.innerHTML=parts.join('');countSpan.textContent=total;}
+function renderTextQueryFavoriteCard(query){
+    const text=String(query||'').trim();
+    return favoriteButton({type:'بحث نصي',name:text,query:text});
+}
+function renderEmptySearch(){
+    const query=searchInput.value.trim();
+    if(!query){
+        resultsDiv.innerHTML=`<div class="card no-results"><div style="text-align:center;padding:30px;"><div style="font-size:44px;margin-bottom:12px;">🔍</div><h3>ابحث عن مدينة أو دولة</h3><p style="color:#94a3b8;margin-top:7px;">${allCities.length.toLocaleString()} مدينة متاحة للبحث</p></div></div>`;
+        countSpan.textContent='0';
+        return;
+    }
+    resultsDiv.innerHTML=`<div class="card no-results"><div style="text-align:center;padding:30px;"><div style="font-size:44px;margin-bottom:12px;">🔍</div><h3>لا توجد نتائج محلية أو في ويكيبيديا</h3><p style="color:#94a3b8;">يمكنك استخدام بطاقة البحث النصي للوصول إلى البحث العام.</p></div></div>`;
+    countSpan.textContent='1';
+    // إذا لم توجد الكلمة في JSON ولا في ويكيبيديا، أظهر بطاقة البحث النصي
+    // بنفس الكلمة التي كتبها المستخدم، ولا تجعلها تختفي.
+    try {
+        if (typeof prependTextQueryCard === 'function') {
+            prependTextQueryCard(query);
+        } else {
+            resultsDiv.insertAdjacentHTML('afterbegin', `
+                <div class="card text-query-card" style="background:white;border-radius:12px;padding:16px;margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:18px;font-weight:bold;color:#1e293b;">${escapeHtml(query)}</div></div><div style="margin:9px 0;">${renderTextQueryFavoriteCard(query)}</div>
+                    <div style="color:#64748b;margin-top:5px;">📝 بحث نصي</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                        <a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(query)}">🔍 Google</a>
+                        <a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}">📍 خرائط</a>
+                        <a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query=${encodeURIComponent(query)}">▶ YouTube</a>
+                    </div>
+                </div>`);
+        }
+    } catch (error) {
+        console.warn('تعذر إنشاء بطاقة البحث النصي:', error);
+    }
+    updateStatus('ℹ️ لم توجد مطابقة؛ تم إبقاء بطاقة البحث النصي للكلمة المطلوبة.','#64748b');
+}
+function renderWikipediaResults(results,query,isMore=false){if(!results?.length)return;let html='';if(!isMore)html+=buildAdvancedCategoryPanel();results.forEach(item=>{const index=allLinksData.length;allLinksData.push({query:item.title,links:null,type:'ويكيبيديا',name:item.title});const wc=item.wordcount?`📝 ${Number(item.wordcount).toLocaleString()} كلمة`:'';html+=`<div class="card" style="${cardStyle()}"><div style="text-align:left;margin-bottom:7px;">${favoriteButton({type:'ويكيبيديا',name:item.title,query:item.title,url:item.url})}</div><div class="card-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;flex-wrap:wrap;"><div><span class="city-name" style="font-size:17px;font-weight:bold;color:#1e293b;">${escapeHtml(item.title)}</span><span style="color:#64748b;margin-right:7px;font-size:13px;">📖 ويكيبيديا</span>${wc?`<span style="color:#94a3b8;font-size:11px;margin-right:5px;">${wc}</span>`:''}</div></div><p style="margin:0 0 9px;color:#64748b;font-size:13px;line-height:1.5;">${escapeHtml(item.snippet||'')}</p>${buttonsHtml(item.title,index,item.title,item.url)}</div>`;});if(!isMore)html+=`<div style="text-align:center;margin:14px 0;"><button type="button" onclick="loadMoreWikipedia()" style="padding:10px 24px;background:#3b82f6;color:white;border:0;border-radius:8px;cursor:pointer;">📚 تحميل 10 نتائج إضافية</button></div>`;resultsDiv.insertAdjacentHTML('beforeend',html);}
+window.toggleLinks=function(index){
+    const data=allLinksData[Number(index)];
+    const container=document.getElementById('links-'+Number(index));
+    if(!data||!container)return;
+    if(!Array.isArray(data.links)||data.links.length===0){
+        data.links=typeof generateAllLinks==='function'?generateAllLinks(data.query):[];
+    }
+    const grid=container.querySelector('.links-grid');
+    if(grid&&!grid.children.length){
+        grid.innerHTML=data.links.map(link=>`<a class="advanced-result-link" target="_blank" rel="noopener noreferrer" href="${escapeHtml(link.url)}" style="display:block;padding:7px 9px;border-radius:7px;background:#fff;border:1px solid #e2e8f0;text-decoration:none;color:#334155;font-size:12px;line-height:1.35;"><span style="font-weight:700;">${escapeHtml(String(link.id))}. ${escapeHtml(link.name)}</span></a>`).join('');
+    }
+    container.style.display=container.style.display==='none'?'block':'none';
+};
+window.selectCity=function(name){
+    searchInput.value=String(name||'');
+    if(suggestionsDiv)suggestionsDiv.style.display='none';
+    if(typeof handleSearch==='function')handleSearch();
+};
+window.showCountryCityPrompt=async function(query,onContinue){
+    const text=String(query||'').trim();
+    if(!text){ onContinue?.(); return; }
+    const normalized=normalizeText(text);
+    const country=(Array.isArray(countries)?countries:[]).find(c=>{
+        const names=[c.name,c.name_ar,c.code,c.iso2,c.iso3].filter(Boolean).map(normalizeText);
+        return names.includes(normalized);
+    });
+    if(!country){ onContinue?.(); return; }
+    const code=String(country.code||'').toUpperCase();
+    let cities=[];
+    try{
+        if(typeof countryCitiesCache!=='undefined' && countryCitiesCache.has(code)){
+            cities=countryCitiesCache.get(code)||[];
+        }else if(typeof loadCountryCities==='function'){
+            cities=await loadCountryCities(code);
+            if(typeof countryCitiesCache!=='undefined') countryCitiesCache.set(code,cities);
+        }
+        if(typeof sortCitiesForCountry==='function') cities=sortCitiesForCountry(cities,code);
+    }catch(error){ console.warn('تعذر تحميل مدن الدولة:',error); }
+    const featured=(cities||[]).slice(0,8);
+    if(!featured.length){ onContinue?.(); return; }
+    const host=ensureSearchAdvancedPrompt();
+    if(!host){ onContinue?.(); return; }
+    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>🏙️</span><div><strong>اختر مدينة من '+escapeHtml(country.name_ar||country.name||text)+'</strong><small>اختر المدينة أولاً، ثم ستظهر لك فلترة البحث المتقدم</small></div></div><div class="city-choice-grid">'+featured.map((city,i)=>{
+        const name=city.city||city.name||city.city_ar||'مدينة';
+        const ar=city.city_ar&&city.city_ar!==name?' ('+escapeHtml(city.city_ar)+')':'';
+        return '<button type="button" class="city-choice-btn" data-city-index="'+i+'">🏙️ '+escapeHtml(name)+ar+'</button>';
+    }).join('')+'</div><div class="search-advanced-prompt-actions"><button type="button" class="search-advanced-skip" id="country-city-skip">▶️ بحث الدولة في YouTube</button></div></div>';
+    host.style.display='block';
+    host.querySelectorAll('.city-choice-btn').forEach(button=>{
+        button.onclick=()=>{
+            const city=featured[Number(button.dataset.cityIndex)];
+            if(!city)return;
+            const cityQuery=[city.city,city.city_ar,country.name,country.name_ar].filter(Boolean).join(' ');
+            searchInput.value=cityQuery;
+            host.style.display='none';
+            onContinue?.();
+        };
+    });
+    host.querySelector('#country-city-skip').onclick=()=>{
+        selectedAdvancedCategory=0;
+        try{localStorage.setItem('tuursim53_advanced_category','0');}catch(_){}
+        host.style.display='none';
+        onContinue?.();
+    };
 };
 function populateCountrySelect(){countrySelect.innerHTML='<option value="">🌐 كل الدول</option>';countries.forEach(c=>{const displayName=c.name_ar||c.name||c.code;countryMap[c.code]=displayName;countryNames[c.code]=c.name||c.code;const option=document.createElement('option');option.value=c.code;option.textContent=displayName;countrySelect.appendChild(option);});}
 console.log('✅ 04-ui.js تم تحميله بنجاح — واجهة تصنيفات احترافية ومتجاوبة');
