@@ -194,6 +194,12 @@ window.showSearchAdvancedPrompt=function(onContinue){
             host.style.display='none';
         }
     });
+    host.addEventListener('mousedown', event => {
+        if(event.target === host){
+            event.preventDefault();
+            host.style.display='none';
+        }
+    });
 
         selectedAdvancedCategory=Number(filterSelect?.value)||0;
         try{localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));localStorage.setItem('tuursim53.advancedCategory',String(selectedAdvancedCategory));}catch(_){}
