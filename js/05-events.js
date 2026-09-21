@@ -603,7 +603,7 @@ countrySelect.addEventListener('change', async function () {
     const countryName = countryMap[code] || code;
     if (countryCitiesCache.has(code)) {
         currentCountryCities = countryCitiesCache.get(code);
-        updateStatus(`✅ ${currentCountryCities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
+        updateStatus('✅ تم تحميل مدن الدولة', '#10b981');
         renderLocalCityResults(sortCitiesForCountry(currentCountryCities, code));
         return;
     }
@@ -614,7 +614,7 @@ countrySelect.addEventListener('change', async function () {
         if (requestId !== countryLoadRequestId || countrySelect.value !== code) return;
         countryCitiesCache.set(code, cities);
         currentCountryCities = cities;
-        updateStatus(`✅ ${cities.length.toLocaleString()} مدينة في ${countryName}`, '#10b981');
+        updateStatus('✅ تم تحميل مدن الدولة', '#10b981');
         renderLocalCityResults(sortCitiesForCountry(cities, code));
     } catch (error) {
         if (requestId !== countryLoadRequestId) return;
