@@ -140,11 +140,39 @@ async function loadCountryCities(code) {
     const countryUrl = new URL(`output/by_country/${code}.json`, document.baseURI).href;
     const res = await fetch(countryUrl + '?v=20260918-data2', { cache: 'no-store' });
     if (!res.ok) throw new Error(`country_http_${res.status}`);
-    const data = await res.json();
+    let data = await res.json();
+    if (!Array.isArray(data)) data = [];
+
     const countryName = countryMap[code] || code;
-    const countryNameAr = countries.find(c => c.code === code)?.name_ar || countryName;
+    const countryRecord = countries.find(c =>
+        String(c?.code || c?.iso2 || c?.iso3 || '').toUpperCase() === String(code).toUpperCase()
+    );
+    const countryNameEn = String(countryRecord?.name || countryNames?.[code] || '').trim();
+    const countryNameAr = countryRecord?.name_ar || countryName;
+
+    // بعض ملفات by_country القديمة/المولدة قد تكون فارغة (مثل FR.json).
+    // في هذه الحالة استخدم قاعدة المدن العالمية كاحتياط حتى لا تظهر الدولة بلا مدن.
+    if (!data.length && typeof loadGlobalCities === 'function') {
+        try {
+            const global = await loadGlobalCities({ silent: true });
+            const wantedCode = String(code).toUpperCase();
+            const en = normalizeText(countryNameEn);
+            const ar = normalizeText(countryNameAr);
+            data = global.filter(city => {
+                const cityCode = String(city?.country_code || city?.countryCode || city?.code_country || city?.iso2 || city?.iso3 || '').toUpperCase();
+                const cityCountry = normalizeText(city?.country || '');
+                const cityCountryAr = normalizeText(city?.country_ar || '');
+                return cityCode === wantedCode ||
+                    (en && cityCountry === en) ||
+                    (ar && cityCountryAr === ar);
+            });
+        } catch (fallbackError) {
+            console.warn('تعذر استخدام قاعدة المدن العالمية كاحتياط:', fallbackError);
+        }
+    }
+
     const cities = data.map(city => {
-        city.country = countryName;
+        city.country = countryNameEn || countryName;
         city.country_ar = countryNameAr;
         city._searchKey = buildSearchableText(city);
         return city;
