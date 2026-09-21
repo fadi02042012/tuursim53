@@ -518,9 +518,39 @@ function updateShowMoreButton() {
     showMoreBtn.style.display = 'block';
 }
 
-function createSuggestionItem(city) {
+function createSuggestionItem(item) {
+    if (item.type === 'country') {
+        return `<div class="suggestion" data-country-code="${escapeHtml(item.code || '')}" data-country-name="${escapeHtml(item.name || item.name_ar || '')}" style="padding:10px 15px;cursor:pointer;border-bottom:1px solid #e2e8f0;background:white;">🌍 ${escapeHtml(item.name_ar || item.name || '')} ${item.name_ar && item.name ? `(${escapeHtml(item.name)})` : ''}</div>`;
+    }
+    const city = item.city || {};
     const cityName = city.city || '';
     return `<div class="suggestion" data-city="${escapeHtml(cityName)}" style="padding:10px 15px;cursor:pointer;border-bottom:1px solid #e2e8f0;background:white;">🏙️ ${escapeHtml(cityName)} ${city.city_ar ? `(${escapeHtml(city.city_ar)})` : ''} ${city.country ? `- ${escapeHtml(city.country)}` : ''}</div>`;
+}
+
+function getGlobalSuggestions(query) {
+    const q = String(query || '').trim();
+    if (!q) return [];
+    const cityResults = performLocalSearch(q).map(city => ({ type: 'city', city }));
+    const nq = normalizeText(q);
+    const countryResults = (Array.isArray(countries) ? countries : [])
+        .filter(country => {
+            const en = String(country?.name || '').toLowerCase();
+            const ar = normalizeText(country?.name_ar || '');
+            const code = String(country?.code || '').toLowerCase();
+            return en.includes(q.toLowerCase()) || ar.includes(nq) || code === q.toLowerCase();
+        })
+        .sort((a, b) => {
+            const score = country => {
+                const en = String(country?.name || '').toLowerCase();
+                const ar = normalizeText(country?.name_ar || '');
+                return (en === q.toLowerCase() || ar === nq ? 1000 : 0) +
+                    (en.startsWith(q.toLowerCase()) || ar.startsWith(nq) ? 500 : 0);
+            };
+            return score(b) - score(a);
+        })
+        .slice(0, 4)
+        .map(country => ({ type: 'country', ...country }));
+    return [...countryResults, ...cityResults].slice(0, MAX_SUGGESTIONS);
 }
 
 function performLocalSearch(query) {
@@ -543,11 +573,20 @@ function showSuggestions(results) {
 if (suggestionsDiv) {
     suggestionsDiv.addEventListener('click', event => {
         const item = event.target.closest('.suggestion');
+        if (item?.dataset.countryCode) {
+            const country = (Array.isArray(countries) ? countries : []).find(c => String(c?.code || '').toUpperCase() === String(item.dataset.countryCode).toUpperCase());
+            if (country) {
+                searchInput.value = country.name_ar || country.name || '';
+                if (countrySelect) countrySelect.value = country.code || '';
+                showSuggestions([]);
+            }
+            return;
+        }
         if (item?.dataset.city) selectCity(item.dataset.city);
     });
 }
 
-function scheduleSuggestions(query) {\n    clearTimeout(suggestionsTimeout);\n    const text = String(query || '').trim();\n    if (!text) {\n        showSuggestions([]);\n        return;\n    }\n    suggestionsTimeout = setTimeout(async () => {\n        try {\n            if (!allCities.length && typeof loadGlobalCities === 'function') {\n                await loadGlobalCities({ silent: true });\n            }\n            showSuggestions(performLocalSearch(text));\n        } catch (error) {\n            console.warn('تعذر تحميل اقتراحات المدن العالمية:', error);\n            showSuggestions([]);\n        }\n    }, SUGGESTIONS_DEBOUNCE_MS);\n}// ============================================================
+function scheduleSuggestions(query) {\n    clearTimeout(suggestionsTimeout);\n    const text = String(query || '').trim();\n    if (!text) {\n        showSuggestions([]);\n        return;\n    }\n    suggestionsTimeout = setTimeout(async () => {\n        try {\n            if (!allCities.length && typeof loadGlobalCities === 'function') {\n                await loadGlobalCities({ silent: true });\n            }\n            showSuggestions(getGlobalSuggestions(text));\n        } catch (error) {\n            console.warn('تعذر تحميل اقتراحات المدن العالمية:', error);\n            showSuggestions([]);\n        }\n    }, SUGGESTIONS_DEBOUNCE_MS);\n}// ============================================================
 // 05-events.js - أحداث المستخدم والأداء
 // ============================================================
 
