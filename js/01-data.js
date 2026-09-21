@@ -75,7 +75,7 @@ async function loadData() {
 
 // تحميل قاعدة المدن العالمية عند الطلب فقط، وليس أثناء بدء الصفحة.
 // هذه الدالة متاحة للتوافق ويمكن استدعاؤها لاحقاً من زر "تحميل جميع المدن".
-async function loadGlobalCities() {
+async function loadGlobalCities(options = {}) {
     if (globalCitiesLoaded) return allCities;
     if (globalCitiesLoading) return globalCitiesLoading;
 
@@ -93,7 +93,7 @@ async function loadGlobalCities() {
             });
             globalCitiesLoaded = true;
             updateStatus(`✅ تم تحميل ${allCities.length.toLocaleString()} مدينة`, '#10b981');
-            renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
+            if (!options.silent) renderResults({ cities: allCities.slice(0, INITIAL_RESULTS_LIMIT), countries: [] });
             return allCities;
         } catch (error) {
             console.error('خطأ في تحميل قاعدة المدن العالمية:', error);
