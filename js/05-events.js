@@ -12,7 +12,57 @@ let currentFullResults = [];
 let currentDisplayLimit = RESULTS_PAGE_SIZE;
 let showMoreBtn = null;
 let countryLoadRequestId = 0;
+let currentCountrySearchResult = null;
 const countryCitiesCache = new Map();
+
+async function trySearchExactCountry(query) {
+    const q = String(query || '').trim();
+    if (!q || !Array.isArray(countries) || !countries.length) return false;
+
+    const norm = value => String(value || '').trim().toLowerCase();
+    const nq = norm(q);
+    const country = countries.find(c => [c.name, c.name_ar, c.code, c.iso2, c.iso3]
+        .filter(Boolean)
+        .some(v => norm(v) === nq));
+
+    if (!country) return false;
+
+    const code = String(country.code || country.iso2 || country.iso3 || '').toUpperCase();
+    if (!code || typeof loadCountryCities !== 'function') return false;
+
+    updateStatus(`⏳ جاري ترتيب مدن ${country.name_ar || country.name || q}...`, '#f59e0b');
+
+    try {
+        let cities = countryCitiesCache.has(code)
+            ? countryCitiesCache.get(code)
+            : await loadCountryCities(code);
+
+        if (!countryCitiesCache.has(code)) countryCitiesCache.set(code, cities);
+        cities = typeof sortCitiesForCountry === 'function'
+            ? sortCitiesForCountry(cities, code)
+            : sortCitiesAlphabetically(cities);
+
+        currentCountryCities = cities;
+        currentFullResults = cities;
+        currentDisplayLimit = Math.min(RESULTS_PAGE_SIZE, cities.length);
+        currentCountrySearchResult = country;
+
+        renderResults({
+            countries: [country],
+            cities: cities.slice(0, currentDisplayLimit)
+        });
+        updateShowMoreButton();
+        updateStatus(`🌍 ${country.name_ar || country.name || q} — العاصمة ← الأشهر ← الأكبر سكاناً ← A-Z`, '#10b981');
+
+        if (typeof window.refreshResultsPagination === 'function') window.refreshResultsPagination();
+        return true;
+    } catch (error) {
+        console.error('تعذر تحميل مدن الدولة:', error);
+        currentCountrySearchResult = null;
+        updateStatus('❌ تعذر تحميل مدن الدولة', '#ef4444');
+        return false;
+    }
+}
 
 function updateStatus(message, color = '#64748b') {
     if (statusDiv) {
@@ -358,9 +408,10 @@ function sortCountryDropdown() {
 }
 
 function renderLocalCityResults(sortedCities) {
+    currentCountrySearchResult = null;
     currentFullResults = Array.isArray(sortedCities) ? sortedCities : [];
     currentDisplayLimit = Math.min(RESULTS_PAGE_SIZE, currentFullResults.length || RESULTS_PAGE_SIZE);
-    renderResults({ cities: currentFullResults.slice(0, currentDisplayLimit), countries: [] });
+    renderResults({ cities: currentFullResults.slice(0, currentDisplayLimit), countries: currentCountrySearchResult ? [currentCountrySearchResult] : [] });
     updateShowMoreButton();
 
     // مزامنة زر الدفعة التالية في الشريط الجانبي مع القائمة الجديدة.
@@ -374,7 +425,7 @@ function showMoreLocalResults() {
     const oldLimit = currentDisplayLimit;
     currentDisplayLimit = Math.min(currentDisplayLimit + RESULTS_PAGE_SIZE, currentFullResults.length);
     if (currentDisplayLimit === oldLimit) return;
-    renderResults({ cities: currentFullResults.slice(0, currentDisplayLimit), countries: [] });
+    renderResults({ cities: currentFullResults.slice(0, currentDisplayLimit), countries: currentCountrySearchResult ? [currentCountrySearchResult] : [] });
     updateShowMoreButton();
     showMoreBtn?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -475,7 +526,9 @@ searchInput.addEventListener('keydown', function (event) {
         showSuggestions([]);
         if (this.dataset.searching === '1') return;
         this.dataset.searching = '1';
-        Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});
+        Promise.resolve(trySearchExactCountry(this.value).then(found=>found||handleSearch()))
+            .catch(error=>console.error('Enter search error:',error))
+            .finally(()=>{this.dataset.searching='0';});
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
@@ -505,7 +558,9 @@ document.getElementById('searchBtn')?.addEventListener('click', async () => {
     showSuggestions([]);
     if (searchInput.dataset.searching === '1') return;
     searchInput.dataset.searching = '1';
-    Promise.resolve(handleSearch()).catch(error=>console.error('Button search error:',error)).finally(()=>{searchInput.dataset.searching='0';});
+    Promise.resolve(trySearchExactCountry(searchInput.value).then(found=>found||handleSearch()))
+        .catch(error=>console.error('Button search error:',error))
+        .finally(()=>{searchInput.dataset.searching='0';});
 });
 
 // ============================================================
