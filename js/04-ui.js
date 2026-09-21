@@ -120,30 +120,15 @@ window.showSearchAdvancedPrompt=function(onContinue){
     if(!host){onContinue?.('normal');return;}
     const hasSaved=localStorage.getItem('tuursim53_advanced_category')!==null;
     selectedAdvancedCategory=hasSaved?getSavedAdvancedCategory():0;
-    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>🔍</span><div><strong>كيف تريد البحث؟</strong><small>اختر طريقة البحث</small></div></div><div class="wizard-search-actions"><button type="button" id="wizard-normal-btn" class="advanced-apply-btn wizard-normal-btn">🔎 البحث العادي</button><button type="button" id="wizard-advanced-btn" class="advanced-apply-btn">⚡ تطبيق الفلترة والبحث</button></div></div>';
+    const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():(typeof getAdvancedLinks==='function'?getAdvancedLinks():[]);
+    const options=categories.map((x,i)=>{const idx=Number.isFinite(Number(x.index))?Number(x.index):i;return '<option value="'+idx+'" '+(idx===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name||x.title||('بحث '+(idx+1)))+'</option>';}).join('');
+    host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>🔍</span><div><strong>كيف تريد البحث؟</strong><small>اختر البحث العادي أو الفلترة المتقدمة</small></div></div><div class="wizard-search-actions"><button type="button" id="wizard-normal-btn" class="advanced-apply-btn wizard-normal-btn">🔎 البحث العادي</button><button type="button" id="wizard-advanced-btn" class="advanced-apply-btn">⚡ تطبيق الفلترة والبحث</button></div><div id="wizard-filter-box" style="display:none;margin-top:12px;"><select id="advanced-category-select" class="wizard-city-select">'+options+'</select><button type="button" id="advanced-apply-btn" class="advanced-apply-btn" style="margin-top:10px;">🚀 تطبيق الفلترة والبحث</button></div></div>';
     host.style.display='block';
-    const normalBtn=host.querySelector('#wizard-normal-btn'), advancedBtn=host.querySelector('#wizard-advanced-btn');
-    normalBtn.onclick=()=>{
-        host.style.display='none';
-        onContinue?.('normal');
-    };
-    advancedBtn.onclick=()=>{
-        const categories=typeof getAdvancedSearches==='function'?getAdvancedSearches():(typeof getAdvancedLinks==='function'?getAdvancedLinks():[]);
-        const options=categories.map((x,i)=>{
-            const idx=Number.isFinite(Number(x.index))?Number(x.index):i;
-            return '<option value="'+idx+'" '+(idx===selectedAdvancedCategory?'selected':'')+'>'+escapeHtml(x.name||x.title||('بحث '+(idx+1)))+'</option>';
-        }).join('');
-        host.innerHTML='<div class="search-advanced-prompt-inner"><div class="search-advanced-prompt-title"><span>⚡</span><div><strong>البحث المتقدم</strong><small>اختر فلترة البحث للمدينة</small></div></div><select id="advanced-category-select" class="wizard-city-select">'+options+'</select><button type="button" id="advanced-apply-btn" class="advanced-apply-btn">🚀 تطبيق الفلترة والبحث</button></div>';
-        const select=host.querySelector('#advanced-category-select'), btn=host.querySelector('#advanced-apply-btn');
-        btn.onclick=()=>{
-            selectedAdvancedCategory=Number(select.value)||0;
-            localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));
-            host.style.display='none';
-            onContinue?.('advanced');
-        };
-    };
+    const normalBtn=host.querySelector('#wizard-normal-btn'),advancedBtn=host.querySelector('#wizard-advanced-btn'),filterBox=host.querySelector('#wizard-filter-box'),applyBtn=host.querySelector('#advanced-apply-btn'),select=host.querySelector('#advanced-category-select');
+    normalBtn.onclick=()=>{host.style.display='none';onContinue?.('normal');};
+    advancedBtn.onclick=()=>{filterBox.style.display='block';advancedBtn.style.display='none';};
+    applyBtn.onclick=()=>{selectedAdvancedCategory=Number(select.value)||0;localStorage.setItem('tuursim53_advanced_category',String(selectedAdvancedCategory));host.style.display='none';onContinue?.('advanced');};
 };
-
 window.getSavedAdvancedSearchUrl=function(query){
     const q=String(query||'').trim();
     const url=getCategoryUrl(q,getSavedAdvancedCategory());
