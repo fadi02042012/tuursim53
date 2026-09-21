@@ -242,7 +242,7 @@ window.showCountryCityPrompt=async function(query,onContinue){
             const cityQuery=[city.city,city.city_ar,country.name,country.name_ar].filter(Boolean).join(' ');
             searchInput.value=cityQuery;
             host.style.display='none';
-            window.showSearchAdvancedPrompt(onContinue);
+            onContinue?.();
         };
     });
     host.querySelector('#country-city-skip').onclick=()=>{
