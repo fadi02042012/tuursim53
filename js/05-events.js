@@ -475,14 +475,7 @@ searchInput.addEventListener('keydown', function (event) {
         showSuggestions([]);
         if (this.dataset.searching === '1') return;
         this.dataset.searching = '1';
-        const run=(mode='normal')=>{
-            if(mode==='normal'){return Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});}
-            if(typeof window.showCountryCityPrompt==='function')window.showCountryCityPrompt(this.value,(fromCity)=>{
-                if(fromCity&&typeof window.getSavedAdvancedSearchUrl==='function')window.location.assign(window.getSavedAdvancedSearchUrl(this.value.trim()));
-                else run('normal');
-            });else run('normal');
-        };
-        if(typeof window.showSearchAdvancedPrompt==='function')window.showSearchAdvancedPrompt(run);else run('normal');
+        Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
@@ -491,19 +484,28 @@ searchInput.addEventListener('keydown', function (event) {
     }
 });
 
+document.getElementById('searchAdvancedBtn')?.addEventListener('click', () => {
+    clearTimeout(suggestionsTimeout);
+    showSuggestions([]);
+    const query=String(searchInput.value||'').trim();
+    if(!query) return searchInput.focus();
+    if(typeof window.showSearchAdvancedPrompt==='function'){
+        window.showSearchAdvancedPrompt((mode)=>{
+            if(mode==='advanced' && typeof window.showCountryCityPrompt==='function'){
+                window.showCountryCityPrompt(query,(fromCity)=>{
+                    if(fromCity&&typeof window.getSavedAdvancedSearchUrl==='function') window.location.assign(window.getSavedAdvancedSearchUrl(searchInput.value.trim()));
+                });
+            }
+        });
+    }
+});
+
 document.getElementById('searchBtn')?.addEventListener('click', async () => {
     clearTimeout(suggestionsTimeout);
     showSuggestions([]);
     if (searchInput.dataset.searching === '1') return;
     searchInput.dataset.searching = '1';
-    const run=(mode='normal')=>{
-        if(mode==='normal'){return Promise.resolve(handleSearch()).catch(error=>console.error('Button search error:',error)).finally(()=>{searchInput.dataset.searching='0';});}
-        if(typeof window.showCountryCityPrompt==='function')window.showCountryCityPrompt(searchInput.value,(fromCity)=>{
-            if(fromCity&&typeof window.getSavedAdvancedSearchUrl==='function')window.location.href=window.getSavedAdvancedSearchUrl(searchInput.value.trim());
-            else run('normal');
-        });else run('normal');
-    };
-    if(typeof window.showSearchAdvancedPrompt==='function')window.showSearchAdvancedPrompt(run);else run('normal');
+    Promise.resolve(handleSearch()).catch(error=>console.error('Button search error:',error)).finally(()=>{searchInput.dataset.searching='0';});
 });
 
 // ============================================================
