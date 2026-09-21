@@ -652,21 +652,9 @@ searchInput.addEventListener('keydown', function (event) {
 
 const searchAdvancedButton = document.getElementById('searchAdvancedBtn');
 
-// اعتراض الضغط على مستوى document قبل أي مستمع آخر.
-// هذا يمنع أي handler عام/قديم من اعتبار زر «بحث متقدم» زر البحث العادي.
-document.addEventListener('click', event => {
-    const advanced = event.target?.closest?.('#searchAdvancedBtn');
-    if (!advanced) return;
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-}, true);
-
 
 
 searchAdvancedButton?.addEventListener('pointerdown', event => {
-    // امنع أي تفاعل متداخل مع زر البحث العادي، خصوصًا على اللمس والموبايل.
-    event.preventDefault();
     event.stopPropagation();
 }, true);
 
