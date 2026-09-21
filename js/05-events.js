@@ -475,11 +475,8 @@ searchInput.addEventListener('keydown', function (event) {
         showSuggestions([]);
         if (this.dataset.searching === '1') return;
         this.dataset.searching = '1';
-        Promise.resolve(handleSearch()).catch(error => {
-            console.error('Enter search error:', error);
-        }).finally(() => {
-            this.dataset.searching = '0';
-        });
+        const run=()=>Promise.resolve(handleSearch()).catch(error=>console.error('Enter search error:',error)).finally(()=>{this.dataset.searching='0';});
+        if (typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(run); else run();
     } else if (event.key === 'Escape') {
         clearTimeout(suggestionsTimeout);
         this.value = '';
@@ -491,7 +488,10 @@ searchInput.addEventListener('keydown', function (event) {
 document.getElementById('searchBtn')?.addEventListener('click', async () => {
     clearTimeout(suggestionsTimeout);
     showSuggestions([]);
-    await handleSearch();
+    if (searchInput.dataset.searching === '1') return;
+    searchInput.dataset.searching = '1';
+    const run=()=>Promise.resolve(handleSearch()).catch(error=>console.error('Button search error:',error)).finally(()=>{searchInput.dataset.searching='0';});
+    if (typeof window.showSearchAdvancedPrompt==='function') window.showSearchAdvancedPrompt(run); else run();
 });
 
 // ============================================================
