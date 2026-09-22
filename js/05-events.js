@@ -578,19 +578,13 @@ if (suggestionsDiv) {
             showSuggestions([]);
             clearTimeout(autoSearchTimeout);
 
-            // تنفيذ Enter برمجيًا بعد اكتمال اختيار المدينة، بحيث يمر
-            // عبر مستمع Enter نفسه بدل الاكتفاء باستدعاء البحث مباشرة.
-            requestAnimationFrame(() => {
+            // شغّل البحث تلقائيًا بعد اكتمال كتابة المدينة + الدولة.
+            // لا نعتمد على KeyboardEvent اصطناعي لأن المتصفح قد لا يتعامل
+            // معه كضغط Enter حقيقي في بعض الحالات.
+            setTimeout(() => {
                 searchInput.focus({ preventScroll: true });
-                searchInput.dispatchEvent(new KeyboardEvent('keydown', {
-                    key: 'Enter',
-                    code: 'Enter',
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true,
-                    cancelable: true
-                }));
-            });
+                void runAutomaticSearch();
+            }, 0);
         }
     });
 }
