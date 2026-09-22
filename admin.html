@@ -4,13 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>لوحة تحكم الموقع</title>
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f8f7ff;color:#202124;font-family:"Segoe UI",Tahoma,Arial,sans-serif}
 .wrap{max-width:900px;margin:40px auto;padding:20px}.panel{background:#fff;border:1px solid #e8e7f2;border-radius:22px;box-shadow:0 8px 30px rgba(79,70,120,.08);padding:24px}
-h1{margin-top:0}.muted{color:#64748b}.row{display:grid;gap:8px;margin:18px 0}label{font-weight:700}input[type=url],input[type=text]{width:100%;padding:12px;border:1px solid #d8dbe5;border-radius:12px;font:inherit}input[type=file]{width:100%;padding:12px;border:1px dashed #c9cce0;border-radius:12px;background:#fafaff}
+h1{margin-top:0}.muted{color:#64748b}.row{display:grid;gap:8px;margin:18px 0}label{font-weight:700}input[type=password],input[type=url]{width:100%;padding:12px;border:1px solid #d8dbe5;border-radius:12px;font:inherit}input[type=file]{width:100%;padding:12px;border:1px dashed #c9cce0;border-radius:12px;background:#fafaff}
 .preview{margin-top:12px;border:1px solid #e8e7f2;border-radius:16px;padding:12px;text-align:center;min-height:100px}.preview img{max-width:100%;max-height:320px;border-radius:12px;object-fit:contain}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}button{border:0;border-radius:12px;padding:11px 16px;font:700 14px inherit;cursor:pointer;background:#6d5bd0;color:#fff}button.secondary{background:#eef0f7;color:#334155}.status{margin-top:14px;padding:12px;border-radius:12px;background:#f1f5f9}.danger{background:#fee2e2;color:#991b1b}.ok{background:#dcfce7;color:#166534}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}button{border:0;border-radius:12px;padding:11px 16px;font:700 14px inherit;cursor:pointer;background:#6d5bd0;color:#fff}button.secondary{background:#eef0f7;color:#334155}.status{margin-top:14px;padding:12px;border-radius:12px;background:#f1f5f9}.ok{background:#dcfce7;color:#166534}
 .login{padding:30px;text-align:center}.hidden{display:none!important}
 </style>
 </head>
@@ -18,138 +17,55 @@ h1{margin-top:0}.muted{color:#64748b}.row{display:grid;gap:8px;margin:18px 0}lab
 <div class="wrap">
   <div id="loginPanel" class="panel login">
     <h1>🔐 لوحة تحكم الموقع</h1>
-    <p class="muted">هذه الصفحة مخصصة للأدمن فقط.</p>
-    <button id="loginBtn">تسجيل الدخول</button>
+    <p class="muted">أدخل كلمة مرور الأدمن للوصول إلى لوحة التحكم.</p>
+    <div class="row">
+      <label for="adminPassword">كلمة مرور الأدمن</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور">
+    </div>
+    <button id="loginBtn">دخول</button>
+    <div id="loginStatus" class="status">اللوحة محمية بكلمة مرور.</div>
   </div>
   <div id="adminPanel" class="panel hidden">
     <h1>🖼️ إدارة الصورة والرابط</h1>
-    <p id="account" class="muted"></p>
-
-    <div class="row">
-      <label><input id="enabled" type="checkbox"> إظهار الصورة في الصفحة الرئيسية</label>
-    </div>
-
+    <p class="muted">تم تسجيل الدخول كأدمن.</p>
+    <div class="row"><label><input id="enabled" type="checkbox"> إظهار الصورة في الصفحة الرئيسية</label></div>
     <div class="row">
       <label for="imageFile">رفع صورة من جهازك</label>
       <input id="imageFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
       <small class="muted">يتم تصغير الصور الكبيرة داخل المتصفح قبل الحفظ لتقليل الحمل.</small>
     </div>
-
-    <div class="row">
-      <label for="imageUrl">أو رابط الصورة المباشر</label>
-      <input id="imageUrl" type="url" placeholder="https://example.com/image.jpg">
-    </div>
-
-    <div class="row">
-      <label for="targetUrl">الرابط الذي يفتح عند الضغط على الصورة</label>
-      <input id="targetUrl" type="url" placeholder="https://www.instagram.com/p/.../">
-    </div>
-
+    <div class="row"><label for="imageUrl">أو رابط الصورة المباشر</label><input id="imageUrl" type="url" placeholder="https://example.com/image.jpg"></div>
+    <div class="row"><label for="targetUrl">الرابط الذي يفتح عند الضغط على الصورة</label><input id="targetUrl" type="url" placeholder="https://www.instagram.com/p/.../"></div>
     <div class="preview"><div id="previewText" class="muted">لا توجد صورة</div><img id="preview" class="hidden" alt="معاينة الصورة"></div>
-
     <div class="actions">
-      <button id="saveBtn">💾 حفظ</button>
-      <button id="disableBtn" class="secondary">⏸️ إيقاف ظهور الصورة</button>
+      <button id="saveBtn">💾 حفظ</button><button id="disableBtn" class="secondary">⏸️ إيقاف ظهور الصورة</button>
       <button id="logoutBtn" class="secondary">تسجيل الخروج</button>
       <a href="./" style="display:inline-flex;align-items:center;padding:11px 16px;border-radius:12px;background:#eef0f7;color:#334155;text-decoration:none;font-weight:700">🏠 الموقع</a>
     </div>
-    <div id="status" class="status">جاري التحقق من الحساب...</div>
+    <div id="status" class="status">جاري تحميل الإعدادات...</div>
   </div>
 </div>
 <script>
 (function(){
-  const loginPanel=document.getElementById('loginPanel');
-  const adminPanel=document.getElementById('adminPanel');
-  const loginBtn=document.getElementById('loginBtn');
-  const logoutBtn=document.getElementById('logoutBtn');
-  const status=document.getElementById('status');
-  const enabled=document.getElementById('enabled');
-  const imageFile=document.getElementById('imageFile');
-  const imageUrl=document.getElementById('imageUrl');
-  const targetUrl=document.getElementById('targetUrl');
-  const preview=document.getElementById('preview');
-  const previewText=document.getElementById('previewText');
-  const saveBtn=document.getElementById('saveBtn');
-  const disableBtn=document.getElementById('disableBtn');
-
-  function showStatus(text,ok=false){
-    status.textContent=text;
-    status.className='status '+(ok?'ok':'');
-  }
-  function showPreview(src){
-    if(!src){preview.removeAttribute('src');preview.classList.add('hidden');previewText.classList.remove('hidden');return;}
-    preview.src=src;preview.classList.remove('hidden');previewText.classList.add('hidden');
-  }
-  function openLogin(){
-    if(window.netlifyIdentity) window.netlifyIdentity.open();
-  }
-  loginBtn.addEventListener('click',openLogin);
-
-  async function loadConfig(){
-    try{
-      const r=await fetch('/api/ad-config',{cache:'no-store'});
-      const data=await r.json();
-      if(data.config){
-        enabled.checked=Boolean(data.config.enabled);
-        imageUrl.value=data.config.imageUrl||'';
-        targetUrl.value=data.config.targetUrl||'';
-        showPreview(data.config.imageUrl||'');
-      }
-      showStatus('تم تحميل الإعدادات.',true);
-    }catch(e){showStatus('تعذر تحميل الإعدادات.');}
-  }
-
-  async function compressImage(file){
-    if(file.size<=900000) return file;
-    const bitmap=await createImageBitmap(file);
-    const max=1600, scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
-    const canvas=document.createElement('canvas');
-    canvas.width=Math.max(1,Math.round(bitmap.width*scale));
-    canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-    canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
-    return await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.82));
-  }
-  function blobToDataUrl(blob){
-    return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});
-  }
-
-  imageFile.addEventListener('change',async()=>{
-    const file=imageFile.files[0]; if(!file)return;
-    try{
-      const optimized=await compressImage(file);
-      const data=await blobToDataUrl(optimized);
-      imageUrl.value=data;
-      showPreview(data);
-      showStatus('تم تجهيز الصورة للحفظ.',true);
-    }catch(e){showStatus('تعذر تجهيز الصورة.');}
-  });
-  imageUrl.addEventListener('input',()=>showPreview(imageUrl.value.trim()));
-
-  async function save(){
-    saveBtn.disabled=true;
-    try{
-      const r=await fetch('/api/ad-config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
-        enabled:enabled.checked,imageUrl:imageUrl.value.trim(),targetUrl:targetUrl.value.trim()
-      })});
-      const data=await r.json();
-      if(!r.ok) throw new Error(data.error||'save_failed');
-      showStatus('✅ تم حفظ الإعدادات بنجاح.',true);
-    }catch(e){showStatus(e.message==='admin_only'?'ليس لديك صلاحية الأدمن.':'تعذر الحفظ.');}
-    finally{saveBtn.disabled=false;}
-  }
-  saveBtn.addEventListener('click',save);
-  disableBtn.addEventListener('click',async()=>{enabled.checked=false;await save();});
-
-  function update(user){
-    if(!user){loginPanel.classList.remove('hidden');adminPanel.classList.add('hidden');return;}
-    loginPanel.classList.add('hidden');adminPanel.classList.remove('hidden');
-    document.getElementById('account').textContent='الحساب: '+(user.email||'');
-    loadConfig();
-  }
-  logoutBtn.addEventListener('click',()=>window.netlifyIdentity.logout());
-  window.netlifyIdentity&&window.netlifyIdentity.on('init',update);
-  window.netlifyIdentity&&window.netlifyIdentity.on('login',u=>{update(u);window.netlifyIdentity.close();});
-  window.netlifyIdentity&&window.netlifyIdentity.on('logout',()=>update(null));
+const $=id=>document.getElementById(id);
+const loginPanel=$('loginPanel'),adminPanel=$('adminPanel'),adminPassword=$('adminPassword'),loginBtn=$('loginBtn'),loginStatus=$('loginStatus');
+const enabled=$('enabled'),imageFile=$('imageFile'),imageUrl=$('imageUrl'),targetUrl=$('targetUrl'),preview=$('preview'),previewText=$('previewText'),saveBtn=$('saveBtn'),disableBtn=$('disableBtn'),logoutBtn=$('logoutBtn'),status=$('status');
+function msg(el,text,ok=false){el.textContent=text;el.className='status '+(ok?'ok':'')}
+function showPreview(src){if(!src){preview.removeAttribute('src');preview.classList.add('hidden');previewText.classList.remove('hidden');return}preview.src=src;preview.classList.remove('hidden');previewText.classList.add('hidden')}
+async function auth(method='GET',body){const r=await fetch('/api/admin-auth',{method,headers:body?{'content-type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,cache:'no-store'});const d=await r.json().catch(()=>({}));return {r,d}}
+async function loadConfig(){try{const {r,d}=await auth();if(!r.ok||!d.authenticated){showLogin();return}const x=await fetch('/api/ad-config',{cache:'no-store'}),data=await x.json();if(data.config){enabled.checked=!!data.config.enabled;imageUrl.value=data.config.imageUrl||'';targetUrl.value=data.config.targetUrl||'';showPreview(data.config.imageUrl||'')}msg(status,'تم تحميل الإعدادات.',true)}catch(e){msg(status,'تعذر تحميل الإعدادات.')}}
+function showLogin(){loginPanel.classList.remove('hidden');adminPanel.classList.add('hidden');adminPassword.focus()}
+function showAdmin(){loginPanel.classList.add('hidden');adminPanel.classList.remove('hidden');loadConfig()}
+loginBtn.addEventListener('click',async()=>{loginBtn.disabled=true;try{const {r,d}=await auth('POST',{password:adminPassword.value});if(!r.ok||!d.authenticated){msg(loginStatus,'❌ كلمة المرور غير صحيحة.');return}adminPassword.value='';showAdmin()}catch(e){msg(loginStatus,'تعذر تسجيل الدخول.')}finally{loginBtn.disabled=false}})
+adminPassword.addEventListener('keydown',e=>{if(e.key==='Enter')loginBtn.click()})
+logoutBtn.addEventListener('click',async()=>{await auth('DELETE');showLogin()})
+async function compressImage(file){if(file.size<=900000)return file;const bitmap=await createImageBitmap(file),max=1600,scale=Math.min(1,max/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);return await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.82))}
+function blobToDataUrl(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
+imageFile.addEventListener('change',async()=>{const file=imageFile.files[0];if(!file)return;try{const data=await blobToDataUrl(await compressImage(file));imageUrl.value=data;showPreview(data);msg(status,'تم تجهيز الصورة للحفظ.',true)}catch(e){msg(status,'تعذر تجهيز الصورة.')}})
+imageUrl.addEventListener('input',()=>showPreview(imageUrl.value.trim()))
+async function save(){saveBtn.disabled=true;try{const {r,d}=await auth();if(!r.ok||!d.authenticated)throw new Error('auth');const x=await fetch('/api/ad-config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({enabled:enabled.checked,imageUrl:imageUrl.value.trim(),targetUrl:targetUrl.value.trim()})});const data=await x.json();if(!x.ok)throw new Error(data.error||'save_failed');msg(status,'✅ تم حفظ الإعدادات بنجاح.',true)}catch(e){msg(status,'تعذر الحفظ.')}finally{saveBtn.disabled=false}}
+saveBtn.addEventListener('click',save);disableBtn.addEventListener('click',async()=>{enabled.checked=false;await save()});
+loadConfig();
 })();
 </script>
 </body>
