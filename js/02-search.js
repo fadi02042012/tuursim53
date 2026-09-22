@@ -220,24 +220,22 @@ async function handleSearch() {
     const query = searchInput.value.trim();
 
     if (!query) {
-        const source = currentCountryCities.length
-            ? (typeof sortCitiesForCountry === 'function'
-                ? sortCitiesForCountry(currentCountryCities, countrySelect?.value || '')
-                : currentCountryCities.slice())
-            : (typeof sortCitiesAlphabetically === 'function'
-                ? sortCitiesAlphabetically(allCities)
-                : allCities.slice());
-
+        // لا تعرض أي نتائج تلقائية عند فتح الصفحة أو عندما يكون مربع البحث فارغًا.
+        // تظهر النتائج فقط بعد أن يكتب المستخدم استعلامًا أو يختار دولة/مدينة.
         if (currentCountryCities.length) {
+            const source = typeof sortCitiesForCountry === 'function'
+                ? sortCitiesForCountry(currentCountryCities, countrySelect?.value || '')
+                : currentCountryCities.slice();
+
             currentFullResults = source;
             currentDisplayLimit = Math.min(RESULTS_PER_BATCH, source.length);
             renderResults({ cities: source.slice(0, currentDisplayLimit), countries: [] });
             if (typeof updateShowMoreButton === 'function') updateShowMoreButton();
             if (typeof window.refreshResultsPagination === 'function') window.refreshResultsPagination();
-        } else if (source.length) {
-            renderResults({ cities: source.slice(0, RESULTS_PER_BATCH), countries: [] });
         } else {
-            renderResults({ cities: [], countries: countries.slice(0, RESULTS_PER_BATCH) });
+            resultsDiv.innerHTML = '';
+            countSpan.textContent = '0';
+            allLinksData = [];
         }
         return;
     }
