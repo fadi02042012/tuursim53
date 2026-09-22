@@ -625,24 +625,50 @@ async function searchWikipediaWithConfig(limit, message, extendedMessage) {
 }
 
 // ============================================================
-// البحث: الاقتراحات فقط أثناء الكتابة، والبحث الكامل عند Enter/الزر
+// البحث التلقائي: الاقتراحات أثناء الكتابة، والبحث الكامل بعد التوقف
 // ============================================================
+const AUTO_SEARCH_DEBOUNCE_MS = 700;
+let autoSearchTimeout = null;
+
+async function runAutomaticSearch() {
+    const query = String(searchInput.value || '').trim();
+    clearTimeout(suggestionsTimeout);
+    showSuggestions([]);
+
+    if (!query) return;
+    if (searchInput.dataset.searching === '1') return;
+
+    searchInput.dataset.searching = '1';
+    try {
+        const found = await trySearchExactCountry(query);
+        if (!found) await handleSearch();
+    } catch (error) {
+        console.error('Automatic search error:', error);
+    } finally {
+        searchInput.dataset.searching = '0';
+    }
+}
+
 searchInput.addEventListener('input', function () {
     scheduleSuggestions(this.value);
+    clearTimeout(autoSearchTimeout);
+
+    const query = String(this.value || '').trim();
+    if (!query) return;
+
+    autoSearchTimeout = setTimeout(() => {
+        void runAutomaticSearch();
+    }, AUTO_SEARCH_DEBOUNCE_MS);
 });
 
 searchInput.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         event.preventDefault();
         event.stopImmediatePropagation();
-        clearTimeout(suggestionsTimeout);
-        showSuggestions([]);
-        if (this.dataset.searching === '1') return;
-        this.dataset.searching = '1';
-        Promise.resolve(trySearchExactCountry(this.value).then(found=>found||handleSearch()))
-            .catch(error=>console.error('Enter search error:',error))
-            .finally(()=>{this.dataset.searching='0';});
+        clearTimeout(autoSearchTimeout);
+        void runAutomaticSearch();
     } else if (event.key === 'Escape') {
+        clearTimeout(autoSearchTimeout);
         clearTimeout(suggestionsTimeout);
         this.value = '';
         showSuggestions([]);
@@ -703,15 +729,7 @@ searchAdvancedButton?.addEventListener('click', event => {
     }
 });
 
-document.getElementById('searchBtn')?.addEventListener('click', async () => {
-    clearTimeout(suggestionsTimeout);
-    showSuggestions([]);
-    if (searchInput.dataset.searching === '1') return;
-    searchInput.dataset.searching = '1';
-    Promise.resolve(trySearchExactCountry(searchInput.value).then(found=>found||handleSearch()))
-        .catch(error=>console.error('Button search error:',error))
-        .finally(()=>{searchInput.dataset.searching='0';});
-});
+// لم يعد هناك زر بحث؛ يتم تنفيذ البحث تلقائيًا بعد توقف المستخدم عن الكتابة.
 
 // ============================================================
 // النسخ: بناء النص فقط عند الضغط، بدون عمل إضافي أثناء العرض
