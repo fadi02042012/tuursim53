@@ -48,7 +48,7 @@ function favoriteButton(item){
     const key = favoriteKey(item);
     favoriteItemsCache[key] = item;
     const active = getFavorites().some(x => x.key === key);
-    return '<button type="button" class="btn btn-favorite favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'">'+(active?'⭐ في المفضلة':'☆ أضف للمفضلة')+'</button>';
+    return '<button type="button" class="btn btn-favorite favorite-toggle" data-favorite-key="'+escapeHtml(key)+'" aria-pressed="'+(active?'true':'false')+'">'+(active?'🗑️ إزالة من المفضلة':'☆ أضف للمفضلة')+'</button>';
 }
 window.showFavorites = function(){
     const items = getFavorites();
