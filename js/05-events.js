@@ -558,7 +558,23 @@ if (suggestionsDiv) {
         }
         if (item?.dataset.city) {
             const cityName = item.dataset.city;
-            searchInput.value = cityName;
+            const city = Array.isArray(allCities)
+                ? allCities.find(c => String(c?.city || '').trim() === cityName.trim() && String(c?.country || '').trim() === String(item.dataset.cityCountry || '').trim())
+                : null;
+
+            // عند اختيار مدينة، كوّن عبارة البحث من اسم المدينة والدولة (إن وُجدت)
+            // ثم نفّذ نفس وظيفة Enter تلقائيًا، بدون أي زر.
+            const cityParts = [
+                city?.city,
+                city?.city_ar,
+                city?.country,
+                city?.country_ar
+            ].map(value => String(value || '').trim()).filter(Boolean);
+            const uniqueParts = cityParts.filter((part, index) =>
+                cityParts.findIndex(value => normalizeCityNameForMatch(value) === normalizeCityNameForMatch(part)) === index
+            );
+
+            searchInput.value = uniqueParts.length ? uniqueParts.join(' ') : cityName;
             showSuggestions([]);
             clearTimeout(autoSearchTimeout);
             void runAutomaticSearch();
