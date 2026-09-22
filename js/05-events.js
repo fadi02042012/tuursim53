@@ -758,7 +758,14 @@ searchAdvancedButton?.addEventListener('click', event => {
     }
 });
 
-// لم يعد هناك زر بحث؛ يتم تنفيذ البحث تلقائيًا بعد توقف المستخدم عن الكتابة.
+const searchButton = document.getElementById('searchBtn');
+searchButton?.addEventListener('click', event => {
+    event.preventDefault();
+    clearTimeout(autoSearchTimeout);
+    void runAutomaticSearch();
+});
+
+// يبقى البحث التلقائي عند التوقف عن الكتابة، مع إعادة زر البحث اليدوي.
 
 // ============================================================
 // النسخ: بناء النص فقط عند الضغط، بدون عمل إضافي أثناء العرض
