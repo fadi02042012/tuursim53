@@ -54,13 +54,13 @@ async function loadData() {
             });
         }
 
-        // مهم: لا نحمّل output/cities.json عند بدء التشغيل.
-        // الملف الحالي حجمه ~40MB، وقراءته ثم JSON.parse ثم بناء _searchKey
-        // دفعة واحدة كان يجمّد الخيط الرئيسي ويجعل إعادة التحميل تبدو معلّقة.
-        // اعرض الدول فورًا بدل ترك منطقة النتائج فارغة.
-        renderResults({ cities: [], countries: countries.slice(0, INITIAL_RESULTS_LIMIT) });
-        statusDiv.textContent = `✅ تم تحميل ${countries.length.toLocaleString()} دولة — اختر دولة أو ابدأ البحث`;
-        statusDiv.style.color = '#10b981';
+        // لا تعرض أي دول أو مدن افتراضيًا عند فتح الصفحة.
+        // النتائج تظهر فقط بعد أن يطلب المستخدم بحثًا أو يختار دولة.
+        resultsDiv.innerHTML = '';
+        countSpan.textContent = '0';
+        allLinksData = [];
+        statusDiv.textContent = '🔎 ابدأ البحث عن مدينة أو دولة';
+        statusDiv.style.color = '#64748b';
     } catch (error) {
         console.error('خطأ في تحميل البيانات:', error);
         statusDiv.textContent = '⚠️ تعذر تحميل بيانات الدول.';
