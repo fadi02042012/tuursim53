@@ -75,6 +75,53 @@ window.clearFavorites = function(){
     showFavorites();
 };
 
+// ============================================================
+// إحصائيات البحث - نافذة مستقلة تعتمد على مخزن المفضلة الحالي
+// ============================================================
+function closeStatsModal(){
+    const open = document.querySelector('.enhancement-modal');
+    if (open) open.remove();
+}
+function openStatsModal(title, content, className){
+    closeStatsModal();
+    const modal = document.createElement('div');
+    modal.className = 'enhancement-modal' + (className ? ' ' + className : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.tabIndex = -1;
+    modal.innerHTML = '<div class="enhancement-modal__backdrop" data-close-modal></div><section class="enhancement-modal__panel" aria-labelledby="enhancement-modal-title"><button class="enhancement-modal__close" type="button" aria-label="إغلاق">×</button><h2 id="enhancement-modal-title">'+title+'</h2><div class="enhancement-modal__content">'+content+'</div></section>';
+    document.body.appendChild(modal);
+    const close = modal.querySelector('.enhancement-modal__close');
+    if (close) close.addEventListener('click', closeStatsModal);
+    const backdrop = modal.querySelector('[data-close-modal]');
+    if (backdrop) backdrop.addEventListener('click', closeStatsModal);
+    modal.addEventListener('keydown', event => { if (event.key === 'Escape') closeStatsModal(); });
+    document.addEventListener('keydown', function onEsc(event){
+        if (event.key !== 'Escape') return;
+        document.removeEventListener('keydown', onEsc);
+        closeStatsModal();
+    });
+    modal.focus();
+}
+window.showStatistics = function(){
+    const arabicNumber = value => Number(value || 0).toLocaleString('ar-EG');
+    const links = Array.isArray(allLinksData)
+        ? allLinksData.reduce((sum, item) => sum + ((item && item.links && item.links.length) || 0), 0)
+        : 0;
+    const shown = parseInt(String((countSpan && countSpan.textContent) || '').replace(/[^0-9]/g, ''), 10) || 0;
+    const tiles = [
+        [Array.isArray(allCities) ? allCities.length : 0, 'مدينة محملة'],
+        [Array.isArray(countries) ? countries.length : 0, 'دولة'],
+        [shown, 'نتيجة ظاهرة'],
+        [links, 'رابط متاح'],
+        [getFavorites().length, 'عنصر مفضل']
+    ];
+    const grid = tiles
+        .map(([value, label]) => '<div><strong>'+arabicNumber(value)+'</strong><span>'+label+'</span></div>')
+        .join('');
+    openStatsModal('📊 إحصائيات البحث', '<div class="enhancement-stats-grid">'+grid+'</div>', 'statistics-modal');
+};
+
 
 function ensureAdvancedCategoryStyles() {
     if (document.getElementById('advanced-category-styles')) return;
