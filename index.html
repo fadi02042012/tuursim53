@@ -53,6 +53,19 @@ body.dark-mode .featured-instagram{background:#111827!important;border-color:#33
 </main>
 <footer style="padding:24px;text-align:center;color:#888;font-size:12px;">© البحث الذكي</footer>
 <script async src="//www.instagram.com/embed.js"></script>
+<script>
+(function(){
+  function processInstagram(){
+    if(window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+  }
+  if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processInstagram, {once:true});
+  } else {
+    processInstagram();
+  }
+  window.addEventListener('load', processInstagram, {once:true});
+})();
+</script>
 <script src="js/00-config.js?v=20260918-fix3" defer></script>
 <script src="js/01-data.js?v=20260918-fix3" defer></script>
 <script src="js/03-links.js?v=20260918-fix1" defer></script>
