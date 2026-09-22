@@ -32,7 +32,7 @@ body.dark-mode .btn{filter:brightness(.9)}
 body.dark-mode select,body.dark-mode option{background:#0f172a!important;color:#f8fafc!important}
 body.dark-mode .search-advanced-prompt-inner{background:#172033!important;color:#e5e7eb!important}
 body.dark-mode .featured-instagram{background:#111827!important;border-color:#334155!important}.featured-instagram-title{color:inherit}
-</style>
+.promo-panel{margin:0 18px 16px;background:#fff;border:1px solid #e8e7f2;border-radius:20px;padding:10px;box-shadow:0 8px 30px rgba(79,70,120,.06);text-align:center}.promo-panel[hidden]{display:none!important}.promo-panel a{display:block}.promo-panel img{display:block;width:100%;max-height:360px;object-fit:contain;border-radius:14px;margin:0 auto}@media(max-width:820px){.promo-panel{margin-left:12px;margin-right:12px}.promo-panel img{max-height:280px}}body.dark-mode .promo-panel{background:#111827;border-color:#334155}</style>
 </head>
 <body>
 <a class="skip-link" href="#results">تخطي إلى النتائج</a>
@@ -43,6 +43,11 @@ body.dark-mode .featured-instagram{background:#111827!important;border-color:#33
 <nav class="msn-nav" aria-label="التنقل الرئيسي"><a class="is-active" href="./">🏠 اكتشاف</a><a href="#search">🔍 البحث الذكي</a><a href="#results">🏙️ المدن</a><a href="#results">🌍 الدول</a><button type="button" onclick="showFavorites()">⭐ المفضلة</button><button type="button" onclick="showStatistics()">📊 الإحصائيات</button></nav>
 <div class="stats-bar"><div class="stats-item">📌 <span class="number" id="totalCities">0</span> مدينة</div><div class="stats-item">🌍 <span class="number" id="totalCountries">0</span> دولة</div><div class="stats-item">🔗 <span class="number" id="totalLinks">0</span> رابط</div><div class="stats-item">📊 <span class="number" id="totalResults">0</span> نتيجة</div></div>
 <div id="status" role="status" aria-live="polite">جاهز للبحث</div>
+<div id="promoPanel" class="promo-panel" hidden aria-label="إعلان">
+  <a id="promoLink" href="#" target="_blank" rel="noopener noreferrer">
+    <img id="promoImage" src="" alt="إعلان" loading="lazy" decoding="async">
+  </a>
+</div>
 <section id="featuredInstagram" class="featured-instagram" aria-label="منشور مميز">
   <div class="featured-instagram-title">✨ منتج مميز</div>
   <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DceKVrajVqv/" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:12px;margin:0;max-width:540px;min-width:0;width:100%;"></blockquote>
@@ -60,6 +65,7 @@ body.dark-mode .featured-instagram{background:#111827!important;border-color:#33
 <script src="js/04-ui.js?v=20260918-fix4" defer></script>
 <script src="js/05-events.js?v=20260922-autosearch2" defer></script>
 <script src="js/app.js?v=20260918-fix3" defer></script>
+<script src="js/07-promo.js?v=20260922-admin1" defer></script>
 <script src="js/06-search-integration.js?v=20260918-fix3" defer></script>
 <script>(function(){const btn=document.getElementById('nextResultsSideBtn');if(btn)btn.addEventListener('click',()=>{if(typeof window.loadNextResultsPage==='function')window.loadNextResultsPage();});})();</script>
 <script>
