@@ -577,7 +577,20 @@ if (suggestionsDiv) {
             searchInput.value = uniqueParts.length ? uniqueParts.join(' ') : cityName;
             showSuggestions([]);
             clearTimeout(autoSearchTimeout);
-            void runAutomaticSearch();
+
+            // تنفيذ Enter برمجيًا بعد اكتمال اختيار المدينة، بحيث يمر
+            // عبر مستمع Enter نفسه بدل الاكتفاء باستدعاء البحث مباشرة.
+            requestAnimationFrame(() => {
+                searchInput.focus({ preventScroll: true });
+                searchInput.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true,
+                    cancelable: true
+                }));
+            });
         }
     });
 }
