@@ -556,7 +556,13 @@ if (suggestionsDiv) {
             }
             return;
         }
-        if (item?.dataset.city) selectCity(item.dataset.city);
+        if (item?.dataset.city) {
+            const cityName = item.dataset.city;
+            searchInput.value = cityName;
+            showSuggestions([]);
+            clearTimeout(autoSearchTimeout);
+            void runAutomaticSearch();
+        }
     });
 }
 
