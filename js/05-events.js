@@ -20,7 +20,7 @@ async function trySearchExactCountry(query) {
     if (!q || !Array.isArray(countries) || !countries.length) return false;
 
     const norm = value => normalizeText(String(value || '').trim())
-        .replace(/\\s+/g, ' ')
+        .replace(/\s+/g, ' ')
         .trim();
     const nq = norm(q);
     const country = countries.find(c => [c.name, c.name_ar, c.code, c.iso2, c.iso3]
