@@ -23,6 +23,9 @@ document.addEventListener('click', function(event){
 });
 window.toggleFavorite = function(key){
     const item = favoriteItemsCache[key];
+    const sourceButton = document.querySelector('[data-favorite-key="'+CSS.escape(String(key))+'"]');
+    const sourceCard = sourceButton ? sourceButton.closest('.card') : null;
+    if (sourceCard) item.cardHtml = sourceCard.outerHTML;
     if(!item) return;
     const items = getFavorites();
     const index = items.findIndex(x => x.key === key);
@@ -53,15 +56,18 @@ function favoriteButton(item){
 window.showFavorites = function(){
     const items = getFavorites();
     if(!items.length){ resultsDiv.innerHTML='<div class="card"><div style="text-align:center;padding:35px;">⭐<h3>لا توجد نتائج في المفضلة</h3><p style="color:#94a3b8;">يمكنك إضافة أي نتيجة للمفضلة والعودة إليها لاحقًا.</p></div></div>'; countSpan.textContent='0'; return; }
-    resultsDiv.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="margin:0;">⭐ المفضلة ('+items.length+')</h3><button type="button" onclick="clearFavorites()" style="padding:7px 11px;border:1px solid #ef4444;border-radius:8px;background:#fff;color:#b91c1c;cursor:pointer;">🗑️ مسح المفضلة</button></div>' +
-        items.map(item => {
-            const safeName = escapeHtml(item.name || item.query || 'نتيجة');
-            const q = String(item.query || item.name || '').trim();
-            const url = item.url ? '<a class="btn btn-wiki" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(item.url)+'">📖 فتح الصفحة</a>' : '';
-            favoriteItemsCache[item.key] = item;
-            return '<div class="card" style="'+cardStyle()+';position:relative;"><div style="position:absolute;top:10px;left:10px;">'+favoriteButton(item)+'</div><div style="font-size:17px;font-weight:bold;color:#1e293b;padding-left:135px;">'+safeName+'</div><div style="color:#64748b;font-size:13px;margin:5px 0 9px;">'+escapeHtml(item.type || 'نتيجة')+'</div><div style="display:flex;gap:7px;flex-wrap:wrap;">'+'<a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent(q)+'">🔍 Google</a><a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)+'">📍 خرائط</a><a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+'">▶ YouTube</a>'+url+'</div></div>';
-        }).join('');
+    const cards = items.map(item => {
+        favoriteItemsCache[item.key] = item;
+        if (item.cardHtml) return item.cardHtml;
+        // توافق مع المفضلة القديمة التي لم تكن تحفظ نسخة البطاقة كاملة.
+        const safeName = escapeHtml(item.name || item.query || 'نتيجة');
+        const q = String(item.query || item.name || '').trim();
+        const url = item.url ? '<a class="btn btn-wiki" target="_blank" rel="noopener noreferrer" href="'+escapeHtml(item.url)+'">📖 فتح الصفحة</a>' : '';
+        return '<div class="card" style="'+cardStyle()+';position:relative;"><div style="position:absolute;top:10px;left:10px;">'+favoriteButton(item)+'</div><div style="font-size:17px;font-weight:bold;color:#1e293b;padding-left:135px;">'+safeName+'</div><div style="color:#64748b;font-size:13px;margin:5px 0 9px;">'+escapeHtml(item.type || 'نتيجة')+'</div><div style="display:flex;gap:7px;flex-wrap:wrap;"><a class="btn btn-google" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q='+encodeURIComponent(q)+'">🔍 Google</a><a class="btn btn-maps" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)+'">📍 خرائط</a><a class="btn btn-yt" target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/results?search_query='+encodeURIComponent(q)+'">▶ YouTube</a>'+url+'</div></div>';
+    }).join('');
+    resultsDiv.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="margin:0;">⭐ المفضلة ('+items.length+')</h3><button type="button" onclick="clearFavorites()" style="padding:7px 11px;border:1px solid #ef4444;border-radius:8px;background:#fff;color:#b91c1c;cursor:pointer;">🗑️ مسح المفضلة</button></div>' + cards;
     countSpan.textContent=String(items.length);
+    updateFavoriteButtons();
 };
 window.clearFavorites = function(){
     if(!confirm('هل تريد مسح جميع النتائج المحفوظة في المفضلة؟')) return;
