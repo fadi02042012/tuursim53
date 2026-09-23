@@ -10,22 +10,28 @@ function apply(a){const c=$("#category").value,min=+$("#rating").value||0,max=+$
 function sorted(a){const m=$("#sort").value;return [...a].sort((x,y)=>m==="rating"?(y.rating||0)-(x.rating||0):m==="references"?(y.references||0)-(x.references||0):m==="recent"?(y.recency||0)-(x.recency||0):score(y)-score(x))}
 function maps(r){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(r.name+" "+(r.lat&&r.lng?r.lat+","+r.lng:""))}
 function yt(r){return "https://www.youtube.com/results?search_query="+encodeURIComponent(r.name+" travel")}
-async function videos(name){
+async function videos(name, regionCode=""){
+  const key=JSON.stringify({name,regionCode,o:$("#videoOrder")?.value||"relevance",d:$("#videoDuration")?.value||"",def:$("#videoDefinition")?.value||"",cap:$("#videoCaption")?.value||""});
+  try{const hit=JSON.parse(sessionStorage.getItem("yt:"+key)||"null");if(hit&&Date.now()-hit.t<10*60*1000)return hit.items}catch{}
   const p=new URLSearchParams({q:name+" travel"});
   const o=$("#videoOrder")?.value||"relevance"; p.set("order",o);
   const d=$("#videoDuration")?.value; if(d)p.set("videoDuration",d);
   const def=$("#videoDefinition")?.value; if(def)p.set("videoDefinition",def);
   const cap=$("#videoCaption")?.value; if(cap)p.set("videoCaption",cap);
-  const r=await fetch("/.netlify/functions/youtube-search?"+p); if(!r.ok)throw Error("YouTube "+r.status); return (await r.json()).items||[];
+  if(regionCode)p.set("regionCode",regionCode);
+  const r=await fetch("/.netlify/functions/youtube-search?"+p); if(!r.ok)throw Error("YouTube "+r.status);
+  const items=(await r.json()).items||[];
+  try{sessionStorage.setItem("yt:"+key,JSON.stringify({t:Date.now(),items}))}catch{}
+  return items;
 }
 function renderVideos(items){
   const box=$("#videoResults"); if(!box)return;
   box.innerHTML=items.length?items.map(v=>'<article class="video-card"><a target="_blank" rel="noopener" href="'+v.url+'"><img src="'+esc(v.thumbnail)+'" alt=""><h3>'+esc(v.title)+'</h3></a><p>'+esc(v.channel)+' • '+Number(v.views).toLocaleString("ar")+" مشاهدة</p><button type="button" onclick="playVideo('"+esc(v.id)+"','"+esc(v.title).replace(/'/g,"&#39;")+"')">▶ مشاهدة</button></article>').join(""):'<div class="empty">لم نجد فيديوهات مناسبة.</div>';
 }
-async function videoSearch(query){
+async function videoSearch(query, regionCode=""){
   const q=(query||$("#q").value.trim()).trim(); if(!q)return;
   $("#videoStatus").textContent="جاري البحث عن أفضل الفيديوهات…";
-  try{const items=await videos(q);renderVideos(items);$("#videoStatus").textContent="تم العثور على "+items.length+" فيديو";$("#videoResults")?.scrollIntoView({behavior:"smooth",block:"start"})}
+  try{const items=await videos(q,regionCode);renderVideos(items);$("#videoStatus").textContent="تم العثور على "+items.length+" فيديو";$("#videoResults")?.scrollIntoView({behavior:"smooth",block:"start"})}
   catch(e){console.warn(e);$("#videoStatus").textContent="تعذر جلب فيديوهات YouTube. تأكد من إعداد مفتاح YouTube API في Netlify."}
 }
 function playVideo(id,title){$("#mediaBody").innerHTML='<div class="media"><h3>'+esc(title)+'</h3><iframe loading="lazy" src="https://www.youtube.com/embed/'+encodeURIComponent(id)+'" title="'+esc(title)+'" allowfullscreen></iframe></div>';mediaDialog.showModal()}
@@ -33,5 +39,5 @@ function render(){const a=apply(sorted(S.results));$("#resultCount").textContent
 async function search(q){const id=++S.id;$("#status").textContent="جاري تجميع النتائج…";let a=[];try{a=[...(await local(q)),...(await osm(q))]}catch(e){console.warn(e)}if(id!==S.id)return;const seen=new Set();S.results=a.filter(r=>{const k=r.name+"|"+r.lat+"|"+r.lng;if(seen.has(k))return false;seen.add(k);return true}).slice(0,C.max);render();$("#status").textContent=S.results.length?"تم جمع "+S.results.length+" نتيجة":"لم نجد نتائج مطابقة"}
 function showVideo(name){$("#mediaBody").innerHTML='<div class="media"><h3>فيديوهات: '+esc(name)+'</h3><iframe loading="lazy" src="https://www.youtube.com/embed?listType=search&list='+encodeURIComponent(name+" travel")+'" title="YouTube search"></iframe><p class="meta">يمكنك استخدام زر YouTube في البطاقة.</p></div>';mediaDialog.showModal()}
 async function init(){map=L.map("map").setView([20,0],2);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);layer=L.layerGroup().addTo(map);try{const cs=await get("output/countries.json");cs.sort((a,b)=>String(a.name_ar||a.name).localeCompare(String(b.name_ar||b.name),"ar")).forEach(c=>{const o=document.createElement("option");o.value=c.code;o.textContent=c.name_ar||c.name;$("#countryFilter").appendChild(o)})}catch{}$("#searchForm").addEventListener("submit",e=>{e.preventDefault();const q=$("#q").value.trim();if(q)search(q)});$("#q").addEventListener("input",()=>{clearTimeout(S.timer);S.timer=setTimeout(()=>{const q=$("#q").value.trim();if(q)search(q)},C.debounce)});document.querySelectorAll("[data-q]").forEach(b=>b.addEventListener("click",()=>{$("#q").value=b.dataset.q;search(b.dataset.q);videoSearch(b.dataset.q)}));
-$("#countryFilter").addEventListener("change",async()=>{render();const o=$("#countryFilter").selectedOptions[0];const name=o?.textContent?.trim();if(name&&o.value){$("#q").value=name;videoSearch(name+" travel tourism")}});["category","rating","distance","sort"].forEach(id=>$("#"+id).addEventListener("change",render));$("#themeBtn").addEventListener("click",()=>{document.body.classList.toggle("light");localStorage.setItem("tour-theme",document.body.classList.contains("light")?"light":"dark")});if(localStorage.getItem("tour-theme")==="light")document.body.classList.add("light");const q=new URLSearchParams(location.search).get("q");if(q){$("#q").value=q;search(q)}}
+$("#countryFilter").addEventListener("change",async()=>{render();const o=$("#countryFilter").selectedOptions[0];const name=o?.textContent?.trim();if(name&&o.value){$("#q").value=name;videoSearch(name+" travel tourism",o.value)}});["category","rating","distance","sort"].forEach(id=>$("#"+id).addEventListener("change",render));$("#themeBtn").addEventListener("click",()=>{document.body.classList.toggle("light");localStorage.setItem("tour-theme",document.body.classList.contains("light")?"light":"dark")});if(localStorage.getItem("tour-theme")==="light")document.body.classList.add("light");const q=new URLSearchParams(location.search).get("q");if(q){$("#q").value=q;search(q)}}
 document.addEventListener("DOMContentLoaded",init);
