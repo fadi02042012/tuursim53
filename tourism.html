@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tuursim53 — مستكشف السفر البحثي</title>
+<meta name="description" content="محرك بحث سياحي تفاعلي يجمع الأماكن والفيديوهات والصور من مصادر متعددة مع خريطة متزامنة.">
+<meta name="theme-color" content="#0b1220">
+<link rel="canonical" href="./tourism.html">
+<link rel="stylesheet" href="tourism.css?v=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</head>
+<body>
+<a class="skip" href="#results">تخطي إلى النتائج</a>
+<header class="topbar">
+<a class="brand" href="./tourism.html"><span class="brand-mark">✈</span><span><b>Tuursim53</b><small>مستكشف السفر البحثي</small></span></a>
+<div class="search-wrap"><form id="searchForm" role="search"><input id="q" name="q" placeholder="ابحث عن مدينة، معلم أو وجهة…" aria-label="البحث السياحي"><button type="submit">بحث</button></form></div>
+<button id="themeBtn" class="icon-btn" type="button" aria-label="تبديل المظهر">☾</button>
+</header>
+<main>
+<section class="hero"><div><span class="eyebrow">RESEARCH • MAPS • VIDEO • PHOTOS</span><h1>اكتشف المكان قبل أن تذهب.</h1><p>نتائج موحّدة من قاعدة المدن المحلية، OpenStreetMap، YouTube ومصادر الصور — مع ترتيب بحثي وخريطة تتزامن مع النتائج.</p><div class="chips"><button data-q="Sanaa">صنعاء</button><button data-q="Istanbul">إسطنبول</button><button data-q="Cairo">القاهرة</button><button data-q="Paris">باريس</button></div></div><div class="hero-stat"><strong id="resultCount">0</strong><span>نتيجة مستكشفة</span></div></section>
+<section class="controls" aria-label="مرشحات البحث">
+<label>الدولة<select id="countryFilter"><option value="">كل الدول</option></select></label>
+<label>الفئة<select id="category"><option value="">كل الفئات</option><option value="museum">متاحف</option><option value="hotel">فنادق</option><option value="restaurant">مطاعم</option><option value="attraction">معالم</option><option value="nature">طبيعة</option></select></label>
+<label>التقييم الأدنى<select id="rating"><option value="0">الكل</option><option value="3">3+</option><option value="4">4+</option><option value="4.5">4.5+</option></select></label>
+<label>المسافة<input id="distance" type="number" min="0" placeholder="كم"></label>
+<label>الترتيب<select id="sort"><option value="research">الأهمية البحثية</option><option value="rating">التقييم</option><option value="recent">الأحدث</option><option value="references">عدد المراجع</option></select></label>
+</section>
+<section class="workspace"><div class="results-pane"><div class="section-head"><div><span class="eyebrow">DISCOVERY</span><h2>النتائج</h2></div><span id="status" role="status" aria-live="polite">اكتب بحثًا للبدء</span></div><div id="results" class="grid"></div></div><aside class="map-pane"><div id="map" aria-label="خريطة النتائج"></div><div class="map-note">© OpenStreetMap contributors</div></aside></section>
+</main>
+<dialog id="mediaDialog"><button class="dialog-close" type="button" onclick="mediaDialog.close()" aria-label="إغلاق">×</button><div id="mediaBody"></div></dialog>
+<footer><div><b>Tuursim53</b> — واجهة بحث سياحي قابلة للتوسع.</div><a href="API-SETUP.md">دليل APIs</a></footer>
+<script src="tourism.js?v=1" defer></script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Tuursim53","url":"./tourism.html","description":"مستكشف سفر بحثي تفاعلي","potentialAction":{"@type":"SearchAction","target":"./tourism.html?q={search_term_string}","query-input":"required name=search_term_string"}}</script>
+</body></html>
