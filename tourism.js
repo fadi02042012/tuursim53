@@ -19,8 +19,9 @@ async function videos(name, regionCode=""){
   const def=$("#videoDefinition")?.value; if(def)p.set("videoDefinition",def);
   const cap=$("#videoCaption")?.value; if(cap)p.set("videoCaption",cap);
   if(regionCode)p.set("regionCode",regionCode);
-  const r=await fetch("/.netlify/functions/youtube-search?"+p); if(!r.ok)throw Error("YouTube "+r.status);
-  const items=(await r.json()).items||[];
+  const r=await fetch("/.netlify/functions/youtube-search?"+p); const body=await r.json().catch(()=>({}));
+  if(!r.ok){const e=Error("YouTube "+r.status);e.code=body.error||"";throw e;}
+  const items=body.items||[];
   try{sessionStorage.setItem("yt:"+key,JSON.stringify({t:Date.now(),items}))}catch{}
   return items;
 }
@@ -32,7 +33,7 @@ async function videoSearch(query, regionCode=""){
   const q=(query||$("#q").value.trim()).trim(); if(!q)return;
   $("#videoStatus").textContent="جاري البحث عن أفضل الفيديوهات…";
   try{const items=await videos(q,regionCode);renderVideos(items);$("#videoStatus").textContent="تم العثور على "+items.length+" فيديو";$("#videoResults")?.scrollIntoView({behavior:"smooth",block:"start"})}
-  catch(e){console.warn(e);$("#videoStatus").textContent=e?.message==="YouTube 503"?"مفتاح YouTube API غير مُعد في Netlify.":"تعذر جلب فيديوهات YouTube حاليًا.";}
+  catch(e){console.warn(e); const url="https://www.youtube.com/results?search_query="+encodeURIComponent(q+" travel"); const box=$("#videoResults"); if(box)box.innerHTML="<div class=\\"empty video-fallback\\"><strong>تعذر جلب النتائج المباشرة من YouTube.</strong><p>يمكنك فتح نتائج YouTube مباشرة الآن، وبعد إضافة مفتاح YouTube API ستظهر النتائج داخل الموقع.</p><a class=\\"primary\\" target=\\"_blank\\" rel=\\"noopener\\" href=\\""+url+"\\">فتح نتائج YouTube</a></div>"; $("#videoStatus").textContent=e?.code==="youtube_api_key_missing"?"مفتاح YouTube API غير مُعد في Netlify.":e?.code==="youtube_api_disabled"?"YouTube Data API v3 غير مفعّل للمفتاح.":e?.code==="youtube_quota_exceeded"?"تم تجاوز حصة YouTube API لهذا المفتاح.":"تعذر جلب فيديوهات YouTube حاليًا.";}
 }
 function playVideo(id,title){$("#mediaBody").innerHTML='<div class="media"><h3>'+esc(title)+'</h3><iframe loading="lazy" src="https://www.youtube.com/embed/'+encodeURIComponent(id)+'" title="'+esc(title)+'" allowfullscreen></iframe></div>';mediaDialog.showModal()}
 function render(){const a=apply(sorted(S.results));$("#resultCount").textContent=a.length;$("#results").innerHTML=a.length?a.map((r,i)=>'<article class="card" id="card-'+i+'"><img class="thumb" loading="lazy" src="'+esc(r.image||"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80")+'" alt="'+esc(r.name)+'"><div class="card-body"><h3>'+esc(r.name)+'</h3><div class="meta">'+esc(r.city||"")+" "+(r.country?"• "+esc(r.country):"")+(r.rating?' • <span class="score">★ '+Number(r.rating).toFixed(1)+"</span>":"")+'</div><div class="tags"><span class="tag">'+esc(r.category||"وجهة")+'</span><span class="tag">'+(r.references||1)+" مراجع</span>"+(r.distance!=null?'<span class="tag">'+r.distance.toFixed(1)+" كم</span>":"")+'</div><div class="actions"><a class="primary" target="_blank" rel="noopener" href="'+maps(r)+'">📍 الخريطة</a><a target="_blank" rel="noopener" href="'+yt(r)+'">▶ فيديوهات</a><button type="button" onclick="showVideo('+JSON.stringify(r.name)+')">▶ عرض فيديو</button></div></div></article>').join(""):'<div class="empty">لا توجد نتائج بهذه الفلاتر.</div>';layer.clearLayers();S.markers=[];a.forEach((r,i)=>{if(!Number.isFinite(r.lat)||!Number.isFinite(r.lng))return;const m=L.marker([r.lat,r.lng]).addTo(layer).bindPopup("<b>"+esc(r.name)+"</b><br><a target='_blank' rel='noopener' href='"+maps(r)+"'>فتح في خرائط Google</a>");m.on("click",()=>$("#card-"+i)?.scrollIntoView({behavior:"smooth",block:"center"}));S.markers.push(m)});if(S.markers.length)map.fitBounds(L.featureGroup(S.markers).getBounds().pad(.18),{maxZoom:13})}
