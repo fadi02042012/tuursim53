@@ -10,6 +10,25 @@ function apply(a){const c=$("#category").value,min=+$("#rating").value||0,max=+$
 function sorted(a){const m=$("#sort").value;return [...a].sort((x,y)=>m==="rating"?(y.rating||0)-(x.rating||0):m==="references"?(y.references||0)-(x.references||0):m==="recent"?(y.recency||0)-(x.recency||0):score(y)-score(x))}
 function maps(r){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(r.name+" "+(r.lat&&r.lng?r.lat+","+r.lng:""))}
 function yt(r){return "https://www.youtube.com/results?search_query="+encodeURIComponent(r.name+" travel")}
+async function videos(name){
+  const p=new URLSearchParams({q:name+" travel"});
+  const o=$("#videoOrder")?.value||"relevance"; p.set("order",o);
+  const d=$("#videoDuration")?.value; if(d)p.set("videoDuration",d);
+  const def=$("#videoDefinition")?.value; if(def)p.set("videoDefinition",def);
+  const cap=$("#videoCaption")?.value; if(cap)p.set("videoCaption",cap);
+  const r=await fetch("/.netlify/functions/youtube-search?"+p); if(!r.ok)throw Error("YouTube "+r.status); return (await r.json()).items||[];
+}
+function renderVideos(items){
+  const box=$("#videoResults"); if(!box)return;
+  box.innerHTML=items.length?items.map(v=>'<article class="video-card"><a target="_blank" rel="noopener" href="'+v.url+'"><img src="'+esc(v.thumbnail)+'" alt=""><h3>'+esc(v.title)+'</h3></a><p>'+esc(v.channel)+' • '+Number(v.views).toLocaleString("ar")+" مشاهدة</p><button type="button" onclick="playVideo('"+esc(v.id)+"','"+esc(v.title).replace(/'/g,"&#39;")+"')">▶ مشاهدة</button></article>').join(""):'<div class="empty">لم نجد فيديوهات مناسبة.</div>';
+}
+async function videoSearch(){
+  const q=$("#q").value.trim(); if(!q)return;
+  $("#videoStatus").textContent="جاري البحث عن أفضل الفيديوهات…";
+  try{const items=await videos(q);renderVideos(items);$("#videoStatus").textContent="تم العثور على "+items.length+" فيديو";$("#videoResults")?.scrollIntoView({behavior:"smooth",block:"start"})}
+  catch(e){console.warn(e);$("#videoStatus").textContent="تعذر جلب فيديوهات YouTube. تأكد من إعداد مفتاح YouTube API في Netlify."}
+}
+function playVideo(id,title){$("#mediaBody").innerHTML='<div class="media"><h3>'+esc(title)+'</h3><iframe loading="lazy" src="https://www.youtube.com/embed/'+encodeURIComponent(id)+'" title="'+esc(title)+'" allowfullscreen></iframe></div>';mediaDialog.showModal()}
 function render(){const a=apply(sorted(S.results));$("#resultCount").textContent=a.length;$("#results").innerHTML=a.length?a.map((r,i)=>'<article class="card" id="card-'+i+'"><img class="thumb" loading="lazy" src="'+esc(r.image||"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80")+'" alt="'+esc(r.name)+'"><div class="card-body"><h3>'+esc(r.name)+'</h3><div class="meta">'+esc(r.city||"")+" "+(r.country?"• "+esc(r.country):"")+(r.rating?' • <span class="score">★ '+Number(r.rating).toFixed(1)+"</span>":"")+'</div><div class="tags"><span class="tag">'+esc(r.category||"وجهة")+'</span><span class="tag">'+(r.references||1)+" مراجع</span>"+(r.distance!=null?'<span class="tag">'+r.distance.toFixed(1)+" كم</span>":"")+'</div><div class="actions"><a class="primary" target="_blank" rel="noopener" href="'+maps(r)+'">📍 الخريطة</a><a target="_blank" rel="noopener" href="'+yt(r)+'">▶ فيديوهات</a><button type="button" onclick="showVideo('+JSON.stringify(r.name)+')">▶ عرض فيديو</button></div></div></article>').join(""):'<div class="empty">لا توجد نتائج بهذه الفلاتر.</div>';layer.clearLayers();S.markers=[];a.forEach((r,i)=>{if(!Number.isFinite(r.lat)||!Number.isFinite(r.lng))return;const m=L.marker([r.lat,r.lng]).addTo(layer).bindPopup("<b>"+esc(r.name)+"</b><br><a target='_blank' rel='noopener' href='"+maps(r)+"'>فتح في خرائط Google</a>");m.on("click",()=>$("#card-"+i)?.scrollIntoView({behavior:"smooth",block:"center"}));S.markers.push(m)});if(S.markers.length)map.fitBounds(L.featureGroup(S.markers).getBounds().pad(.18),{maxZoom:13})}
 async function search(q){const id=++S.id;$("#status").textContent="جاري تجميع النتائج…";let a=[];try{a=[...(await local(q)),...(await osm(q))]}catch(e){console.warn(e)}if(id!==S.id)return;const seen=new Set();S.results=a.filter(r=>{const k=r.name+"|"+r.lat+"|"+r.lng;if(seen.has(k))return false;seen.add(k);return true}).slice(0,C.max);render();$("#status").textContent=S.results.length?"تم جمع "+S.results.length+" نتيجة":"لم نجد نتائج مطابقة"}
 function showVideo(name){$("#mediaBody").innerHTML='<div class="media"><h3>فيديوهات: '+esc(name)+'</h3><iframe loading="lazy" src="https://www.youtube.com/embed?listType=search&list='+encodeURIComponent(name+" travel")+'" title="YouTube search"></iframe><p class="meta">يمكنك استخدام زر YouTube في البطاقة.</p></div>';mediaDialog.showModal()}
