@@ -1,52 +1,84 @@
+const CACHE_TTL = 5 * 60 * 1000;
+const cache = globalThis.__tuursimYoutubeCache || (globalThis.__tuursimYoutubeCache = new Map());
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "public, max-age=60, stale-while-revalidate=300" }
+  });
+}
+
 export default async (req) => {
   const key = process.env.YOUTUBE_API_KEY;
   const url = new URL(req.url);
-  const q = (url.searchParams.get("q") || "").trim();
-  if (!q) return Response.json({ error: "query_required", items: [] }, { status: 400 });
-  if (!key) return Response.json({ error: "youtube_api_key_missing", items: [] }, { status: 503 });
+  const q = (url.searchParams.get("q") || "").trim().slice(0, 120);
+  if (!q) return json({ error: "query_required", items: [] }, 400);
+  if (!key) return json({ error: "youtube_api_key_missing", items: [] }, 503);
+
+  const order = ["relevance", "viewCount", "date"].includes(url.searchParams.get("order") || "")
+    ? url.searchParams.get("order") : "relevance";
+  const duration = ["short", "medium", "long"].includes(url.searchParams.get("videoDuration") || "")
+    ? url.searchParams.get("videoDuration") : "";
+  const definition = ["high", "standard"].includes(url.searchParams.get("videoDefinition") || "")
+    ? url.searchParams.get("videoDefinition") : "";
+  const captions = ["any", "closedCaption", "none"].includes(url.searchParams.get("videoCaption") || "")
+    ? url.searchParams.get("videoCaption") : "";
+  const region = /^[A-Z]{2}$/.test(url.searchParams.get("regionCode") || "")
+    ? url.searchParams.get("regionCode") : "";
+
+  const cacheKey = JSON.stringify({ q, order, duration, definition, captions, region });
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.time < CACHE_TTL) return json(cached.data);
 
   const params = new URLSearchParams({
-    key, part: "snippet", q, type: "video", maxResults: "24",
-    order: url.searchParams.get("order") || "relevance",
-    safeSearch: "moderate", videoEmbeddable: "true",
-    relevanceLanguage: "ar"
+    key, part: "snippet", q, type: "video", maxResults: "12",
+    order, safeSearch: "moderate", videoEmbeddable: "true", relevanceLanguage: "ar"
   });
-  const region = url.searchParams.get("regionCode");
-  const duration = url.searchParams.get("videoDuration");
-  const hd = url.searchParams.get("videoDefinition");
-  const captions = url.searchParams.get("videoCaption");
   if (region) params.set("regionCode", region);
-  if (duration && ["short","medium","long"].includes(duration)) params.set("videoDuration", duration);
-  if (hd && ["high","standard"].includes(hd)) params.set("videoDefinition", hd);
-  if (captions && ["any","closedCaption","none"].includes(captions)) params.set("videoCaption", captions);
+  if (duration) params.set("videoDuration", duration);
+  if (definition) params.set("videoDefinition", definition);
+  if (captions) params.set("videoCaption", captions);
 
   const sr = await fetch("https://www.googleapis.com/youtube/v3/search?" + params);
-  if (!sr.ok) return Response.json({ error: "youtube_search_failed", items: [] }, { status: sr.status });
+  if (!sr.ok) return json({ error: "youtube_search_failed", items: [] }, sr.status);
   const search = await sr.json();
-  const ids = (search.items || []).map(x => x.id?.videoId).filter(Boolean);
-  if (!ids.length) return Response.json({ items: [] });
+  const ids = (search.items || []).map(x => x.id?.videoId).filter(Boolean).slice(0, 12);
+  if (!ids.length) return json({ items: [] });
 
   const vr = await fetch("https://www.googleapis.com/youtube/v3/videos?" + new URLSearchParams({
     key, part: "snippet,statistics,contentDetails", id: ids.join(",")
   }));
-  if (!vr.ok) return Response.json({ error: "youtube_video_details_failed", items: [] }, { status: vr.status });
+  if (!vr.ok) return json({ error: "youtube_video_details_failed", items: [] }, vr.status);
   const details = await vr.json();
   const byId = new Map((details.items || []).map(x => [x.id, x]));
+  const now = Date.now();
 
-  const items = ids.map(id => {
-    const x = byId.get(id), s = x?.snippet || {};
-    const st = x?.statistics || {};
+  const items = ids.map((id, index) => {
+    const x = byId.get(id), s = x?.snippet || {}, st = x?.statistics || {};
     const views = Number(st.viewCount || 0), likes = Number(st.likeCount || 0);
+    const published = Date.parse(s.publishedAt || "");
+    const ageYears = published ? Math.max(0, (now - published) / 31557600000) : 10;
+    const recency = 1 / (1 + ageYears);
+    const engagement = views ? Math.min(1, (likes / views) * 40) : 0;
+    const popularity = views ? Math.min(1, Math.log10(views + 1) / 8) : 0;
     return {
       id, title: s.title || "", description: s.description || "",
       channel: s.channelTitle || "", publishedAt: s.publishedAt || "",
-      thumbnail: s.thumbnails?.high?.url || s.thumbnails?.medium?.url || "",
+      thumbnail: s.thumbnails?.high?.url || s.thumbnails?.medium?.url || s.thumbnails?.default?.url || "",
       views, likes, duration: x?.contentDetails?.duration || "",
       url: "https://www.youtube.com/watch?v=" + id,
       embed: "https://www.youtube.com/embed/" + id,
-      score: views ? Math.log10(views + 1) * 0.65 + Math.log10(likes + 1) * 0.2 + (s.publishedAt ? Math.max(0, 1 - (Date.now()-Date.parse(s.publishedAt))/31557600000)*0.15 : 0) : 0
+      relevanceRank: index + 1,
+      score: (1 - Math.min(1, index / 11)) * 0.35 + popularity * 0.40 + engagement * 0.10 + recency * 0.15
     };
   });
-  items.sort((a,b)=>b.score-a.score);
-  return Response.json({ items });
+
+  if (order === "viewCount") items.sort((a, b) => b.views - a.views);
+  else if (order === "date") items.sort((a, b) => Date.parse(b.publishedAt || 0) - Date.parse(a.publishedAt || 0));
+  else items.sort((a, b) => b.score - a.score);
+
+  const data = { items };
+  cache.set(cacheKey, { time: Date.now(), data });
+  if (cache.size > 100) cache.delete(cache.keys().next().value);
+  return json(data);
 };
